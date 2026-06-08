@@ -14,21 +14,25 @@ Proyecto de plataforma educativa universitaria para reemplazar Moodle con una ex
 - Mocks funcionales para prototipo
 
 ## Instalacion
+
 ```bash
 npm install
 ```
 
 ## Desarrollo
+
 ```bash
 npm run dev
 ```
 
 ## Lint
+
 ```bash
 npm run lint
 ```
 
 ## Build
+
 ```bash
 npm run build
 ```
