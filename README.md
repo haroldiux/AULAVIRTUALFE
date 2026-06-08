@@ -1,40 +1,34 @@
-# Aula-virtualapp (aula-virtual)
+# AULAVIRTUALFE
 
-PROYECTO DE PLATAFORMA EDUCATIVA PARA REEMPLAZAR EL LMS MOODLE PARA LA UNIVERSIDAD TECNICA PRIVADA COSMOS
+Frontend del Aula Virtual LMS UNITEPC.
 
-## Install the dependencies
+Proyecto de plataforma educativa universitaria para reemplazar Moodle con una experiencia mas clara, modular y amigable.
+
+## Stack
+
+- Vue 3
+- Quasar 2
+- Pinia
+- Vue Router
+- Tailwind CSS 4
+- Mocks funcionales para prototipo
+
+## Instalacion
 ```bash
-yarn
-# or
 npm install
 ```
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
+## Desarrollo
 ```bash
-quasar dev
+npm run dev
 ```
 
-
-### Lint the files
+## Lint
 ```bash
-yarn lint
-# or
 npm run lint
 ```
 
-
-### Format the files
+## Build
 ```bash
-yarn format
-# or
-npm run format
+npm run build
 ```
-
-
-### Build the app for production
-```bash
-quasar build
-```
-
-### Customize the configuration
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).

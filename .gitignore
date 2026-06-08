@@ -30,4 +30,15 @@ yarn-error.log*
 *.sln
 
 # local .env files
+.env
 .env.local*
+.env.*.local
+
+# local workspace/codex/codegraph artifacts
+.codegraph/
+.opencode/
+.codex/
+
+# editor/runtime local artifacts
+.vscode/
+quasar.config.js.temporary.compiled*.mjs

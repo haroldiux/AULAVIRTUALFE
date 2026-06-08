@@ -1,0 +1,144 @@
+// UNITEPC Institutional Theme — Design Tokens
+// ============================================================
+// Colores extraidos del logo oficial UNITEPC:
+//   "UNI"  -> Purpura #6B3FA0
+//   "TEPC" -> Teal   #0D9488
+// ============================================================
+
+:root {
+  // Backgrounds — Light Mode
+  --ta-bg-page:     linear-gradient(180deg, #fbfbfd 0%, #f3faf9 100%);
+  --ta-bg-sidebar:  linear-gradient(180deg, #6B3FA0 0%, #5A2E8C 42%, #0D9488 150%);
+  --ta-bg-header:   linear-gradient(135deg, #6B3FA0 0%, #0D9488 100%);
+  --ta-bg-card:     #ffffff;
+  --ta-bg-input:    #ffffff;
+  --ta-bg-hover:    #f3f0f9;
+  --ta-bg-dropzone: linear-gradient(135deg, rgba(107, 63, 160, 0.08) 0%, rgba(13, 148, 136, 0.08) 100%);
+
+  // Borders — Light Mode
+  --ta-border-card:    #e2e8f0;
+  --ta-border-input:   #e2e8f0;
+  --ta-border-sidebar: rgba(255, 255, 255, 0.15);
+  --ta-border-table:   #e2e8f0;
+
+  // Text — Light Mode
+  --ta-text-primary:   #1e293b;
+  --ta-text-secondary: #64748b;
+  --ta-text-muted:     #94a3b8;
+  --ta-text-sidebar:   rgba(255, 255, 255, 0.85);
+  --ta-text-sidebar-active: #ffffff;
+
+  // Sidebar item — Light
+  --ta-sidebar-hover:       rgba(255, 255, 255, 0.10);
+  --ta-sidebar-active-bg:   rgba(255, 255, 255, 0.18);
+
+  // Primary — UNITEPC Purple
+  --ta-primary:       #6B3FA0;
+  --ta-primary-hover: #5A2E8C;
+
+  // Accent solids
+  --ta-success:  #10b981;
+  --ta-warning:  #f59e0b;
+  --ta-danger:   #ef4444;
+  --ta-info:     #0D9488;
+
+  // KPI solids (UNITEPC style)
+  --ta-kpi-purple: #6B3FA0;
+  --ta-kpi-teal:   #0D9488;
+  --ta-kpi-orange: #f59e0b;
+  --ta-kpi-pink:   #f43f5e;
+  --ta-kpi-green:  #10b981;
+  --ta-kpi-blue:   #0ea5e9;
+}
+
+.body--dark {
+  // Backgrounds — Dark Mode (Purple-tinged dark)
+  --ta-bg-page:     linear-gradient(180deg, #120B1E 0%, #0F1A2A 100%);
+  --ta-bg-sidebar:  linear-gradient(180deg, #2D1B4E 0%, #182F33 160%);
+  --ta-bg-header:   linear-gradient(135deg, #2D1B4E 0%, #0D9488 100%);
+  --ta-bg-card:     #3A245C;
+  --ta-bg-input:    #3A245C;
+  --ta-bg-hover:    #4A3470;
+  --ta-bg-dropzone: linear-gradient(135deg, rgba(107, 63, 160, 0.14) 0%, rgba(13, 148, 136, 0.14) 100%);
+
+  // Borders — Dark Mode
+  --ta-border-card:    rgba(255, 255, 255, 0.08);
+  --ta-border-input:   rgba(255, 255, 255, 0.08);
+  --ta-border-sidebar: rgba(255, 255, 255, 0.06);
+  --ta-border-table:   rgba(255, 255, 255, 0.08);
+
+  // Text — Dark Mode
+  --ta-text-primary:   #ffffff;
+  --ta-text-secondary: #c4b5fd;
+  --ta-text-muted:     #a78bfa;
+  --ta-text-sidebar:   rgba(255, 255, 255, 0.85);
+  --ta-text-sidebar-active: #ffffff;
+
+  // Sidebar item — Dark
+  --ta-sidebar-hover:       rgba(255, 255, 255, 0.08);
+  --ta-sidebar-active-bg:   rgba(107, 63, 160, 0.35);
+
+  // Primary — Dark Mode (lighter purple)
+  --ta-primary:       #a78bfa;
+  --ta-primary-hover: #c4b5fd;
+
+  // Accent solids
+  --ta-success:  #14b8a6;
+  --ta-warning:  #f59e0b;
+  --ta-danger:   #ef4444;
+  --ta-info:     #0ea5e9;
+
+  // KPI solids (UNITEPC Dark style)
+  --ta-kpi-purple: #a78bfa;
+  --ta-kpi-teal:   #0D9488;
+  --ta-kpi-orange: #f59e0b;
+  --ta-kpi-pink:   #f43f5e;
+  --ta-kpi-green:  #14b8a6;
+  --ta-kpi-blue:   #0ea5e9;
+}
+
+// Utility classes
+.ta-bg-page     { background: var(--ta-bg-page) !important; }
+.ta-bg-sidebar  { background: var(--ta-bg-sidebar) !important; }
+.ta-bg-header   { background: var(--ta-bg-header) !important; }
+.ta-bg-card     { background: var(--ta-bg-card) !important; }
+.ta-bg-input    { background: var(--ta-bg-input) !important; }
+.ta-bg-hover    { background: var(--ta-bg-hover) !important; }
+
+.ta-border-card    { border-color: var(--ta-border-card) !important; }
+.ta-border-input   { border-color: var(--ta-border-input) !important; }
+.ta-border-sidebar { border-color: var(--ta-border-sidebar) !important; }
+
+.ta-text-primary   { color: var(--ta-text-primary) !important; }
+.ta-text-secondary { color: var(--ta-text-secondary) !important; }
+.ta-text-muted     { color: var(--ta-text-muted) !important; }
+.ta-text-sidebar   { color: var(--ta-text-sidebar) !important; }
+
+.ta-sidebar-hover:hover { background-color: var(--ta-sidebar-hover); }
+.ta-sidebar-active {
+  background-color: var(--ta-sidebar-active-bg);
+  color: var(--ta-text-sidebar-active);
+}
+
+.ta-transition {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+// Scrollbar styling
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.body--dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+.body--dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}

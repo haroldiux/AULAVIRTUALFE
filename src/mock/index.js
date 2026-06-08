@@ -1,0 +1,6 @@
+export { default as usuarios } from './data/usuarios.js'
+export { default as cursos } from './data/cursos.js'
+export { default as actividades } from './data/actividades.js'
+export { default as matriculas } from './data/matriculas.js'
+export { default as calificaciones } from './data/calificaciones.js'
+export { default as entregasEstudiante } from './data/entregas_estudiante.js'
