@@ -1,5 +1,8 @@
 <template>
+  <AppSkeleton v-if="cargando" variant="dashboard" />
+
   <DashboardShell
+    v-else
     title="Centro docente"
     subtitle="Monitorea avance, entregas pendientes y acciones prioritarias para tus cursos activos."
     eyebrow="Docente"
@@ -7,7 +10,7 @@
     :meta="fechaHoy"
   >
     <template #actions>
-      <q-btn unelevated no-caps color="primary" text-color="white" icon="add" label="Nuevo curso" to="/docente/cursos" />
+      <q-btn unelevated no-caps color="primary" text-color="white" icon="add" label="Nuevo curso" to="/docente/cursos" class="shadow-2" />
       <q-btn outline no-caps color="primary" icon="grade" label="Calificar" to="/docente/calificar" />
       <q-btn flat no-caps color="primary" icon="auto_awesome" label="Herramientas" to="/docente/herramientas" />
     </template>
@@ -44,7 +47,9 @@
           height="310px"
         >
           <BarChart v-if="chartDataRendimiento.labels.length" :data="chartDataRendimiento" :options="barOptions" />
-          <DashboardEmptyState v-else icon="school" title="Sin cursos asignados" message="Todavia no hay cursos para graficar." />
+          <AppEmptyState v-else icon="school" title="Sin cursos asignados" message="Todavia no hay cursos para graficar.">
+            <TaButton variant="primary" icon="add" label="Crear curso" class="q-mt-sm" to="/docente/cursos" />
+          </AppEmptyState>
         </DashboardChartCard>
       </div>
       <div class="col-12 col-lg-4">
@@ -56,7 +61,9 @@
           height="310px"
         >
           <DoughnutChart v-if="chartDataActividades.labels.length" :data="chartDataActividades" :options="doughnutOptions" />
-          <DashboardEmptyState v-else icon="assignment" title="Sin actividades" message="Crea actividades para ver su distribucion." />
+          <AppEmptyState v-else icon="assignment" title="Sin actividades" message="Crea actividades para ver su distribucion.">
+            <TaButton variant="primary" icon="add" label="Nuevo curso" class="q-mt-sm" to="/docente/cursos" />
+          </AppEmptyState>
         </DashboardChartCard>
       </div>
     </div>
@@ -99,7 +106,9 @@
                 </q-badge>
               </q-item-section>
             </q-item>
-            <DashboardEmptyState v-if="!cursos.length" icon="school" title="Sin cursos" message="No hay cursos asignados para este docente." />
+            <AppEmptyState v-if="!cursos.length" icon="school" title="Sin cursos" message="No hay cursos asignados para este docente.">
+              <TaButton variant="primary" icon="add" label="Crear curso" class="q-mt-sm" to="/docente/cursos" />
+            </AppEmptyState>
           </q-list>
         </TaCard>
       </div>
@@ -157,7 +166,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { Bar as BarChart, Doughnut as DoughnutChart } from 'vue-chartjs'
@@ -167,10 +176,13 @@ import { useAuthStore } from 'src/stores/auth'
 import { useHerramientasDocenteStore } from 'src/stores/herramientasDocente'
 import { actividades as mockActividades } from 'src/mock/index.js'
 import { useStaggerCards } from 'src/composables/useAnimations'
+import { useLoadingState } from 'src/composables/useLoadingState'
 import DashboardShell from 'src/components/dashboard/DashboardShell.vue'
 import DashboardChartCard from 'src/components/dashboard/DashboardChartCard.vue'
-import DashboardEmptyState from 'src/components/dashboard/DashboardEmptyState.vue'
+import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
+import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
+import TaButton from 'src/components/tailadmin/TaButton.vue'
 import TaKpiCard from 'src/components/tailadmin/TaKpiCard.vue'
 
 ChartJS.register(BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend)
@@ -180,6 +192,7 @@ const router = useRouter()
 const cursosStore = useCursosStore()
 const auth = useAuthStore()
 const herramientas = useHerramientasDocenteStore()
+const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 700 })
 
 const fechaHoy = new Date().toLocaleDateString('es-BO', { day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -280,4 +293,8 @@ function labelTipo(tipo) {
 }
 
 useStaggerCards('.card-item')
+
+onMounted(() => {
+  finalizarCarga()
+})
 </script>

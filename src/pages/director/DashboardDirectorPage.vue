@@ -1,5 +1,8 @@
 <template>
+  <AppSkeleton v-if="cargando" variant="dashboard" :kpis="6" />
+
   <DashboardShell
+    v-else
     title="Panel academico"
     subtitle="Supervisa avance por carrera, cursos con riesgo y alertas operativas de la gestion."
     eyebrow="Direccion academica"
@@ -12,7 +15,8 @@
         :options="opcionesCarrera"
         outlined
         dense
-        bg-color="white"
+        :bg-color="$q.dark.isActive ? 'grey-9' : 'white'"
+        :input-style="{ color: $q.dark.isActive ? '#F1F5F9' : '#1E293B' }"
         color="primary"
         label="Carrera"
         map-options
@@ -107,20 +111,23 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { Bar as BarChart, Doughnut as DoughnutChart } from 'vue-chartjs'
 import { Chart as ChartJS, BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
 import DashboardShell from 'src/components/dashboard/DashboardShell.vue'
 import DashboardChartCard from 'src/components/dashboard/DashboardChartCard.vue'
+import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaKpiCard from 'src/components/tailadmin/TaKpiCard.vue'
 import { useStaggerCards } from 'src/composables/useAnimations'
+import { useLoadingState } from 'src/composables/useLoadingState'
 
 ChartJS.register(BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend)
 
 const $q = useQuasar()
 const fechaHoy = new Date().toLocaleDateString('es-BO', { day: 'numeric', month: 'long', year: 'numeric' })
+const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 700 })
 
 const carreraSeleccionada = ref(1)
 const opcionesCarrera = [
@@ -189,4 +196,8 @@ const alertas = [
 ]
 
 useStaggerCards('.card-item')
+
+onMounted(() => {
+  finalizarCarga()
+})
 </script>

@@ -60,12 +60,12 @@ export const useNotificacionesStore = defineStore('notificaciones', {
       const min = (m) => new Date(ahora.getTime() - m * 60000).toISOString()
 
       this.notificaciones = [
-        { id: 1, fecha: min(5), leida: false, icon: 'assignment_turned_in', color: 'green', titulo: 'Juan Perez entrego Tarea 1', descripcion: 'Diagrama de Clases — Programacion Avanzada', curso: 'Programacion Avanzada' },
-        { id: 2, fecha: min(30), leida: false, icon: 'forum', color: 'teal', titulo: 'Nueva respuesta en el foro', descripcion: 'Dra. Maria Rios respondio en "Factory vs Abstract"', curso: 'Programacion Avanzada' },
-        { id: 3, fecha: min(60), leida: false, icon: 'grade', color: 'primary', titulo: 'Tu tarea fue calificada', descripcion: 'Foro Debate — 18/20 puntos', curso: 'Programacion Avanzada' },
-        { id: 4, fecha: min(120), leida: true, icon: 'event', color: 'orange', titulo: 'Recordatorio: fecha limite', descripcion: 'Tarea 1 vence en 2 dias', curso: 'Programacion Avanzada' },
-        { id: 5, fecha: min(180), leida: true, icon: 'campaign', color: 'purple', titulo: 'Nuevo material disponible', descripcion: 'Lectura - Patrones Creacionales publicada', curso: 'Programacion Avanzada' },
-        { id: 6, fecha: min(240), leida: true, icon: 'school', color: 'indigo', titulo: 'Curso publicado', descripcion: 'El docente publico Base de Datos II', curso: 'Base de Datos II' },
+        { id: 1, fecha: min(5), leida: false, icon: 'assignment_turned_in', color: 'green', titulo: 'Juan Perez entrego Tarea 1', descripcion: 'Diagrama de Clases — Programacion Avanzada', curso: 'Programacion Avanzada', ruta: '/estudiante/curso/1?actividad=1' },
+        { id: 2, fecha: min(30), leida: false, icon: 'forum', color: 'teal', titulo: 'Nueva respuesta en el foro', descripcion: 'Dra. Maria Rios respondio en "Factory vs Abstract"', curso: 'Programacion Avanzada', ruta: '/estudiante/curso/1' },
+        { id: 3, fecha: min(60), leida: false, icon: 'grade', color: 'primary', titulo: 'Tu tarea fue calificada', descripcion: 'Foro Debate — 18/20 puntos', curso: 'Programacion Avanzada', ruta: '/estudiante/notas' },
+        { id: 4, fecha: min(120), leida: true, icon: 'event', color: 'orange', titulo: 'Recordatorio: fecha limite', descripcion: 'Tarea 1 vence en 2 dias', curso: 'Programacion Avanzada', ruta: '/estudiante/centro' },
+        { id: 5, fecha: min(180), leida: true, icon: 'campaign', color: 'purple', titulo: 'Nuevo material disponible', descripcion: 'Lectura - Patrones Creacionales publicada', curso: 'Programacion Avanzada', ruta: '/estudiante/curso/1' },
+        { id: 6, fecha: min(240), leida: true, icon: 'school', color: 'indigo', titulo: 'Curso publicado', descripcion: 'El docente publico Base de Datos II', curso: 'Base de Datos II', ruta: '/estudiante/cursos' },
       ]
       this.persistir()
       this.cargadas = true

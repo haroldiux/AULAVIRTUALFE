@@ -77,7 +77,7 @@ defineEmits(['update:modelValue'])
 
 .ta-input--light ::v-deep(.q-field__control:focus-within) {
   border-color: #6B3FA0 !important;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+  box-shadow: 0 0 0 4px rgba(107, 63, 160, 0.12) !important;
 }
 
 .ta-input--dark ::v-deep(.q-field__control) {
@@ -86,8 +86,8 @@ defineEmits(['update:modelValue'])
 }
 
 .ta-input--dark ::v-deep(.q-field__control:focus-within) {
-  border-color: #4f5bec !important;
-  box-shadow: 0 0 0 4px rgba(79, 91, 236, 0.18) !important;
+  border-color: #a78bfa !important;
+  box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.18) !important;
 }
 
 .ta-input ::v-deep(.q-field__native),

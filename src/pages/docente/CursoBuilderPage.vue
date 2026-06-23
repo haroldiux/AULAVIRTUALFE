@@ -5,13 +5,15 @@
       <q-breadcrumbs-el :label="curso?.nombre ?? 'Curso'" />
     </q-breadcrumbs>
 
-    <template v-if="curso">
+    <AppSkeleton v-if="cargando" variant="list" :count="5" />
+
+    <template v-else-if="curso">
       <TaPageHeader :title="curso.nombre" data-tour="teacher-builder-header">
         <template #actions>
           <TaButton variant="primary" icon="visibility" label="Previsualizar" @click="previsualizarCurso" />
           <TaButton v-if="curso.estado === 'borrador'" variant="primary" icon="publish" label="Publicar" @click="publicarCurso" />
           <TaButton v-else variant="secondary" icon="unpublished" label="Despublicar" />
-          <TaButton variant="ghost" icon="more_vert">
+          <TaButton variant="ghost" icon="more_vert" aria-label="Opciones del curso">
             <q-menu>
               <q-list dense style="min-width: 180px">
                 <q-item clickable v-close-popup @click="duplicarCurso">
@@ -38,10 +40,10 @@
         </template>
       </TaPageHeader>
       <div class="row items-center q-mb-lg q-mt-sm">
-        <q-badge :color="curso.estado === 'publicado' ? 'green' : 'orange'">
+        <q-badge :color="curso.estado === 'publicado' ? 'positive' : 'warning'" class="q-px-sm">
           {{ curso.estado === 'publicado' ? 'Publicado' : 'Borrador' }}
         </q-badge>
-        <span class="text-caption text-grey-7 q-ml-sm">{{ curso.codigo }} — {{ curso.gestion }} — {{ curso.total_estudiantes }} estudiantes</span>
+        <span class="text-caption q-ml-sm" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">{{ curso.codigo }} — {{ curso.gestion }} — {{ curso.total_estudiantes }} estudiantes</span>
       </div>
 
       <div class="row q-col-gutter-md">
@@ -85,13 +87,13 @@
                           <div class="text-caption text-grey-6">{{ seccion.descripcion }}</div>
                         </div>
                         <div class="col-auto row q-gutter-xs">
-                          <q-badge color="grey-4" text-color="grey-8">
+                          <q-badge class="section-count" text-color="white">
                             {{ getActividadesCount(seccion.id) }} actividades
                           </q-badge>
-                          <q-btn flat round dense size="sm" icon="edit" color="grey-7" @click.stop="abrirDialogoSeccion(seccion)">
+                          <q-btn flat round dense size="sm" icon="edit" color="grey-7" aria-label="Editar seccion" @click.stop="abrirDialogoSeccion(seccion)">
                             <q-tooltip>Editar seccion</q-tooltip>
                           </q-btn>
-                          <q-btn flat round dense size="sm" icon="delete" color="negative" @click.stop="eliminarSeccion(seccion.id)">
+                          <q-btn flat round dense size="sm" icon="delete" color="negative" aria-label="Eliminar seccion" @click.stop="eliminarSeccion(seccion.id)">
                             <q-tooltip>Eliminar seccion</q-tooltip>
                           </q-btn>
                         </div>
@@ -130,7 +132,7 @@
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side>
-                              <q-btn flat round dense size="sm" icon="more_vert">
+                              <q-btn flat round dense size="sm" icon="more_vert" aria-label="Opciones de actividad">
                                 <q-menu>
                                   <q-list dense>
                                     <q-item clickable v-close-popup @click.stop="editarActividad(act)">
@@ -165,12 +167,17 @@
                 </template>
               </draggable>
 
-              <div v-if="!curso.secciones.length" class="text-center q-pa-xl" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-6'">
-                <q-icon name="folder_open" size="48px" :color="$q.dark.isActive ? 'grey-6' : 'grey-4'" />
-                <p>No hay secciones. Agrega tu primera seccion o genera un curso desde SISA.</p>
-                <TaButton variant="primary" icon="add" label="Agregar Seccion" @click="abrirDialogoSeccion()" />
-                <TaButton variant="outline" icon="cloud_download" label="Generar desde SISA" class="q-ml-sm" @click="menuSisa = true" />
-              </div>
+              <AppEmptyState
+                v-if="!curso.secciones.length"
+                icon="folder_open"
+                title="Sin secciones"
+                message="Agrega tu primera seccion o genera un curso desde SISA."
+              >
+                <div class="row q-gutter-sm q-mt-md justify-center">
+                  <TaButton variant="primary" icon="add" label="Agregar Seccion" @click="abrirDialogoSeccion()" />
+                  <TaButton variant="outline" icon="cloud_download" label="Generar desde SISA" @click="menuSisa = true" />
+                </div>
+              </AppEmptyState>
             </q-card-section>
 
             <!-- MODO CANVAS -->
@@ -199,12 +206,16 @@
     </template>
 
     <div v-else class="flex flex-center q-pa-xl">
-      <q-spinner-dots color="primary" size="40px" />
+      <div class="text-center" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-6'">
+        <q-icon name="error_outline" size="48px" :color="$q.dark.isActive ? 'grey-6' : 'grey-4'" />
+        <p class="q-mt-md">Curso no encontrado.</p>
+        <TaButton variant="primary" icon="arrow_back" label="Volver a mis cursos" :to="'/docente/cursos'" />
+      </div>
     </div>
 
     <!-- Dialogos (seccion, tipo actividad, formulario actividad, SISA, confirmar eliminar) -->
     <q-dialog v-model="dialogoSeccion">
-      <q-card style="min-width: 450px">
+      <q-card class="dialog-card" style="min-width: 450px">
         <q-card-section>
           <div class="text-h6">{{ seccionEditando ? 'Editar Seccion' : 'Nueva Seccion' }}</div>
         </q-card-section>
@@ -220,7 +231,7 @@
     </q-dialog>
 
     <q-dialog v-model="tipoActividadDialog">
-      <q-card style="min-width: 350px">
+      <q-card class="dialog-card" style="min-width: 350px">
         <q-card-section>
           <div class="text-h6">Seleccionar Tipo de Actividad</div>
         </q-card-section>
@@ -244,7 +255,7 @@
     </q-dialog>
 
     <q-dialog v-model="dialogoActividad" persistent>
-      <q-card style="min-width: 550px; max-width: 700px">
+      <q-card class="dialog-card" style="min-width: 550px; max-width: 700px">
         <q-card-section>
           <div class="text-h6">{{ actividadEditando ? 'Editar ' + labelTipo(formActividad.tipo) : 'Nueva ' + labelTipo(formActividad.tipo) }}</div>
         </q-card-section>
@@ -356,7 +367,7 @@
         <q-bar class="bg-primary text-white">
           <div>Generar Curso desde SISA</div>
           <q-space />
-          <q-btn dense flat icon="close" v-close-popup />
+          <q-btn dense flat icon="close" aria-label="Cerrar dialogo" v-close-popup />
         </q-bar>
         <q-card-section class="q-pa-lg">
           <div class="text-h5 text-center q-mb-lg">Importar Plan Analitico de Curso (PAC)</div>
@@ -400,7 +411,7 @@
     </q-dialog>
 
     <q-dialog v-model="dialogoConfirmar">
-      <q-card>
+      <q-card class="dialog-card">
         <q-card-section>
           <div class="text-h6">Confirmar Eliminacion</div>
         </q-card-section>
@@ -416,7 +427,7 @@
 
     <!-- Dialogo Cargar Plantilla -->
     <q-dialog v-model="dialogoPlantillas">
-      <q-card style="min-width: 500px; max-width: 650px">
+      <q-card class="dialog-card" style="min-width: 500px; max-width: 650px">
         <q-card-section>
           <div class="text-h6">Cargar Plantilla</div>
           <p class="text-grey-7 q-mb-none">Selecciona una plantilla para aplicar su estructura al curso actual.</p>
@@ -437,14 +448,16 @@
                 </q-item-label>
               </q-item-section>
               <q-item-section side top>
-                <q-btn flat round dense size="sm" icon="delete" color="negative" @click.stop="eliminarPlantilla(i)" />
+                <q-btn flat round dense size="sm" icon="delete" color="negative" aria-label="Eliminar plantilla" @click.stop="eliminarPlantilla(i)" />
               </q-item-section>
             </q-item>
           </q-list>
-          <div v-if="plantillas.length === 0" class="text-center q-pa-md" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-6'">
-            <q-icon name="bookmark_border" size="32px" :color="$q.dark.isActive ? 'grey-6' : 'grey-4'" />
-            <p class="q-mt-sm">No hay plantillas guardadas. Usa "Guardar como Plantilla" para crear una.</p>
-          </div>
+          <AppEmptyState
+            v-if="plantillas.length === 0"
+            icon="bookmark_border"
+            title="Sin plantillas"
+            message="Usa 'Guardar como Plantilla' para crear una."
+          />
         </q-card-section>
         <q-card-actions align="right">
           <TaButton variant="ghost" label="Cerrar" v-close-popup />
@@ -455,7 +468,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, shallowReactive } from 'vue'
+import { ref, computed, watch, shallowReactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useCursosStore } from 'src/stores/cursos'
@@ -467,6 +480,9 @@ import BuilderCanvas from 'src/components/curso-builder/BuilderCanvas.vue'
 import TaPageHeader from 'src/components/tailadmin/TaPageHeader.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaButton from 'src/components/tailadmin/TaButton.vue'
+import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
+import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
+import { useLoadingState } from 'src/composables/useLoadingState'
 import { getActivityModel } from 'src/utils/activityModel'
 
 const $q = useQuasar()
@@ -474,6 +490,7 @@ const route = useRoute()
 const router = useRouter()
 const cursosStore = useCursosStore()
 const actividadesStore = useActividadesStore()
+const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 700 })
 
 const curso = computed(() => cursosStore.getCursoById(Number(route.params.id)))
 
@@ -516,6 +533,10 @@ function inicializarListas() {
 }
 
 inicializarListas()
+
+onMounted(() => {
+  finalizarCarga()
+})
 
 watch(
   () => [curso.value?.secciones?.length, curso.value?.secciones?.map((s) => s.id).join(',')],
@@ -970,47 +991,43 @@ if (plantillas.value.length === 0) {
 
 <style scoped>
 .seccion-card {
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid var(--ta-border-card);
+  background: var(--ta-bg-card);
+  box-shadow: var(--shadow-card);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 .seccion-card:hover {
-  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
-  border-color: #c7d2fe;
-}
-.body--dark .seccion-card {
-  border-color: #2e3a47;
-  background: #1c2434;
+  box-shadow: var(--shadow-card-hover);
+  border-color: rgba(var(--primary-rgb), 0.22);
 }
 .body--dark .seccion-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  border-color: #3e4a5e;
+  border-color: rgba(var(--primary-rgb), 0.28);
 }
 
 .ghost-card {
-  opacity: 0.6;
-  background: rgba(37, 99, 235, 0.08);
-  border: 2px dashed rgba(37, 99, 235, 0.4);
-  border-radius: 16px;
+  opacity: 0.65;
+  background: rgba(var(--primary-rgb), 0.08);
+  border: 2px dashed rgba(var(--primary-rgb), 0.35);
+  border-radius: 18px;
 }
 
 .drag-handle { cursor: grab; transition: color 0.2s ease; }
-.drag-handle:hover { color: #3c50e0; }
+.drag-handle:hover { color: var(--ta-primary); }
 .drag-handle:active { cursor: grabbing; }
 
 .actividad-item {
-  border-radius: 10px;
-  margin: 2px 8px;
+  border-radius: 12px;
+  margin: 3px 10px;
   transition: background 0.25s ease, transform 0.2s ease;
 }
 .actividad-item:hover {
-  background: rgba(37, 99, 235, 0.04);
-  transform: translateX(2px);
+  background: rgba(var(--primary-rgb), 0.05);
+  transform: translateX(3px);
 }
 .body--dark .actividad-item:hover {
-  background: rgba(79, 91, 236, 0.06);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .act-drag-handle {
@@ -1023,19 +1040,30 @@ if (plantillas.value.length === 0) {
 }
 .act-drag-handle:hover {
   opacity: 1 !important;
-  color: #3c50e0;
+  color: var(--ta-primary);
 }
 .act-drag-handle:active { cursor: grabbing; }
 
 .add-act-row {
-  border-radius: 10px;
-  margin: 2px 8px;
+  border-radius: 12px;
+  margin: 3px 10px;
   transition: all 0.2s ease;
+  color: var(--ta-text-secondary);
 }
 .add-act-row:hover {
-  background: rgba(37, 99, 235, 0.06);
-  color: #3c50e0;
+  background: rgba(var(--primary-rgb), 0.06);
+  color: var(--ta-primary);
 }
 
-.sisa-wizard { max-width: 700px; width: 100%; }
+.sisa-wizard { max-width: 700px; width: 100%; border-radius: 20px; }
+.dialog-card { border-radius: 20px; }
+.section-count {
+  background: rgba(var(--primary-rgb), 0.12);
+  color: var(--ta-primary);
+  font-weight: 600;
+}
+.body--dark .section-count {
+  background: rgba(var(--primary-rgb), 0.2);
+  color: var(--ta-text-primary);
+}
 </style>

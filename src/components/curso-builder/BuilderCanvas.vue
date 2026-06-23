@@ -18,8 +18,8 @@
           <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-6'">{{ seccion.descripcion }}</div>
         </div>
         <div class="col-auto row q-gutter-xs">
-          <q-btn flat round dense size="sm" icon="edit" color="grey-7" @click="$emit('edit-seccion', seccion)" />
-          <q-btn flat round dense size="sm" icon="delete" color="negative" @click="$emit('delete-seccion', seccion.id)" />
+          <q-btn flat round dense size="sm" icon="edit" color="grey-7" aria-label="Editar seccion" @click="$emit('edit-seccion', seccion)" />
+          <q-btn flat round dense size="sm" icon="delete" color="negative" aria-label="Eliminar seccion" @click="$emit('delete-seccion', seccion.id)" />
         </div>
       </div>
 
@@ -47,10 +47,10 @@
               <q-icon :name="iconBloque(bloque)" :color="colorBloque(bloque)" size="xs" class="q-mr-sm" />
               <span class="text-caption text-weight-medium">{{ labelBloque(bloque) }}</span>
               <q-space />
-              <q-btn flat round dense size="xs" icon="edit" color="grey-6" @click="$emit('edit-bloque', bloque, seccion.id)">
+              <q-btn flat round dense size="xs" icon="edit" color="grey-6" aria-label="Editar bloque" @click="$emit('edit-bloque', bloque, seccion.id)">
                 <q-tooltip>Editar</q-tooltip>
               </q-btn>
-              <q-btn flat round dense size="xs" icon="delete" color="negative" @click="$emit('delete-bloque', seccion.id, bIdx)">
+              <q-btn flat round dense size="xs" icon="delete" color="negative" aria-label="Eliminar bloque" @click="$emit('delete-bloque', seccion.id, bIdx)">
                 <q-tooltip>Eliminar</q-tooltip>
               </q-btn>
             </div>

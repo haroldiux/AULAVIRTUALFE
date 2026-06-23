@@ -1,5 +1,8 @@
 <template>
+  <AppSkeleton v-if="cargando" variant="dashboard" />
+
   <DashboardShell
+    v-else
     title="Mi Aula Virtual"
     subtitle="Continua tus cursos, revisa entregas pendientes y mantente al dia con las proximas fechas."
     eyebrow="Estudiante"
@@ -60,7 +63,7 @@
           height="300px"
         >
           <DoughnutChart v-if="pendingTypeChart.labels.length" :data="pendingTypeChart" :options="doughnutOptions" />
-          <DashboardEmptyState
+          <AppEmptyState
             v-else
             icon="check_circle"
             title="Todo al dia"
@@ -86,16 +89,18 @@
         </q-input>
       </div>
       <div class="col-12 col-md-auto">
-        <q-btn-toggle
-          v-model="courseFilter"
-          unelevated
-          no-caps
-          rounded
-          color="primary"
-          toggle-color="primary"
-          text-color="primary"
-          :options="courseFilterOptions"
-        />
+        <div class="filter-bar">
+          <q-btn-toggle
+            v-model="courseFilter"
+            flat
+            no-caps
+            rounded
+            color="primary"
+            toggle-color="primary"
+            text-color="primary"
+            :options="courseFilterOptions"
+          />
+        </div>
       </div>
     </div>
 
@@ -142,7 +147,7 @@
             </q-card>
           </div>
         </div>
-        <DashboardEmptyState
+        <AppEmptyState
           v-else
           icon="manage_search"
           title="No se encontraron cursos"
@@ -178,7 +183,7 @@
                 </q-item-section>
               </q-item>
             </template>
-            <DashboardEmptyState
+            <AppEmptyState
               v-else
               icon="task_alt"
               title="Sin pendientes"
@@ -209,7 +214,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { Bar as BarChart, Doughnut as DoughnutChart } from 'vue-chartjs'
@@ -217,9 +222,11 @@ import { Chart as ChartJS, BarElement, ArcElement, CategoryScale, LinearScale, T
 import { useAuthStore } from 'src/stores/auth'
 import { useActividadesStore } from 'src/stores/actividades'
 import { useStaggerCards } from 'src/composables/useAnimations'
+import { useLoadingState } from 'src/composables/useLoadingState'
 import DashboardShell from 'src/components/dashboard/DashboardShell.vue'
 import DashboardChartCard from 'src/components/dashboard/DashboardChartCard.vue'
-import DashboardEmptyState from 'src/components/dashboard/DashboardEmptyState.vue'
+import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
+import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaKpiCard from 'src/components/tailadmin/TaKpiCard.vue'
 
@@ -229,6 +236,7 @@ const $q = useQuasar()
 const router = useRouter()
 const auth = useAuthStore()
 const actividadesStore = useActividadesStore()
+const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 700 })
 
 const search = ref('')
 const courseFilter = ref('todos')
@@ -433,12 +441,30 @@ function irAActividad(actividad, cursoId) {
 }
 
 useStaggerCards('.card-item')
+
+onMounted(() => {
+  finalizarCarga()
+})
 </script>
 
 <style scoped>
 .search-input :deep(.q-field__control) {
   border-radius: 16px;
   background: var(--ta-bg-card);
+  border: 1px solid var(--ta-border-card);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.search-input :deep(.q-field__control:focus-within) {
+  border-color: rgba(var(--primary-rgb), 0.4);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.08);
+}
+.filter-bar {
+  display: inline-flex;
+  padding: 4px;
+  background: var(--ta-bg-card);
+  border: 1px solid var(--ta-border-card);
+  border-radius: 999px;
+  box-shadow: var(--shadow-card);
 }
 
 .line-clamp-2 {

@@ -1,5 +1,5 @@
 <template>
-  <q-page class="av-dashboard-page">
+  <q-page class="av-dashboard-page ta-aurora">
     <section class="av-dashboard-hero" data-tour="dashboard-hero">
       <div class="av-dashboard-hero__content">
         <q-chip

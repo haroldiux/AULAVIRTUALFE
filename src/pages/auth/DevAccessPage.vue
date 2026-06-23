@@ -11,8 +11,8 @@
             <div class="dev-logo mx-auto mb-4">
               <q-icon name="construction" size="28px" color="white" />
             </div>
-            <h1 class="text-3xl font-black text-white tracking-tight mb-1">Accesos de Desarrollo</h1>
-            <p class="text-white/40 text-sm">Selecciona un perfil para probar la aplicacion</p>
+            <h1 class="text-3xl font-black text-white mb-1">Accesos de Desarrollo</h1>
+            <p class="text-white/55 text-sm">Selecciona un perfil para probar la aplicacion</p>
           </div>
 
           <!-- Grid de roles -->
@@ -20,7 +20,7 @@
             <div v-for="(rol, nombre) in roles" :key="nombre" class="col-12 col-sm-6">
               <div class="dev-rol-card" :class="{ 'dev-rol-card--active': expandido[nombre] }">
                 <!-- Header del rol -->
-                <button class="dev-rol-header" @click="toggleRol(nombre)">
+                <button class="dev-rol-header" :aria-expanded="expandido[nombre]" :aria-label="`Perfil ${rol.label}`" @click="toggleRol(nombre)">
                   <div class="flex items-center gap-3">
                     <div class="dev-rol-icon" :class="`bg-${rol.color}`">
                       <q-icon :name="rol.icon" size="20px" :color="rol.iconColor" />
@@ -45,6 +45,7 @@
                       v-for="user in rol.usuarios"
                       :key="user.id"
                       class="dev-user-btn"
+                      :aria-label="`Ingresar como ${user.nombre}`"
                       @click="doLogin(user.id)"
                     >
                       <img :src="user.avatar" class="dev-user-avatar" />
@@ -132,15 +133,18 @@ function doLogin(usuarioId) {
 
 /* Card de rol */
 .dev-rol-card {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 16px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 18px;
   overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transition: all 0.3s ease;
 }
 .dev-rol-card:hover {
-  border-color: rgba(255,255,255,0.24);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.24);
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.26);
+  box-shadow: 0 16px 34px rgba(0,0,0,0.28);
 }
 
 /* Header del rol */
@@ -178,7 +182,7 @@ function doLogin(usuarioId) {
 }
 .dev-rol-count {
   font-size: 12px;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.52);
 }
 
 /* Lista de usuarios */
@@ -221,19 +225,19 @@ function doLogin(usuarioId) {
 }
 .dev-user-email {
   font-size: 11px;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.52);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* Link volver */
 .dev-link {
   display: inline-flex; align-items: center;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.55);
   font-size: 13px;
   text-decoration: none;
   transition: color 0.2s ease;
 }
-.dev-link:hover { color: rgba(255,255,255,0.7); }
+.dev-link:hover { color: rgba(255,255,255,0.85); }
 
 /* Transiciones */
 .slide-enter-active { transition: all 0.3s ease-out; }

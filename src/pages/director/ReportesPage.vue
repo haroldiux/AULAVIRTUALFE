@@ -1,30 +1,33 @@
 <template>
   <q-page class="av-dashboard-page">
-    <TaPageHeader title="Reportes" data-tour="director-reports-header" />
+    <AppSkeleton v-if="cargando" variant="dashboard" />
 
-    <div class="row q-col-gutter-md q-mb-md" data-tour="director-reports-kpis">
-      <div class="col-12 col-md-4">
-        <TaCard custom-class="card-item text-center">
-          <q-icon name="school" size="48px" color="primary" />
-          <div class="text-h6 q-mt-sm" :class="$q.dark.isActive ? 'text-slate-100' : 'text-slate-800'">Cumplimiento Docente</div>
-          <p class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">{{ cursosActivos }} cursos activos · {{ cursosInactivos }} sin actividad reciente</p>
-        </TaCard>
+    <template v-else>
+      <TaPageHeader title="Reportes" data-tour="director-reports-header" />
+
+      <div class="row q-col-gutter-md q-mb-md" data-tour="director-reports-kpis">
+        <div class="col-12 col-md-4">
+          <TaCard custom-class="card-item text-center report-kpi report-kpi--purple">
+            <q-icon name="school" size="48px" color="primary" />
+            <div class="text-h6 q-mt-sm text-weight-bold">Cumplimiento Docente</div>
+            <p class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">{{ cursosActivos }} cursos activos · {{ cursosInactivos }} sin actividad reciente</p>
+          </TaCard>
+        </div>
+        <div class="col-12 col-md-4">
+          <TaCard custom-class="card-item text-center report-kpi report-kpi--teal">
+            <q-icon name="trending_up" size="48px" color="teal" />
+            <div class="text-h6 q-mt-sm text-weight-bold">Rendimiento Estudiantil</div>
+            <p class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Promedio general: {{ promedioGeneral }}%</p>
+          </TaCard>
+        </div>
+        <div class="col-12 col-md-4">
+          <TaCard custom-class="card-item text-center report-kpi report-kpi--orange">
+            <q-icon name="warning" size="48px" color="orange" />
+            <div class="text-h6 q-mt-sm text-weight-bold">Alertas</div>
+            <p class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">{{ alertasCount }} cursos con entregas sin calificar</p>
+          </TaCard>
+        </div>
       </div>
-      <div class="col-12 col-md-4">
-        <TaCard custom-class="card-item text-center">
-          <q-icon name="trending_up" size="48px" color="teal" />
-          <div class="text-h6 q-mt-sm" :class="$q.dark.isActive ? 'text-slate-100' : 'text-slate-800'">Rendimiento Estudiantil</div>
-          <p class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Promedio general: {{ promedioGeneral }}%</p>
-        </TaCard>
-      </div>
-      <div class="col-12 col-md-4">
-        <TaCard custom-class="card-item text-center">
-          <q-icon name="warning" size="48px" color="orange" />
-          <div class="text-h6 q-mt-sm" :class="$q.dark.isActive ? 'text-slate-100' : 'text-slate-800'">Alertas</div>
-          <p class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">{{ alertasCount }} cursos con entregas sin calificar</p>
-        </TaCard>
-      </div>
-    </div>
 
     <div class="row q-col-gutter-md q-mb-md" data-tour="director-reports-charts">
       <div class="col-12 col-md-6">
@@ -42,34 +45,37 @@
     <div class="row q-col-gutter-md">
       <div class="col-12">
         <TaCard title="Cursos sin Actividad Reciente" class="card-item">
-          <q-list dense separator>
-            <q-item v-for="curso in cursosInactivosList" :key="curso.id">
+          <q-list separator>
+            <q-item v-for="curso in cursosInactivosList" :key="curso.id" class="av-list-item q-py-md">
               <q-item-section avatar>
-                <q-icon name="warning" color="orange" />
+                <q-avatar color="warning" text-color="white" size="44px">
+                  <q-icon name="warning" />
+                </q-avatar>
               </q-item-section>
               <q-item-section>
-                <q-item-label>{{ curso.nombre }} <span class="text-caption text-grey-7">({{ curso.codigo }})</span></q-item-label>
+                <q-item-label class="text-weight-bold">{{ curso.nombre }} <span class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">({{ curso.codigo }})</span></q-item-label>
                 <q-item-label caption>{{ curso.docente }} · {{ curso.ultimaActividad }}</q-item-label>
               </q-item-section>
               <q-item-section side>
-                <q-badge color="orange" text-color="white">Inactivo</q-badge>
+                <q-badge color="warning" text-color="white" class="q-px-sm">Inactivo</q-badge>
               </q-item-section>
             </q-item>
-            <q-item v-if="cursosInactivosList.length === 0" class="text-center text-grey">
-              <q-item-section>
-                <q-icon name="check_circle" color="positive" size="24px" />
-                <div class="text-caption">Todos los cursos tienen actividad reciente</div>
-              </q-item-section>
-            </q-item>
+            <AppEmptyState
+              v-if="cursosInactivosList.length === 0"
+              icon="check_circle"
+              title="Todos los cursos estan activos"
+              message="No hay cursos sin actividad reciente en este periodo."
+            />
           </q-list>
         </TaCard>
       </div>
     </div>
+    </template>
   </q-page>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { Bar as BarChart, Doughnut as DoughnutChart } from 'vue-chartjs'
 import { Chart as ChartJS, BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
@@ -78,7 +84,10 @@ import { useActividadesStore } from 'src/stores/actividades'
 import { calificaciones as mockCalificaciones, matriculas as mockMatriculas, usuarios as mockUsuarios } from 'src/mock/index.js'
 import TaPageHeader from 'src/components/tailadmin/TaPageHeader.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
+import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
+import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 import { useStaggerCards } from 'src/composables/useAnimations'
+import { useLoadingState } from 'src/composables/useLoadingState'
 
 ChartJS.register(BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend)
 useStaggerCards('.card-item')
@@ -86,6 +95,7 @@ useStaggerCards('.card-item')
 const $q = useQuasar()
 const cursosStore = useCursosStore()
 const actividadesStore = useActividadesStore()
+const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 700 })
 
 const cursos = computed(() => cursosStore.cursos)
 const cursosActivos = computed(() => cursos.value.filter((c) => c.estado === 'publicado').length)
@@ -191,4 +201,25 @@ const cursosInactivosList = computed(() => {
       }
     })
 })
+
+onMounted(() => {
+  finalizarCarga()
+})
 </script>
+
+<style scoped>
+.report-kpi {
+  position: relative;
+  overflow: hidden;
+}
+.report-kpi::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  pointer-events: none;
+}
+.report-kpi--purple::before { background: linear-gradient(135deg, #6B3FA0 0%, #0D9488 100%); }
+.report-kpi--teal::before { background: linear-gradient(135deg, #0D9488 0%, #6B3FA0 100%); }
+.report-kpi--orange::before { background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); }
+</style>

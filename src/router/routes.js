@@ -21,7 +21,7 @@ const routes = [
   {
     path: '/login',
     component: () => import('pages/auth/LoginPage.vue'),
-    meta: { public: true },
+    meta: { public: true, title: 'Iniciar Sesion' },
   },
   {
     path: '/docente',
@@ -50,7 +50,7 @@ const routes = [
       {
         path: 'dashboard',
         component: () => import('pages/docente/DashboardDocentePage.vue'),
-        meta: { title: 'Dashboard' },
+        meta: { title: 'Dashboard Docente' },
       },
       {
         path: 'calificar',
@@ -76,7 +76,7 @@ const routes = [
       {
         path: 'dashboard',
         component: () => import('pages/estudiante/DashboardEstudiantePage.vue'),
-        meta: { title: 'Dashboard' },
+        meta: { title: 'Dashboard Estudiante' },
       },
       {
         path: 'cursos',
@@ -112,7 +112,7 @@ const routes = [
       {
         path: 'dashboard',
         component: () => import('pages/director/DashboardDirectorPage.vue'),
-        meta: { title: 'Dashboard' },
+        meta: { title: 'Dashboard Director' },
       },
       {
         path: 'seguimiento',
@@ -172,12 +172,14 @@ const routes = [
       {
         path: '',
         component: () => import('pages/auth/DevAccessPage.vue'),
+        meta: { title: 'Acceso de Desarrollo' },
       },
     ],
   },
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue'),
+    meta: { title: 'Pagina no encontrada' },
   },
 ]
 

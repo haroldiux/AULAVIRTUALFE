@@ -1,13 +1,16 @@
 <template>
   <q-page class="av-dashboard-page">
-    <TaPageHeader title="Configuracion del Sistema">
-      <template #actions>
-        <TaButton variant="outline" icon="security" label="Auditoria" @click="verAuditoria" />
-        <TaButton variant="primary" icon="save" label="Guardar cambios" @click="guardarCambios" />
-      </template>
-    </TaPageHeader>
+    <AppSkeleton v-if="cargando" variant="list" :count="6" />
 
-    <div class="row q-col-gutter-md q-mb-lg">
+    <template v-else>
+      <TaPageHeader title="Configuracion del Sistema">
+        <template #actions>
+          <TaButton variant="outline" icon="security" label="Auditoria" @click="verAuditoria" />
+          <TaButton variant="primary" icon="save" label="Guardar cambios" @click="guardarCambios" />
+        </template>
+      </TaPageHeader>
+
+      <div class="row q-col-gutter-md q-mb-lg">
       <div v-for="kpi in kpis" :key="kpi.label" class="col-6 col-lg-3">
         <TaKpiCard class="card-item" :icon="kpi.icon" :icon-color="kpi.color" :label="kpi.label" :value="kpi.value" :trend="kpi.trend" />
       </div>
@@ -17,7 +20,7 @@
       <div class="col-12 col-xl-7">
         <TaCard title="Integraciones y servicios" subtitle="Control operativo de APIs externas y servicios LMS" :padding="false" class="card-item q-mb-lg">
           <q-list separator>
-            <q-item v-for="config in centro.configuraciones" :key="config.id" class="av-list-item q-py-md">
+            <q-item v-for="config in centro.configuraciones" :key="config.id" class="av-list-item config-item q-py-md">
               <q-item-section avatar>
                 <q-avatar :color="colorEstado(config.estado)" text-color="white" size="44px">
                   <q-icon :name="iconoEstado(config.estado)" />
@@ -37,14 +40,14 @@
 
         <TaCard title="Politicas academicas" subtitle="Reglas globales que afectan docentes, estudiantes y directores" :padding="false" class="card-item">
           <q-list separator>
-            <q-item v-for="politica in centro.politicas" :key="politica.id" class="av-list-item q-py-md">
+            <q-item v-for="politica in centro.politicas" :key="politica.id" class="av-list-item config-item q-py-md">
               <q-item-section avatar><q-icon name="rule" color="primary" /></q-item-section>
               <q-item-section>
                 <q-item-label class="text-weight-bold">{{ politica.nombre }}</q-item-label>
                 <q-item-label caption>{{ politica.valor }}</q-item-label>
               </q-item-section>
               <q-item-section side>
-                <q-badge color="teal" text-color="white">{{ politica.estado }}</q-badge>
+                <q-badge class="policy-badge" text-color="white">{{ politica.estado }}</q-badge>
               </q-item-section>
             </q-item>
           </q-list>
@@ -53,6 +56,7 @@
 
       <div class="col-12 col-xl-5">
         <TaCard title="Preferencias visuales" subtitle="Personalizacion institucional del LMS" class="card-item q-mb-lg">
+          <div class="text-caption q-mb-md" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Activa las experiencias visuales y de navegacion del LMS.</div>
           <div class="settings-grid">
             <q-toggle v-model="configLocal.animaciones" label="Animaciones premium" color="primary" />
             <q-toggle v-model="configLocal.tutoriales" label="Tutoriales por rol" color="teal" />
@@ -66,9 +70,9 @@
 
         <TaCard title="Auditoria reciente" subtitle="Eventos relevantes del sistema" :padding="false" class="card-item">
           <q-list separator>
-            <q-item v-for="evento in centro.auditoria" :key="evento.id" class="av-list-item q-py-md">
+            <q-item v-for="evento in centro.auditoria" :key="evento.id" class="av-list-item config-item q-py-md">
               <q-item-section avatar>
-                <q-avatar :color="evento.tipo === 'success' ? 'green' : 'orange'" text-color="white" size="38px">
+                <q-avatar :color="evento.tipo === 'success' ? 'positive' : 'warning'" text-color="white" size="38px">
                   <q-icon :name="evento.tipo === 'success' ? 'check' : 'warning'" />
                 </q-avatar>
               </q-item-section>
@@ -82,21 +86,25 @@
         </TaCard>
       </div>
     </div>
+    </template>
   </q-page>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useSuiteRolesStore } from 'src/stores/suiteRoles'
 import TaPageHeader from 'src/components/tailadmin/TaPageHeader.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaButton from 'src/components/tailadmin/TaButton.vue'
 import TaKpiCard from 'src/components/tailadmin/TaKpiCard.vue'
+import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
 import { useStaggerCards } from 'src/composables/useAnimations'
+import { useLoadingState } from 'src/composables/useLoadingState'
 
 const $q = useQuasar()
 const suite = useSuiteRolesStore()
+const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 600 })
 const centro = computed(() => suite.centroAdmin())
 const configLocal = ref({ animaciones: true, tutoriales: true, alertas: true, modoCompacto: false, tema: 'UNITEPC Premium', densidad: 'Confortable' })
 const temas = ['UNITEPC Premium', 'Institucional claro', 'Institucional oscuro']
@@ -116,8 +124,41 @@ function guardarCambios() { suite.registrarAccion('admin', 'Configuracion guarda
 function verAuditoria() { $q.notify({ message: 'Auditoria completa disponible en backend futuro', color: 'info', icon: 'security' }) }
 
 useStaggerCards('.card-item')
+
+onMounted(() => {
+  finalizarCarga()
+})
 </script>
 
 <style scoped>
-.settings-grid { display: grid; gap: 10px; }
+.settings-grid {
+  display: grid;
+  gap: 14px;
+  padding: 6px;
+  border: 1px solid var(--ta-border-card);
+  border-radius: 16px;
+  background: var(--ta-bg-card);
+}
+.body--dark .settings-grid {
+  background: rgba(255, 255, 255, 0.02);
+}
+.config-item {
+  border-radius: 14px;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.config-item:hover {
+  background: rgba(var(--primary-rgb), 0.04);
+  transform: translateX(2px);
+}
+.body--dark .config-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.policy-badge {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--ta-info);
+}
+.body--dark .policy-badge {
+  background: rgba(var(--accent-rgb), 0.18);
+  color: var(--ta-text-primary);
+}
 </style>

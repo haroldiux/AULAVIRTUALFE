@@ -13,6 +13,7 @@
           icon="menu"
           class="lt-md q-mr-md"
           color="white"
+          aria-label="Abrir menu"
           @click="toggleLeftDrawer"
         />
 
@@ -54,6 +55,7 @@
           dense
           :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
           color="white"
+          aria-label="Cambiar tema"
           @click="toggleDark"
           class="q-mr-sm"
         >
@@ -66,6 +68,7 @@
           dense
           icon="notifications"
           color="white"
+          aria-label="Notificaciones"
           @click="toggleNotifPanel"
           class="q-mr-sm"
           data-tour="notifications"
@@ -109,34 +112,41 @@
           :label="userIniciales"
           dropdown-icon="expand_more"
           color="white"
-          class="q-ml-sm text-weight-bold"
+          class="q-ml-sm text-weight-bold profile-dropdown"
           data-tour="profile"
           @show="animateBars"
         >
-          <q-list style="min-width: 320px" class="q-py-md">
+          <q-list style="min-width: 320px" class="q-py-md profile-menu">
             <q-item class="column items-center q-pb-md">
-              <q-avatar size="72px" class="q-mb-sm shadow-2">
+              <q-avatar size="76px" class="q-mb-sm shadow-3 profile-avatar">
                 <img :src="auth.userAvatar" />
               </q-avatar>
-              <div class="text-h6 text-weight-bold">{{ auth.userName }}</div>
-              <div class="text-caption text-grey">{{ roleLabel }}</div>
-              <div class="text-caption text-primary text-weight-bold uppercase tracking-widest q-mt-xs">Buenos dias</div>
+              <div class="text-h6 text-weight-bold text-primary">{{ auth.userName }}</div>
+              <div class="text-caption text-grey-6">{{ roleLabel }}</div>
+              <div class="text-caption text-secondary text-weight-bold uppercase q-mt-xs">Buenos dias</div>
             </q-item>
 
             <q-separator spaced />
 
             <q-item class="justify-center q-gutter-md">
-              <q-btn round flat icon="notifications" size="sm" color="grey-6" @click="openNotifFromMenu">
+              <q-btn round flat icon="notifications" size="sm" color="grey-6" aria-label="Notificaciones" @click="openNotifFromMenu">
+                <q-tooltip>Notificaciones</q-tooltip>
                 <q-badge v-if="notifStore.cantidadNoLeidas" floating rounded color="negative" />
               </q-btn>
-              <q-btn round flat icon="mail" size="sm" color="grey-6" />
-              <q-btn round flat icon="bookmark" size="sm" color="grey-6" />
-              <q-btn round flat icon="settings" size="sm" color="grey-6" />
+              <q-btn round flat icon="mail" size="sm" color="grey-6" aria-label="Mensajes">
+                <q-tooltip>Mensajes</q-tooltip>
+              </q-btn>
+              <q-btn round flat icon="bookmark" size="sm" color="grey-6" aria-label="Guardados">
+                <q-tooltip>Guardados</q-tooltip>
+              </q-btn>
+              <q-btn round flat icon="settings" size="sm" color="grey-6" aria-label="Configuracion">
+                <q-tooltip>Configuracion</q-tooltip>
+              </q-btn>
             </q-item>
 
             <q-separator spaced />
 
-            <q-item-label header class="text-weight-bold text-uppercase tracking-widest text-caption q-px-md text-grey">
+            <q-item-label header class="text-weight-bold text-uppercase text-caption q-px-md text-grey-6">
               Actividad
             </q-item-label>
             <q-item class="q-px-md">
@@ -150,16 +160,16 @@
                   <div
                     class="bar-chart__bar full-width"
                     :data-height="bar.height"
-                    style="height: 0%; background: #6B3FA0; border-radius: 4px 4px 0 0"
+                    style="height: 0%; background: var(--gradient-unitepc); border-radius: 4px 4px 0 0"
                   />
-                  <div class="text-caption text-grey q-mt-xs">{{ bar.label }}</div>
+                  <div class="text-caption text-grey-6 q-mt-xs">{{ bar.label }}</div>
                 </div>
               </div>
             </q-item>
 
             <q-separator spaced />
 
-            <q-item-label header class="text-weight-bold text-uppercase tracking-widest text-caption q-px-md text-grey">
+            <q-item-label header class="text-weight-bold text-uppercase text-caption q-px-md text-grey-6">
               Instructores a seguir
             </q-item-label>
             <q-list dense>
@@ -169,7 +179,7 @@
                 class="q-px-md"
               >
                 <q-item-section avatar>
-                  <q-avatar size="36px">
+                  <q-avatar size="38px">
                     <img :src="instructor.avatar" />
                   </q-avatar>
                 </q-item-section>
@@ -194,7 +204,7 @@
 
             <q-separator spaced />
 
-            <q-item clickable v-close-popup @click="confirmarLogout" class="q-px-md">
+            <q-item clickable v-close-popup @click="confirmarLogout" class="q-px-md logout-item">
               <q-item-section avatar>
                 <q-icon name="logout" color="negative" />
               </q-item-section>
@@ -273,14 +283,14 @@
     </q-page-container>
 
     <!-- Panel de Notificaciones -->
-    <q-drawer v-model="notifPanel" side="right" bordered :width="340" overlay behavior="mobile">
-      <div class="row items-center q-pa-sm app-notif-header">
-        <div class="col text-subtitle2">Notificaciones</div>
-        <div class="col-auto">
-          <q-btn flat round dense icon="done_all" @click="notifStore.marcarTodasLeidas()">
+    <q-drawer v-model="notifPanel" side="right" bordered :width="360" overlay behavior="mobile" class="notif-drawer">
+      <div class="row items-center q-pa-md app-notif-header">
+        <div class="col text-subtitle1 text-weight-bold">Notificaciones</div>
+        <div class="col-auto q-gutter-sm">
+          <q-btn flat round dense icon="done_all" aria-label="Marcar todas leidas" @click="notifStore.marcarTodasLeidas()">
             <q-tooltip>Marcar todas leidas</q-tooltip>
           </q-btn>
-          <q-btn flat round dense icon="close" v-close-popup />
+          <q-btn flat round dense icon="close" aria-label="Cerrar panel" @click="notifPanel = false" />
         </div>
       </div>
       <q-scroll-area class="fit">
@@ -290,11 +300,13 @@
             :key="notif.id"
             clickable
             v-ripple
-            @click="notifStore.marcarLeida(notif.id)"
-            :class="['notif-item', { 'notif-unread': !notif.leida }]"
+            @click="abrirNotificacion(notif)"
+            :class="['notif-item q-py-md', { 'notif-unread': !notif.leida }]"
           >
             <q-item-section avatar>
-              <q-icon :name="notif.icon" :color="notif.color" />
+              <q-avatar :color="notif.color" text-color="white" size="40px">
+                <q-icon :name="notif.icon" size="20px" />
+              </q-avatar>
             </q-item-section>
             <q-item-section>
               <q-item-label :class="{ 'text-weight-bold': !notif.leida }">{{ notif.titulo }}</q-item-label>
@@ -305,12 +317,12 @@
               </q-item-label>
             </q-item-section>
             <q-item-section side top>
-              <q-btn flat round dense size="xs" icon="close" color="grey-5" @click.stop="notifStore.eliminar(notif.id)" />
+              <q-btn flat round dense size="xs" icon="close" color="grey-5" aria-label="Eliminar notificacion" @click.stop="notifStore.eliminar(notif.id)" />
             </q-item-section>
           </q-item>
           <div v-if="notifStore.todasOrdenadas.length === 0" class="text-center q-pa-xl text-grey-6">
-            <q-icon name="notifications_none" size="48px" color="grey-4" />
-            <p>No hay notificaciones</p>
+            <q-icon name="notifications_none" size="56px" color="grey-4" />
+            <p class="q-mt-sm">No hay notificaciones</p>
           </div>
         </q-list>
       </q-scroll-area>
@@ -404,6 +416,14 @@ function openNotifFromMenu() {
   notifPanel.value = true
 }
 
+function abrirNotificacion(notif) {
+  notifStore.marcarLeida(notif.id)
+  notifPanel.value = false
+  if (notif.ruta) {
+    router.push(notif.ruta)
+  }
+}
+
 function startTutorial() {
   if (!leftDrawerOpen.value && $q.screen.lt.md) {
     leftDrawerOpen.value = true
@@ -482,5 +502,32 @@ function animateBars() {
 .v-enter-active,
 .v-leave-active {
   transition: opacity 0.25s ease;
+}
+
+.profile-dropdown :deep(.q-btn-dropdown__arrow) {
+  margin-left: 4px;
+}
+
+.profile-menu {
+  border-radius: 20px;
+  background: var(--ta-bg-card);
+  border: 1px solid var(--ta-border-card);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.profile-avatar {
+  border: 3px solid rgba(107, 63, 160, 0.18);
+  padding: 2px;
+}
+.body--dark .profile-avatar {
+  border-color: rgba(167, 139, 250, 0.22);
+}
+
+.logout-item:hover {
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.notif-drawer {
+  background: var(--ta-bg-card);
 }
 </style>

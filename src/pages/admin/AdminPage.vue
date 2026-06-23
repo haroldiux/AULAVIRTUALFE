@@ -1,5 +1,8 @@
 <template>
+  <AppSkeleton v-if="cargando" variant="dashboard" />
+
   <DashboardShell
+    v-else
     title="Operacion del sistema"
     subtitle="Controla sincronizaciones, usuarios cacheados, estado de cursos y salud de integraciones externas."
     eyebrow="Administracion"
@@ -7,7 +10,7 @@
     :meta="fechaHoy"
   >
     <template #actions>
-      <q-btn unelevated no-caps color="primary" text-color="white" icon="sync" label="Forzar sync" @click="notifySync" />
+      <q-btn unelevated no-caps color="primary" text-color="white" icon="sync" label="Forzar sync" class="shadow-2" @click="notifySync" />
       <q-btn outline no-caps color="primary" icon="settings" label="Configuracion" to="/admin/configuracion" />
     </template>
 
@@ -122,7 +125,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useCursosStore } from 'src/stores/cursos'
 import { usuarios as mockUsuarios } from 'src/mock/index.js'
@@ -130,9 +133,11 @@ import { Bar as BarChart, Doughnut as DoughnutChart } from 'vue-chartjs'
 import { Chart as ChartJS, BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
 import DashboardShell from 'src/components/dashboard/DashboardShell.vue'
 import DashboardChartCard from 'src/components/dashboard/DashboardChartCard.vue'
+import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaKpiCard from 'src/components/tailadmin/TaKpiCard.vue'
 import { useStaggerCards } from 'src/composables/useAnimations'
+import { useLoadingState } from 'src/composables/useLoadingState'
 
 ChartJS.register(BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend)
 useStaggerCards('.card-item')
@@ -140,6 +145,7 @@ useStaggerCards('.card-item')
 const $q = useQuasar()
 const cursosStore = useCursosStore()
 const fechaHoy = new Date().toLocaleDateString('es-BO', { day: 'numeric', month: 'long', year: 'numeric' })
+const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 700 })
 
 const totalCursos = computed(() => cursosStore.cursos.length)
 const totalUsuarios = mockUsuarios.length
@@ -231,4 +237,8 @@ function labelRol(r) {
 function notifySync() {
   $q.notify({ message: 'Mock: sincronizacion administrativa iniciada', color: 'info', icon: 'sync', timeout: 2200 })
 }
+
+onMounted(() => {
+  finalizarCarga()
+})
 </script>

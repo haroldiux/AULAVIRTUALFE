@@ -1,13 +1,16 @@
 <template>
   <q-page class="av-dashboard-page">
-    <TaPageHeader title="Centro Inteligente Docente" data-tour="teacher-tools-header">
-      <template #actions>
-        <TaButton variant="secondary" icon="refresh" label="Actualizar analisis" @click="actualizarAnalisis" />
-        <TaButton variant="primary" icon="campaign" label="Notificar alertas" @click="notificarAlertas" />
-      </template>
-    </TaPageHeader>
+    <AppSkeleton v-if="cargando" variant="dashboard" />
 
-    <div class="row q-col-gutter-md q-mb-lg" data-tour="teacher-tools-kpis">
+    <template v-else>
+      <TaPageHeader title="Centro Inteligente Docente" data-tour="teacher-tools-header">
+        <template #actions>
+          <TaButton variant="secondary" icon="refresh" label="Actualizar analisis" @click="actualizarAnalisis" />
+          <TaButton variant="primary" icon="campaign" label="Notificar alertas" @click="notificarAlertas" />
+        </template>
+      </TaPageHeader>
+
+      <div class="row q-col-gutter-md q-mb-lg" data-tour="teacher-tools-kpis">
       <div v-for="kpi in kpis" :key="kpi.label" class="col-6 col-lg-3">
         <TaKpiCard
           class="card-item"
@@ -63,7 +66,7 @@
                 <div class="text-weight-bold">{{ alerta.estudiante.nombre }}</div>
                 <div class="text-caption text-grey">{{ alerta.cursoCodigo }} · {{ alerta.curso }}</div>
                 <div class="row q-gutter-xs q-mt-sm">
-                  <q-chip v-for="factor in alerta.factores" :key="factor" dense color="grey-2" text-color="grey-9" size="sm">
+                  <q-chip v-for="factor in alerta.factores" :key="factor" dense class="risk-chip" size="sm">
                     {{ factor }}
                   </q-chip>
                 </div>
@@ -78,15 +81,15 @@
               </div>
               <q-badge :color="colorSeveridad(alerta.severidad)" class="q-pa-sm">{{ labelSeveridad(alerta.severidad) }}</q-badge>
               <div class="row no-wrap q-gutter-xs">
-                <q-btn flat round icon="chat" color="teal" @click="contactarEstudiante(alerta)">
+                <q-btn flat round icon="chat" color="teal" aria-label="Enviar mensaje" @click="contactarEstudiante(alerta)">
                   <q-tooltip>Enviar mensaje</q-tooltip>
                 </q-btn>
-                <q-btn flat round icon="grade" color="primary" @click="abrirCalificaciones(alerta)">
+                <q-btn flat round icon="grade" color="primary" aria-label="Abrir calificaciones" @click="abrirCalificaciones(alerta)">
                   <q-tooltip>Abrir calificaciones</q-tooltip>
                 </q-btn>
               </div>
             </article>
-            <DashboardEmptyState
+            <AppEmptyState
               v-if="!alertasFiltradas.length"
               icon="verified"
               title="Sin alertas con estos filtros"
@@ -196,10 +199,10 @@
                   <q-item-section side>
                     <q-badge :color="colorAgenda(item.estadoAgenda)" class="q-mb-sm">{{ labelAgenda(item) }}</q-badge>
                     <div class="row no-wrap">
-                      <q-btn flat round dense icon="edit_calendar" color="primary" @click="reprogramar(item)">
+                      <q-btn flat round dense icon="edit_calendar" color="primary" aria-label="Reprogramar" @click="reprogramar(item)">
                         <q-tooltip>Reprogramar</q-tooltip>
                       </q-btn>
-                      <q-btn flat round dense icon="edit" color="grey-7" @click="abrirBuilder(item)">
+                      <q-btn flat round dense icon="edit" color="grey-7" aria-label="Editar actividad" @click="abrirBuilder(item)">
                         <q-tooltip>Editar actividad</q-tooltip>
                       </q-btn>
                     </div>
@@ -233,7 +236,7 @@
                 <div class="automation-meta"><q-icon name="history" /> {{ regla.ultimaEjecucion ? formatoFechaHora(regla.ultimaEjecucion) : 'Nunca ejecutada' }}</div>
                 <div class="row q-gutter-sm q-mt-md">
                   <TaButton variant="outline" icon="visibility" label="Vista previa" @click="previsualizarRegla(regla)" />
-                  <q-btn flat round icon="play_arrow" color="teal" :disable="!regla.activa" @click="ejecutarRegla(regla)">
+                  <q-btn flat round icon="play_arrow" color="teal" aria-label="Ejecutar ahora" :disable="!regla.activa" @click="ejecutarRegla(regla)">
                     <q-tooltip>Ejecutar ahora</q-tooltip>
                   </q-btn>
                 </div>
@@ -248,15 +251,16 @@
               <div class="text-h6 text-weight-bold">Banco Docente</div>
               <div class="text-caption text-grey">Reutiliza actividades, rubricas y preguntas entre tus cursos.</div>
             </div>
-            <q-btn-toggle
-              v-model="bancoCategoria"
-              no-caps
-              unelevated
-              toggle-color="primary"
-              color="grey-2"
-              text-color="grey-8"
-              :options="opcionesBanco"
-            />
+            <div class="filter-bar">
+              <q-btn-toggle
+                v-model="bancoCategoria"
+                no-caps
+                flat
+                toggle-color="primary"
+                text-color="primary"
+                :options="opcionesBanco"
+              />
+            </div>
           </div>
 
           <div class="row q-col-gutter-md">
@@ -269,7 +273,7 @@
                       <div class="text-subtitle1 text-weight-bold">{{ plantilla.nombre }}</div>
                       <div class="text-caption text-grey">{{ labelCategoria(plantilla.categoria) }} · usada {{ plantilla.uso }} veces</div>
                     </div>
-                    <q-btn flat round icon="content_copy" color="primary" @click="abrirCopiarPlantilla(plantilla)">
+                    <q-btn flat round icon="content_copy" color="primary" aria-label="Usar plantilla" @click="abrirCopiarPlantilla(plantilla)">
                       <q-tooltip>Usar plantilla</q-tooltip>
                     </q-btn>
                   </div>
@@ -364,11 +368,12 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+    </template>
   </q-page>
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { Bar as BarChart, Doughnut as DoughnutChart } from 'vue-chartjs'
@@ -384,9 +389,11 @@ import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaButton from 'src/components/tailadmin/TaButton.vue'
 import TaKpiCard from 'src/components/tailadmin/TaKpiCard.vue'
 import DashboardChartCard from 'src/components/dashboard/DashboardChartCard.vue'
-import DashboardEmptyState from 'src/components/dashboard/DashboardEmptyState.vue'
+import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
+import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 import ActividadGuiadaWizard from 'src/components/docente/ActividadGuiadaWizard.vue'
 import { useStaggerCards } from 'src/composables/useAnimations'
+import { useLoadingState } from 'src/composables/useLoadingState'
 
 ChartJS.register(BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend)
 
@@ -399,6 +406,7 @@ const actividadesStore = useActividadesStore()
 const herramientas = useHerramientasDocenteStore()
 const notificaciones = useNotificacionesStore()
 const suite = useSuiteRolesStore()
+const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 600 })
 
 const tab = ref(route.query.tab || 'alertas')
 const filtroCurso = ref(null)
@@ -649,25 +657,61 @@ function labelTipo(tipo) { return { tarea: 'Tareas', foro: 'Foros', cuestionario
 function labelCategoria(categoria) { return { actividad: 'Actividad', rubrica: 'Rubrica', preguntas: 'Banco de preguntas' }[categoria] || categoria }
 
 useStaggerCards('.card-item')
+
+onMounted(() => {
+  finalizarCarga()
+})
 </script>
 
 <style scoped>
 .tools-shell:hover { transform: none; }
-.tools-tabs { min-height: 58px; color: var(--ta-text-secondary); }
+.tools-tabs {
+  min-height: 58px;
+  color: var(--ta-text-secondary);
+  background: var(--ta-bg-card);
+  border-bottom: 1px solid var(--ta-border-card);
+}
 .tools-panels { background: transparent; color: var(--ta-text-primary); min-height: 580px; }
 .section-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
-.risk-list { border: 1px solid var(--ta-border-card); border-radius: 12px; overflow: hidden; }
-.risk-row { display: grid; grid-template-columns: 5px 46px minmax(240px, 1fr) 90px 100px auto auto; align-items: center; gap: 14px; padding: 14px 16px 14px 0; border-bottom: 1px solid var(--ta-border-card); }
+.filter-bar {
+  display: inline-flex;
+  padding: 4px;
+  background: var(--ta-bg-card);
+  border: 1px solid var(--ta-border-card);
+  border-radius: 999px;
+}
+.risk-list { border: 1px solid var(--ta-border-card); border-radius: 16px; overflow: hidden; background: var(--ta-bg-card); }
+.risk-row {
+  display: grid;
+  grid-template-columns: 5px 46px minmax(240px, 1fr) 90px 100px auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px 14px 0;
+  border-bottom: 1px solid var(--ta-border-card);
+  transition: background-color 0.2s ease;
+}
 .risk-row:last-child { border-bottom: 0; }
+.risk-row:hover { background: rgba(var(--primary-rgb), 0.04); }
+.body--dark .risk-row:hover { background: rgba(255, 255, 255, 0.03); }
 .risk-row__signal { align-self: stretch; border-radius: 0 6px 6px 0; background: #6B3FA0; }
 .risk-row__signal--critica { background: #ef4444; }
 .risk-row__signal--alta { background: #F59E0B; }
+.risk-chip {
+  background: rgba(var(--primary-rgb), 0.08);
+  color: var(--ta-primary);
+  border: 1px solid rgba(var(--primary-rgb), 0.16);
+}
+.body--dark .risk-chip {
+  background: rgba(var(--primary-rgb), 0.14);
+  color: var(--ta-text-primary);
+  border-color: rgba(var(--primary-rgb), 0.24);
+}
 .risk-metric { display: grid; text-align: center; }
-.risk-metric strong { font-size: 1.05rem; }
+.risk-metric strong { font-size: 1.05rem; color: var(--ta-text-primary); }
 .risk-metric span { color: var(--ta-text-secondary); font-size: 0.7rem; }
 .agenda-layout { display: grid; grid-template-columns: minmax(230px, 0.34fr) minmax(0, 1fr); gap: 20px; }
-.agenda-summary { border: 1px solid var(--ta-border-card); border-radius: 12px; overflow: hidden; align-self: start; }
-.agenda-date { display: grid; justify-items: center; padding: 24px; background: var(--ta-primary); color: white; }
+.agenda-summary { border: 1px solid var(--ta-border-card); border-radius: 16px; overflow: hidden; align-self: start; background: var(--ta-bg-card); box-shadow: var(--shadow-card); }
+.agenda-date { display: grid; justify-items: center; padding: 24px; background: var(--gradient-unitepc); color: white; }
 .agenda-date span { font-size: 3rem; font-weight: 800; line-height: 1; }
 .agenda-date strong { font-size: 1.2rem; margin-top: 8px; }
 .agenda-date small { opacity: 0.75; }
@@ -675,10 +719,26 @@ useStaggerCards('.card-item')
 .agenda-count { display: flex; align-items: baseline; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--ta-border-card); }
 .agenda-count strong { font-size: 1.25rem; color: var(--ta-primary); }
 .agenda-count span { color: var(--ta-text-secondary); font-size: 0.8rem; }
-.agenda-list { border: 1px solid var(--ta-border-card); border-radius: 12px; overflow: hidden; }
+.agenda-count:last-child { border-bottom: 0; }
+.agenda-list { border: 1px solid var(--ta-border-card); border-radius: 16px; overflow: hidden; background: var(--ta-bg-card); }
+.agenda-item { transition: background-color 0.2s ease; }
 .agenda-item:hover { background: rgba(var(--primary-rgb), 0.04); }
-.automation-card, .template-row, .course-progress { height: 100%; border: 1px solid var(--ta-border-card); border-radius: 12px; padding: 18px; background: var(--ta-bg-card); }
-.automation-description { min-height: 42px; }
+.body--dark .agenda-item:hover { background: rgba(255, 255, 255, 0.03); }
+.automation-card, .template-row, .course-progress {
+  height: 100%;
+  border: 1px solid var(--ta-border-card);
+  border-radius: 16px;
+  padding: 18px;
+  background: var(--ta-bg-card);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.automation-card:hover, .template-row:hover, .course-progress:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: rgba(var(--primary-rgb), 0.22);
+}
+.automation-description { min-height: 42px; color: var(--ta-text-secondary); }
 .automation-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; color: var(--ta-text-secondary); font-size: 0.78rem; }
 .template-row { display: flex; gap: 16px; }
 .template-row__body { flex: 1; min-width: 0; }
@@ -687,8 +747,25 @@ useStaggerCards('.card-item')
 .assistant-layout { display: grid; grid-template-columns: minmax(260px, 0.85fr) minmax(260px, 1fr) minmax(260px, 0.9fr); gap: 16px; align-items: start; }
 .assistant-card:hover, .assistant-preview:hover { transform: none; }
 .assistant-tools { display: grid; gap: 12px; }
-.assistant-tool { display: flex; gap: 14px; align-items: center; border: 1px solid var(--ta-border-card); border-radius: 12px; padding: 14px; background: var(--ta-bg-card); cursor: pointer; transition: transform 0.2s ease, border-color 0.2s ease; }
-.assistant-tool:hover, .assistant-tool--active { transform: translateY(-2px); border-color: var(--ta-primary); }
+.assistant-tool {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid var(--ta-border-card);
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--ta-bg-card);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.assistant-tool:hover, .assistant-tool--active {
+  transform: translateY(-2px);
+  border-color: var(--ta-primary);
+  box-shadow: var(--shadow-card);
+}
+.body--dark .assistant-tool:hover, .body--dark .assistant-tool--active {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
 @media (max-width: 1100px) {
   .risk-row { grid-template-columns: 5px 46px minmax(200px, 1fr) auto auto; }
   .risk-metric { display: none; }

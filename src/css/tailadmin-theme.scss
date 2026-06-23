@@ -7,23 +7,26 @@
 
 :root {
   // Backgrounds — Light Mode
-  --ta-bg-page:     linear-gradient(180deg, #fbfbfd 0%, #f3faf9 100%);
+  --ta-bg-page:
+    radial-gradient(circle at 10% 10%, rgba(107, 63, 160, 0.06) 0%, transparent 35%),
+    radial-gradient(circle at 90% 90%, rgba(13, 148, 136, 0.05) 0%, transparent 35%),
+    linear-gradient(180deg, #fbfbfd 0%, #f3faf9 100%);
   --ta-bg-sidebar:  linear-gradient(180deg, #6B3FA0 0%, #5A2E8C 42%, #0D9488 150%);
   --ta-bg-header:   linear-gradient(135deg, #6B3FA0 0%, #0D9488 100%);
-  --ta-bg-card:     #ffffff;
+  --ta-bg-card:     rgba(255, 255, 255, 0.96);
   --ta-bg-input:    #ffffff;
   --ta-bg-hover:    #f3f0f9;
   --ta-bg-dropzone: linear-gradient(135deg, rgba(107, 63, 160, 0.08) 0%, rgba(13, 148, 136, 0.08) 100%);
 
   // Borders — Light Mode
-  --ta-border-card:    #e2e8f0;
+  --ta-border-card:    rgba(226, 232, 240, 0.92);
   --ta-border-input:   #e2e8f0;
   --ta-border-sidebar: rgba(255, 255, 255, 0.15);
-  --ta-border-table:   #e2e8f0;
+  --ta-border-table:   rgba(226, 232, 240, 0.80);
 
   // Text — Light Mode
-  --ta-text-primary:   #1e293b;
-  --ta-text-secondary: #64748b;
+  --ta-text-primary:   #172033;
+  --ta-text-secondary: #5a667c;
   --ta-text-muted:     #94a3b8;
   --ta-text-sidebar:   rgba(255, 255, 255, 0.85);
   --ta-text-sidebar-active: #ffffff;
@@ -53,25 +56,28 @@
 
 .body--dark {
   // Backgrounds — Dark Mode (Purple-tinged dark)
-  --ta-bg-page:     linear-gradient(180deg, #120B1E 0%, #0F1A2A 100%);
+  --ta-bg-page:
+    radial-gradient(circle at 10% 10%, rgba(167, 139, 250, 0.07) 0%, transparent 35%),
+    radial-gradient(circle at 90% 90%, rgba(20, 184, 166, 0.05) 0%, transparent 35%),
+    linear-gradient(180deg, #0B0814 0%, #0D111C 100%);
   --ta-bg-sidebar:  linear-gradient(180deg, #2D1B4E 0%, #182F33 160%);
   --ta-bg-header:   linear-gradient(135deg, #2D1B4E 0%, #0D9488 100%);
-  --ta-bg-card:     #3A245C;
-  --ta-bg-input:    #3A245C;
-  --ta-bg-hover:    #4A3470;
+  --ta-bg-card:     rgba(30, 20, 47, 0.92);
+  --ta-bg-input:    #1E142F;
+  --ta-bg-hover:    #2A1C42;
   --ta-bg-dropzone: linear-gradient(135deg, rgba(107, 63, 160, 0.14) 0%, rgba(13, 148, 136, 0.14) 100%);
 
   // Borders — Dark Mode
   --ta-border-card:    rgba(255, 255, 255, 0.08);
-  --ta-border-input:   rgba(255, 255, 255, 0.08);
-  --ta-border-sidebar: rgba(255, 255, 255, 0.06);
+  --ta-border-input:   rgba(255, 255, 255, 0.10);
+  --ta-border-sidebar: rgba(255, 255, 255, 0.08);
   --ta-border-table:   rgba(255, 255, 255, 0.08);
 
   // Text — Dark Mode
-  --ta-text-primary:   #ffffff;
-  --ta-text-secondary: #c4b5fd;
+  --ta-text-primary:   #f8fafc;
+  --ta-text-secondary: #d4c8f5;
   --ta-text-muted:     #a78bfa;
-  --ta-text-sidebar:   rgba(255, 255, 255, 0.85);
+  --ta-text-sidebar:   rgba(255, 255, 255, 0.88);
   --ta-text-sidebar-active: #ffffff;
 
   // Sidebar item — Dark
@@ -125,20 +131,24 @@
 }
 
 // Scrollbar styling
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+  background: rgba(107, 63, 160, 0.22);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgba(107, 63, 160, 0.38);
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 .body--dark ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: rgba(167, 139, 250, 0.22);
 }
 .body--dark ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: rgba(167, 139, 250, 0.38);
 }

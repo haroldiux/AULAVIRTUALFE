@@ -26,7 +26,7 @@
             <q-item-label caption>{{ archivo.tipo?.toUpperCase() }}</q-item-label>
           </q-item-section>
           <q-item-section side>
-            <q-btn flat round dense icon="download" color="primary" />
+            <q-btn flat round dense icon="download" color="primary" aria-label="Descargar archivo" />
           </q-item-section>
         </q-item>
       </q-list>

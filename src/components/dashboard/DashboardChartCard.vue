@@ -3,16 +3,16 @@
     <q-card-section class="av-chart-card__header">
       <div class="av-chart-card__title">
         <div v-if="icon" class="av-chart-card__icon" :style="{ background: iconColor }">
-          <q-icon :name="icon" size="20px" color="white" />
+          <q-icon :name="icon" size="22px" color="white" />
         </div>
         <div>
           <div class="text-subtitle1 text-weight-bold">{{ title }}</div>
-          <div v-if="subtitle" class="text-caption text-grey">{{ subtitle }}</div>
+          <div v-if="subtitle" class="text-caption text-grey-6">{{ subtitle }}</div>
         </div>
       </div>
       <slot name="actions" />
     </q-card-section>
-    <q-separator />
+    <q-separator class="av-chart-card__divider" />
     <q-card-section class="av-chart-card__body" :style="{ minHeight: height }">
       <slot />
     </q-card-section>

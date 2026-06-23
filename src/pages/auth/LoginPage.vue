@@ -7,6 +7,10 @@
         <div class="absolute inset-0 login-bg-gradient" />
         <div class="absolute inset-0 login-bg-overlay" />
 
+        <!-- Blobs -->
+        <div class="login-blob login-blob--purple" />
+        <div class="login-blob login-blob--teal" />
+
         <!-- Particulas -->
         <div class="login-particles">
           <div v-for="i in 6" :key="i" class="login-particle" :style="particleStyle(i)" />
@@ -18,8 +22,8 @@
             <div class="login-logo mx-auto mb-5">
               <q-icon name="school" size="32px" color="white" />
             </div>
-            <h1 class="text-4xl font-black text-white tracking-tight mb-1">Aula Virtual</h1>
-            <p class="text-white/50 text-xs font-medium tracking-wider uppercase">UNITEPC — Plataforma LMS</p>
+            <h1 class="text-4xl font-black text-white mb-1">Aula Virtual</h1>
+            <p class="login-subtitle">UNITEPC — Plataforma LMS</p>
           </div>
 
           <!-- Card -->
@@ -31,25 +35,31 @@
             </button>
 
             <div class="login-divider">
-              <span>o</span>
+              <span>o accede con credenciales</span>
             </div>
 
             <!-- Fallback -->
             <div class="space-y-3">
-              <input
-                v-model="credenciales.username"
-                type="text"
-                placeholder="Usuario"
-                class="login-input"
-                @keyup.enter="loginFallback"
-              />
-              <input
-                v-model="credenciales.password"
-                type="password"
-                placeholder="Contrasena"
-                class="login-input"
-                @keyup.enter="loginFallback"
-              />
+              <div class="login-input-wrap">
+                <q-icon name="person" size="18px" class="login-input-icon" />
+                <input
+                  v-model="credenciales.username"
+                  type="text"
+                  placeholder="Usuario"
+                  class="login-input"
+                  @keyup.enter="loginFallback"
+                />
+              </div>
+              <div class="login-input-wrap">
+                <q-icon name="lock" size="18px" class="login-input-icon" />
+                <input
+                  v-model="credenciales.password"
+                  type="password"
+                  placeholder="Contrasena"
+                  class="login-input"
+                  @keyup.enter="loginFallback"
+                />
+              </div>
               <button class="login-btn-submit" @click="loginFallback">
                 Ingresar
               </button>
@@ -62,7 +72,7 @@
               <q-icon name="construction" size="14px" class="q-mr-xs" />
               Accesos de desarrollo
             </router-link>
-            <p class="text-white/20 text-xs">Prototipo funcional — Fase E5</p>
+            <p class="login-version">Prototipo funcional — Fase E5</p>
           </div>
         </div>
       </q-page>
@@ -162,6 +172,31 @@ function loginFallback() {
     radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.09) 0%, transparent 40%);
 }
 
+/* Blobs */
+.login-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  opacity: 0.45;
+  animation: blobPulse 10s ease-in-out infinite alternate;
+}
+.login-blob--purple {
+  width: 400px; height: 400px;
+  top: -120px; left: -120px;
+  background: rgba(107, 63, 160, 0.35);
+}
+.login-blob--teal {
+  width: 360px; height: 360px;
+  bottom: -100px; right: -100px;
+  background: rgba(13, 148, 136, 0.28);
+  animation-delay: -5s;
+}
+@keyframes blobPulse {
+  0% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(1.1); opacity: 0.55; }
+}
+
 /* Particulas */
 .login-particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .login-particle {
@@ -177,25 +212,25 @@ function loginFallback() {
 
 /* Logo */
 .login-logo {
-  width: 72px; height: 72px; border-radius: 20px;
+  width: 76px; height: 76px; border-radius: 22px;
   background: linear-gradient(135deg, #6B3FA0 0%, #0D9488 100%);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 10px 32px rgba(13,148,136,0.28);
+  box-shadow: 0 14px 40px rgba(13,148,136,0.32);
   animation: logoFloat 4s ease-in-out infinite;
 }
 @keyframes logoFloat {
   0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  50% { transform: translateY(-8px); }
 }
 
 /* Card */
 .login-card {
-  background: rgba(255,255,255,0.12);
-  backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
-  border: 1px solid rgba(255,255,255,0.16);
-  border-radius: 24px;
-  padding: 28px;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.10);
+  backdrop-filter: blur(26px); -webkit-backdrop-filter: blur(26px);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 28px;
+  padding: 32px;
+  box-shadow: 0 30px 70px -16px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.16);
 }
 
 /* Boton SSO */
@@ -203,17 +238,30 @@ function loginFallback() {
   width: 100%;
   display: flex; align-items: center; justify-content: center; gap: 10px;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #6B3FA0 0%, #0D9488 100%);
   color: white;
   font-size: 14px; font-weight: 700;
   border: none; cursor: pointer;
-  box-shadow: 0 4px 14px rgba(13,148,136,0.32);
+  box-shadow: 0 6px 18px rgba(13,148,136,0.32);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.login-btn-sso::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
 }
 .login-btn-sso:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(13,148,136,0.42);
+  box-shadow: 0 10px 28px rgba(13,148,136,0.42);
+}
+.login-btn-sso:hover::before {
+  transform: translateX(100%);
 }
 .login-btn-sso:active {
   transform: scale(0.98);
@@ -222,22 +270,34 @@ function loginFallback() {
 /* Divider */
 .login-divider {
   display: flex; align-items: center; gap: 12px;
-  margin: 20px 0;
-  color: rgba(255,255,255,0.3);
+  margin: 22px 0;
+  color: rgba(255,255,255,0.38);
   font-size: 12px;
+  font-weight: 500;
 }
 .login-divider::before,
 .login-divider::after {
-  content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.1);
+  content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.12);
 }
 
 /* Inputs */
+.login-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.login-input-icon {
+  position: absolute;
+  left: 14px;
+  color: rgba(255,255,255,0.45);
+  pointer-events: none;
+}
 .login-input {
   width: 100%;
-  padding: 12px 16px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.16);
+  padding: 12px 16px 12px 42px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
   color: white;
   font-size: 14px;
   outline: none;
@@ -247,24 +307,27 @@ function loginFallback() {
 .login-input:focus {
   border-color: rgba(13,148,136,0.62);
   box-shadow: 0 0 0 3px rgba(13,148,136,0.18);
-  background: rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.12);
 }
 
 /* Boton submit */
 .login-btn-submit {
   width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.94);
+  padding: 13px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.96);
   color: #5A2E8C;
-  font-size: 14px; font-weight: 600;
-  border: 1px solid rgba(255,255,255,0.28);
+  font-size: 14px; font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.32);
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
 }
 .login-btn-submit:hover {
   background: rgba(255,255,255,1);
-  border-color: rgba(255,255,255,0.40);
+  border-color: rgba(255,255,255,0.45);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.16);
 }
 .login-btn-submit:active {
   transform: scale(0.98);
@@ -278,9 +341,22 @@ function loginFallback() {
   text-decoration: none;
   transition: color 0.2s ease;
 }
-.login-link:hover { color: rgba(255,255,255,0.92); }
+.login-link:hover { color: rgba(255,255,255,0.95); }
 
 /* Utilidades */
 .space-y-2 > * + * { margin-top: 8px; }
 .space-y-3 > * + * { margin-top: 12px; }
+
+.login-subtitle {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.login-version {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.38);
+}
 </style>

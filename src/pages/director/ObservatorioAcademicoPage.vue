@@ -1,13 +1,16 @@
 <template>
   <q-page class="av-dashboard-page">
-    <TaPageHeader title="Observatorio Academico">
-      <template #actions>
-        <TaButton variant="outline" icon="download" label="Exportar informe" @click="exportarInforme" />
-        <TaButton variant="primary" icon="campaign" label="Emitir alertas" @click="emitirAlertas" />
-      </template>
-    </TaPageHeader>
+    <AppSkeleton v-if="cargando" variant="dashboard" />
 
-    <div class="row q-col-gutter-md q-mb-lg">
+    <template v-else>
+      <TaPageHeader title="Observatorio Academico">
+        <template #actions>
+          <TaButton variant="outline" icon="download" label="Exportar informe" @click="exportarInforme" />
+          <TaButton variant="primary" icon="campaign" label="Emitir alertas" @click="emitirAlertas" />
+        </template>
+      </TaPageHeader>
+
+      <div class="row q-col-gutter-md q-mb-lg">
       <div v-for="kpi in kpis" :key="kpi.label" class="col-6 col-lg-3">
         <TaKpiCard class="card-item" :icon="kpi.icon" :icon-color="kpi.color" :label="kpi.label" :value="kpi.value" :trend="kpi.trend" />
       </div>
@@ -16,7 +19,7 @@
     <div class="row q-col-gutter-lg">
       <div class="col-12 col-xl-8">
         <TaCard title="Mapa de riesgo por curso" subtitle="Rendimiento, cobertura de contenidos y calificacion pendiente" :padding="false" class="card-item q-mb-lg">
-          <q-table :rows="cursosFiltrados" :columns="columns" row-key="id" flat bordered :pagination="{ rowsPerPage: 6 }">
+          <q-table :rows="cursosFiltrados" :columns="columns" row-key="id" flat bordered class="risk-table" :pagination="{ rowsPerPage: 6 }">
             <template #top-right>
               <q-input v-model="busqueda" dense outlined placeholder="Buscar curso o docente...">
                 <template #prepend><q-icon name="search" /></template>
@@ -35,8 +38,8 @@
             </template>
             <template #body-cell-acciones="props">
               <q-td :props="props">
-                <q-btn flat round dense icon="visibility" color="primary" @click="abrirDetalle(props.row)" />
-                <q-btn flat round dense icon="mail" color="teal" @click="contactarDocente(props.row)" />
+                <q-btn flat round dense icon="visibility" color="primary" aria-label="Ver detalle" @click="abrirDetalle(props.row)" />
+                <q-btn flat round dense icon="mail" color="teal" aria-label="Contactar docente" @click="contactarDocente(props.row)" />
               </q-td>
             </template>
           </q-table>
@@ -90,11 +93,12 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+    </template>
   </q-page>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { Bar as BarChart, Doughnut as DoughnutChart } from 'vue-chartjs'
 import { Chart as ChartJS, BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
@@ -104,12 +108,15 @@ import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaButton from 'src/components/tailadmin/TaButton.vue'
 import TaKpiCard from 'src/components/tailadmin/TaKpiCard.vue'
 import DashboardChartCard from 'src/components/dashboard/DashboardChartCard.vue'
+import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
 import { useStaggerCards } from 'src/composables/useAnimations'
+import { useLoadingState } from 'src/composables/useLoadingState'
 
 ChartJS.register(BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend)
 
 const $q = useQuasar()
 const suite = useSuiteRolesStore()
+const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 700 })
 const busqueda = ref('')
 const dialogDetalle = ref(false)
 const cursoSeleccionado = ref(null)
@@ -155,12 +162,30 @@ function exportarInforme() { $q.notify({ message: 'Informe academico exportado (
 function emitirAlertas() { $q.notify({ message: 'Alertas institucionales emitidas a docentes con riesgo', color: 'info', icon: 'campaign' }) }
 
 useStaggerCards('.card-item')
+
+onMounted(() => {
+  finalizarCarga()
+})
 </script>
 
 <style scoped>
+.risk-table { border-radius: 14px; overflow: hidden; }
 .director-dialog { width: min(620px, 92vw); border-radius: 20px; }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.detail-grid div { border: 1px solid var(--ta-border-card); border-radius: 12px; padding: 14px; display: grid; gap: 4px; }
+.detail-grid div {
+  border: 1px solid var(--ta-border-card);
+  border-radius: 14px;
+  padding: 16px;
+  display: grid;
+  gap: 6px;
+  background: var(--ta-bg-card);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.detail-grid div:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
 .detail-grid span { color: var(--ta-text-secondary); font-size: 0.78rem; }
 .detail-grid strong { font-size: 1.4rem; color: var(--ta-primary); }
 @media (max-width: 600px) { .detail-grid { grid-template-columns: 1fr; } }

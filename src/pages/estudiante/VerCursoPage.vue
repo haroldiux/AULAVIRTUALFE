@@ -1,59 +1,63 @@
 <template>
   <q-page class="av-dashboard-page">
-    <TaPageHeader title="Curso" :breadcrumbs="['Mis Cursos', curso?.nombre ?? 'Curso']" data-tour="student-course-header" />
+    <AppSkeleton v-if="cargando" variant="list" :count="4" />
 
-    <div v-if="curso">
+    <template v-else>
+      <TaPageHeader title="Curso" :breadcrumbs="['Mis Cursos', curso?.nombre ?? 'Curso']" data-tour="student-course-header" />
+
+      <div v-if="curso">
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-3">
-          <TaCard :padding="false" :shadow="false" customClass="sidebar-sticky" data-tour="student-course-sidebar">
-            <q-card-section>
-              <div class="text-subtitle1 text-weight-medium">{{ curso.nombre }}</div>
-              <div class="text-caption text-grey-7">{{ curso.codigo }}</div>
+          <TaCard :padding="false" :shadow="false" custom-class="sidebar-sticky" data-tour="student-course-sidebar">
+            <q-card-section class="av-sidebar-header">
+              <div class="text-subtitle1 text-weight-medium av-text-primary">{{ curso.nombre }}</div>
+              <div class="text-caption av-text-secondary">{{ curso.codigo }}</div>
             </q-card-section>
 
-            <q-separator />
+            <q-separator class="av-card-separator" />
 
-            <q-list dense>
+            <q-list dense class="av-sidebar-list">
               <q-item
                 v-for="seccion in curso.secciones"
                 :key="seccion.id"
                 clickable
                 v-ripple
                 :active="seccionActiva?.id === seccion.id && !actividadSeleccionada"
-                active-class="text-primary bg-primary-light"
+                active-class="av-sidebar-item--active"
+                class="av-sidebar-item"
                 @click="seleccionarSeccion(seccion)"
               >
                 <q-item-section avatar>
-                  <q-icon name="folder" size="xs" :color="seccionActiva?.id === seccion.id ? 'primary' : 'grey-6'" />
+                  <q-icon name="folder" size="xs" :class="seccionActiva?.id === seccion.id ? 'text-primary' : 'av-text-muted'" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label class="text-body2">{{ seccion.titulo }}</q-item-label>
-                  <q-item-label caption>{{ getActividadesCount(seccion.id) }} actividades</q-item-label>
+                  <q-item-label class="text-body2 av-text-primary">{{ seccion.titulo }}</q-item-label>
+                  <q-item-label class="av-text-secondary text-caption">{{ getActividadesCount(seccion.id) }} actividades</q-item-label>
                 </q-item-section>
               </q-item>
             </q-list>
 
-            <q-separator />
+            <q-separator class="av-card-separator" />
 
-            <q-card-section>
-              <div class="text-caption text-grey-7 q-mb-xs">Actividades realizadas</div>
-              <q-linear-progress :value="ratio(contadoresCurso.realizadas, contadoresCurso.total)" color="green" size="10px" rounded />
-              <div class="text-caption text-right text-grey-6 q-mt-xs">{{ contadoresCurso.labelRealizadas }}</div>
+            <q-card-section class="av-progress-section">
+              <div class="text-caption av-text-secondary q-mb-xs">Actividades realizadas</div>
+              <q-linear-progress :value="ratio(contadoresCurso.realizadas, contadoresCurso.total)" color="positive" size="10px" rounded class="av-progress-bar" />
+              <div class="text-caption text-right av-text-muted q-mt-xs">{{ contadoresCurso.labelRealizadas }}</div>
             </q-card-section>
 
-            <q-separator />
+            <q-separator class="av-card-separator" />
 
             <!-- Pendientes del curso -->
-            <q-card-section class="q-pa-none">
-              <div class="text-caption text-weight-bold uppercase tracking-widest text-grey q-px-md q-py-sm">
+            <q-card-section class="q-pa-none av-pendientes-section">
+              <div class="text-caption text-weight-bold av-pendientes-title">
                 Pendientes
                 <q-badge v-if="pendientesMostrados.length" color="negative" text-color="white" dense class="q-ml-xs">{{ pendientesMostrados.length }}</q-badge>
               </div>
               <q-list dense separator>
-                <q-item v-if="pendientesMostrados.length === 0" class="text-center q-py-sm text-grey">
+                <q-item v-if="pendientesMostrados.length === 0" class="text-center q-py-sm av-text-secondary">
                   <q-item-section>
                     <q-icon name="check_circle" size="24px" color="positive" />
-                    <div class="text-caption">Sin pendientes</div>
+                    <div class="text-caption av-text-secondary">Sin pendientes</div>
                   </q-item-section>
                 </q-item>
                 <q-item
@@ -61,20 +65,20 @@
                   :key="act.id"
                   clickable
                   v-ripple
-                  class="q-px-md"
+                  class="q-px-md av-pendiente-item"
                   @click="abrirActividadPorId(act.id)"
                 >
                   <q-item-section avatar style="min-width: 0">
                     <q-icon :name="iconoTipo(act.tipo)" :color="colorTipo(act.tipo)" size="18px" />
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label class="text-caption text-weight-medium line-clamp-1">{{ act.titulo }}</q-item-label>
-                    <q-item-label caption>
+                    <q-item-label class="text-caption text-weight-medium line-clamp-1 av-text-primary">{{ act.titulo }}</q-item-label>
+                    <q-item-label class="av-text-secondary text-caption">
                       <span :class="urgenciaClase(act.config?.fecha_limite || act.config?.fecha_entrega)">{{ formatoFechaLimite(act.config?.fecha_limite || act.config?.fecha_entrega) }}</span>
                     </q-item-label>
                   </q-item-section>
                   <q-item-section side>
-                    <q-badge :color="colorTipo(act.tipo)" text-color="white" dense size="xs">{{ labelTipo(act.tipo) }}</q-badge>
+                    <q-badge :color="colorTipo(act.tipo)" text-color="white" dense size="xs" class="av-badge">{{ labelTipo(act.tipo) }}</q-badge>
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -93,14 +97,14 @@
           </template>
 
           <template v-else-if="seccionActiva">
-            <TaCard :padding="false" :shadow="false">
+            <TaCard :padding="false" :shadow="false" class="av-section-header">
               <q-card-section>
-                <div class="text-h6">{{ seccionActiva.titulo }}</div>
-                <p class="text-grey-7 q-mb-none">{{ seccionActiva.descripcion }}</p>
+                <div class="text-h6 av-text-primary">{{ seccionActiva.titulo }}</div>
+                <p class="av-text-secondary q-mb-none">{{ seccionActiva.descripcion }}</p>
               </q-card-section>
             </TaCard>
 
-            <div class="q-mt-sm">
+            <div class="q-mt-md">
               <q-card
                 v-for="act in actividadesSeccion"
                 :key="act.id"
@@ -115,56 +119,63 @@
                     <q-icon :name="iconoTipo(act.tipo)" :color="colorTipo(act.tipo)" size="md" />
                   </q-card-section>
                   <q-card-section>
-                    <div class="text-subtitle2 text-weight-medium">{{ act.titulo }}</div>
-                    <div class="text-caption text-grey-6">{{ act.descripcion }}</div>
+                    <div class="text-subtitle2 text-weight-medium av-text-primary">{{ act.titulo }}</div>
+                    <div class="text-caption av-text-secondary line-clamp-2">{{ act.descripcion }}</div>
                     <div class="q-mt-sm">
-                      <q-badge :color="colorTipo(act.tipo)" text-color="white" class="q-mr-sm">
+                      <q-badge :color="colorTipo(act.tipo)" text-color="white" class="q-mr-sm av-badge">
                         {{ labelTipo(act.tipo) }}
                       </q-badge>
-                      <q-badge v-if="act.tiene_nota" color="grey-4" text-color="grey-8">
+                      <q-badge v-if="act.tiene_nota" outline color="primary" text-color="primary" class="q-mr-sm av-badge--subtle">
                         {{ act.nota_maxima }} pts
                       </q-badge>
-                      <q-badge v-else color="grey-3" text-color="grey-7">Sin nota</q-badge>
+                      <q-badge v-else outline color="grey" text-color="grey" class="q-mr-sm av-badge--subtle">Sin nota</q-badge>
                       <q-badge
                         :color="colorEstado(getEstadoActividad(act))"
                         text-color="white"
-                        class="q-ml-sm"
+                        class="q-mr-sm"
                         size="xs"
                       >
                         {{ labelEstado(getEstadoActividad(act)) }}
                       </q-badge>
-                      <q-badge color="grey-2" text-color="grey-8" class="q-ml-sm" size="xs">
+                      <q-badge outline color="secondary" text-color="secondary" size="xs" class="av-badge--subtle">
                         {{ actividadesStore.getModeloActividad(act).accion_label }}
                       </q-badge>
                     </div>
                   </q-card-section>
                   <q-card-section class="flex flex-center">
-                    <q-icon name="chevron_right" color="grey-5" size="sm" />
+                    <q-icon name="chevron_right" :color="$q.dark.isActive ? 'grey-5' : 'grey-4'" size="sm" />
                   </q-card-section>
                 </q-card-section>
               </q-card>
             </div>
 
-            <div v-if="actividadesSeccion.length === 0" class="text-center q-pa-xl text-grey-6">
-              <q-icon name="inbox" size="48px" color="grey-4" />
-              <p>No hay actividades en esta seccion.</p>
-            </div>
+            <AppEmptyState
+              v-if="actividadesSeccion.length === 0"
+              icon="inbox"
+              title="Sin actividades"
+              message="No hay actividades en esta seccion."
+            />
           </template>
 
           <div v-else class="flex flex-center q-pa-xl">
-            <div class="text-center text-grey-6">
-              <q-icon name="touch_app" size="64px" color="grey-4" />
-              <p class="q-mt-md">Selecciona una seccion del menu lateral para ver sus actividades.</p>
-              <p class="text-caption">Tambien puedes hacer click en una actividad para acceder a su contenido.</p>
-            </div>
+            <AppEmptyState
+              icon="touch_app"
+              title="Explora el curso"
+              message="Selecciona una seccion del menu lateral para ver sus actividades. Tambien puedes hacer click en una actividad para acceder a su contenido."
+            />
           </div>
         </div>
       </div>
     </div>
 
-    <div v-else class="flex flex-center q-pa-xl">
-      <q-spinner-dots color="primary" size="40px" />
-    </div>
+      <div v-else class="flex flex-center q-pa-xl">
+        <AppEmptyState
+          icon="school_off"
+          title="Curso no disponible"
+          message="El curso no existe o no tienes acceso."
+        />
+      </div>
+    </template>
   </q-page>
 </template>
 
@@ -176,12 +187,15 @@ import { useActividadesStore } from 'src/stores/actividades'
 import { useAuthStore } from 'src/stores/auth'
 import { calificaciones as mockCalificaciones } from 'src/mock/index.js'
 import { useStaggerCards, useReflectionHover } from 'src/composables/useAnimations'
+import { useLoadingState } from 'src/composables/useLoadingState'
 import ActividadLeccion from 'src/components/actividades/ActividadLeccion.vue'
 import ActividadTarea from 'src/components/actividades/ActividadTarea.vue'
 import ActividadForo from 'src/components/actividades/ActividadForo.vue'
 import ActividadCuestionario from 'src/components/actividades/ActividadCuestionario.vue'
 import ActividadEncuesta from 'src/components/actividades/ActividadEncuesta.vue'
 import ActividadH5P from 'src/components/actividades/ActividadH5P.vue'
+import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
+import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 import TaPageHeader from 'src/components/tailadmin/TaPageHeader.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
 
@@ -189,6 +203,7 @@ const route = useRoute()
 const cursosStore = useCursosStore()
 const actividadesStore = useActividadesStore()
 const auth = useAuthStore()
+const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 500 })
 
 const seccionActiva = ref(null)
 const actividadSeleccionada = ref(null)
@@ -359,6 +374,7 @@ function abrirActividadDesdeQuery() {
 
 onMounted(() => {
   abrirActividadDesdeQuery()
+  finalizarCarga()
 })
 
 watch(() => route.query.actividad, () => {
@@ -370,10 +386,68 @@ useReflectionHover('.actividad-card')
 </script>
 
 <style scoped>
+.av-text-primary { color: var(--ta-text-primary); }
+.av-text-secondary { color: var(--ta-text-secondary); }
+.av-text-muted { color: var(--ta-text-muted); }
+.av-card-separator { background: var(--ta-border-card); }
+
 .sidebar-sticky {
   position: sticky;
   top: 16px;
 }
+.av-sidebar-header { padding: 18px 16px; }
+.av-sidebar-list { padding: 6px; }
+.av-sidebar-item {
+  border-radius: 12px;
+  margin: 2px 0;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.av-sidebar-item:hover {
+  background: rgba(var(--primary-rgb), 0.05);
+  transform: translateX(2px);
+}
+.body--dark .av-sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.av-sidebar-item--active {
+  background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.14) 0%, rgba(var(--accent-rgb), 0.10) 100%) !important;
+  color: var(--ta-primary) !important;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb), 0.18);
+}
+.av-progress-section { padding: 16px; }
+.av-progress-bar { border-radius: 999px; overflow: hidden; }
+.av-pendientes-section { padding-bottom: 8px; }
+.av-pendientes-title {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  color: var(--ta-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.av-pendiente-item {
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.av-pendiente-item:hover {
+  background: rgba(var(--primary-rgb), 0.04);
+  transform: translateX(2px);
+}
+.body--dark .av-pendiente-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.av-section-header { margin-bottom: 8px; }
+.av-badge {
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-weight: 600;
+}
+.av-badge--subtle {
+  background: rgba(var(--primary-rgb), 0.05);
+  font-weight: 500;
+}
+
 .actividad-card {
   border-radius: 16px;
   border: 1px solid var(--ta-border-card);
@@ -392,6 +466,12 @@ useReflectionHover('.actividad-card')
 .line-clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

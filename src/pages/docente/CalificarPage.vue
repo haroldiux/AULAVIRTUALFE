@@ -1,21 +1,25 @@
 <template>
   <q-page class="av-dashboard-page">
-    <TaPageHeader title="Libro de Calificaciones" data-tour="teacher-grades-header">
-      <template #actions>
-        <TaButton variant="primary" icon="download" label="Exportar CSV" @click="exportarCsv" />
-        <TaButton variant="outline" icon="picture_as_pdf" label="Exportar PDF" @click="exportarPdf" />
-        <TaButton variant="secondary" icon="sync" label="Sincronizar Notas" @click="sincronizar" />
-      </template>
-    </TaPageHeader>
-    <p class="text-grey-7 q-mb-lg q-mt-sm">{{ curso?.nombre }} — {{ curso?.codigo }}</p>
+    <AppSkeleton v-if="cargando" variant="table" :count="6" :columns="5" />
 
-    <q-banner v-if="contextoSeguimiento" rounded class="bg-purple-1 text-primary q-mb-md">
-      <template #avatar><q-icon name="person_search" color="primary" /></template>
-      Abierto desde una alerta de seguimiento. Revisa la actividad y el estudiante seleccionado.
-      <template #action>
-        <q-btn flat dense no-caps color="primary" label="Limpiar contexto" @click="limpiarContexto" />
-      </template>
-    </q-banner>
+    <template v-else>
+      <TaPageHeader title="Libro de Calificaciones" data-tour="teacher-grades-header">
+        <template #actions>
+          <TaButton variant="primary" icon="download" label="Exportar CSV" @click="exportarCsv" />
+          <TaButton variant="outline" icon="picture_as_pdf" label="Exportar PDF" @click="exportarPdf" />
+          <TaButton variant="secondary" icon="sync" label="Sincronizar Notas" @click="sincronizar" />
+        </template>
+      </TaPageHeader>
+      <p class="q-mb-lg q-mt-sm" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">{{ curso?.nombre }} — {{ curso?.codigo }}</p>
+
+      <q-banner v-if="contextoSeguimiento" rounded class="seguimiento-banner q-mb-md">
+        <template #avatar><q-icon name="person_search" color="primary" /></template>
+        <div class="text-weight-medium">Abierto desde una alerta de seguimiento</div>
+        <div class="text-caption" :class="$q.dark.isActive ? 'text-indigo-2' : 'text-indigo-9'">Revisa la actividad y el estudiante seleccionado.</div>
+        <template #action>
+          <q-btn flat dense no-caps color="primary" label="Limpiar contexto" @click="limpiarContexto" />
+        </template>
+      </q-banner>
 
     <TaCard>
       <q-card-section>
@@ -24,13 +28,13 @@
             <q-select v-model="cursoSeleccionado" :options="cursosDocente" label="Curso" outlined dense style="max-width: 350px" map-options emit-value />
           </div>
           <div class="col-auto">
-            <q-badge color="green" text-color="white" class="q-pa-sm q-mr-sm">
+            <q-badge color="positive" text-color="white" class="q-pa-sm q-px-md q-mr-sm">
               Promedio general: {{ promedioGeneral }} pts
             </q-badge>
-            <q-badge color="orange" text-color="white" class="q-pa-sm q-mr-sm">
+            <q-badge color="warning" text-color="white" class="q-pa-sm q-px-md q-mr-sm">
               {{ pendientesCalificar }} pendientes de calificar
             </q-badge>
-            <q-badge color="blue" text-color="white" class="q-pa-sm">
+            <q-badge color="info" text-color="white" class="q-pa-sm q-px-md">
               {{ entregasRealizadas }} entregas realizadas
             </q-badge>
           </div>
@@ -72,21 +76,21 @@
                       {{ getNota(est.id, act.id).nota }}
                     </span>
                     <div class="text-caption text-grey-6">de {{ act.nota_maxima }} pts</div>
-                    <q-badge v-if="getNota(est.id, act.id).fuente === 'auto'" color="blue-2" text-color="blue-9" dense size="xs">Auto</q-badge>
-                    <q-btn flat dense round size="sm" icon="edit" color="grey-6" @click="abrirCalificar(est, act)">
+                    <q-badge v-if="getNota(est.id, act.id).fuente === 'auto'" class="auto-badge" dense size="xs">Auto</q-badge>
+                    <q-btn flat dense round size="sm" icon="edit" color="grey-6" aria-label="Editar calificacion" @click="abrirCalificar(est, act)">
                       <q-tooltip>Editar calificacion</q-tooltip>
                     </q-btn>
                   </template>
                   <template v-else-if="estaEntregado(est.id, act.id)">
-                    <q-badge color="orange-2" text-color="orange-9" class="q-mb-xs" size="sm">Entregado</q-badge>
+                    <q-badge class="entregado-badge q-mb-xs" size="sm">Entregado</q-badge>
                     <div>
-                      <q-btn flat round color="orange" icon="grade" size="sm" @click="abrirCalificar(est, act)">
+                      <q-btn flat round color="orange" icon="grade" size="sm" aria-label="Calificar entrega" @click="abrirCalificar(est, act)">
                         <q-tooltip>Calificar entrega</q-tooltip>
                       </q-btn>
                     </div>
                   </template>
                   <template v-else>
-                    <q-badge color="grey-3" text-color="grey-7" size="sm">—</q-badge>
+                    <q-badge class="empty-badge" size="sm">—</q-badge>
                   </template>
                 </td>
                 <td class="text-center text-weight-medium" :class="colorNota(promedioEstudiante(est.id))">
@@ -152,12 +156,13 @@
           <TaButton variant="primary" label="Guardar Calificacion" @click="guardarCalificacion" />
         </q-card-actions>
       </q-card>
-    </q-dialog>
+      </q-dialog>
+    </template>
   </q-page>
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { Bar as BarChart } from 'vue-chartjs'
@@ -170,7 +175,9 @@ import RubricaEditor from 'src/components/calificaciones/RubricaEditor.vue'
 import TaPageHeader from 'src/components/tailadmin/TaPageHeader.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaButton from 'src/components/tailadmin/TaButton.vue'
+import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
 import { useStaggerCards } from 'src/composables/useAnimations'
+import { useLoadingState } from 'src/composables/useLoadingState'
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 useStaggerCards('.card-item')
@@ -181,6 +188,7 @@ const router = useRouter()
 const cursosStore = useCursosStore()
 const actividadesStore = useActividadesStore()
 const auth = useAuthStore()
+const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 600 })
 
 const cursoSeleccionado = ref(Number(route.query.curso) || 1)
 const contextoSeguimiento = computed(() => Boolean(route.query.estudiante || route.query.actividad))
@@ -419,23 +427,66 @@ watch(
   },
   { immediate: true }
 )
+
+onMounted(() => {
+  finalizarCarga()
+})
 </script>
 
 <style scoped>
+.seguimiento-banner {
+  background: var(--gradient-unitepc-soft);
+  border: 1px solid rgba(var(--primary-rgb), 0.18);
+  color: var(--ta-primary);
+}
+.entregado-badge {
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--ta-info);
+  border: 1px solid rgba(var(--accent-rgb), 0.22);
+}
+.body--dark .entregado-badge {
+  background: rgba(var(--accent-rgb), 0.18);
+  color: var(--ta-text-primary);
+  border-color: rgba(var(--accent-rgb), 0.28);
+}
+.empty-badge {
+  background: rgba(148, 163, 184, 0.18);
+  color: var(--ta-text-secondary);
+}
+.body--dark .empty-badge {
+  background: rgba(148, 163, 184, 0.22);
+  color: var(--ta-text-secondary);
+}
+.auto-badge {
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--ta-info);
+  border: 1px solid rgba(var(--accent-rgb), 0.22);
+}
+.body--dark .auto-badge {
+  background: rgba(var(--accent-rgb), 0.18);
+  color: var(--ta-text-primary);
+  border-color: rgba(var(--accent-rgb), 0.28);
+}
+.body--dark .seguimiento-banner {
+  background: rgba(var(--primary-rgb), 0.14);
+  border-color: rgba(var(--primary-rgb), 0.22);
+}
 .table-scroll {
   overflow-x: auto;
+  border: 1px solid var(--ta-border-table);
+  border-radius: 14px;
 }
 .calificaciones-tabla {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.9em;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
 }
 .calificaciones-tabla th,
 .calificaciones-tabla td {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--ta-border-table);
   white-space: nowrap;
   transition: background-color 0.2s ease;
@@ -449,7 +500,6 @@ watch(
   z-index: 1;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
   font-size: 0.75rem;
   color: var(--ta-text-secondary);
 }
@@ -462,10 +512,10 @@ watch(
 
 /* Row hover */
 .calificaciones-tabla tbody tr:hover td {
-  background-color: rgba(var(--primary-rgb), 0.03);
+  background-color: rgba(var(--primary-rgb), 0.04);
 }
 .body--dark .calificaciones-tabla tbody tr:hover td {
-  background-color: rgba(var(--accent-rgb), 0.05);
+  background-color: rgba(var(--accent-rgb), 0.07);
 }
 
 /* Sticky column */
@@ -490,7 +540,7 @@ thead .sticky-col {
 }
 
 .celda-nota {
-  min-width: 90px;
+  min-width: 100px;
 }
 
 /* Activity headers: allow wrapping */

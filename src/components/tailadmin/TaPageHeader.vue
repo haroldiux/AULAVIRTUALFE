@@ -29,11 +29,22 @@ defineProps({
 
 <style scoped>
 .ta-page-header {
-  padding: 18px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 22px;
-  background: linear-gradient(135deg, rgba(107, 63, 160, 0.92) 0%, rgba(13, 148, 136, 0.92) 100%);
-  box-shadow: 0 12px 32px rgba(20, 28, 45, 0.12);
+  padding: 20px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(107, 63, 160, 0.92) 0%, rgba(13, 148, 136, 0.92) 100%),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.20), transparent 30%);
+  box-shadow: 0 18px 40px rgba(20, 28, 45, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  position: relative;
+  overflow: hidden;
+}
+.ta-page-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,0.12), transparent 40%, rgba(255,255,255,0.06) 70%, transparent);
+  pointer-events: none;
 }
 
 .ta-page-header__row {
@@ -41,6 +52,8 @@ defineProps({
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  position: relative;
+  z-index: 1;
 }
 
 .ta-page-header__eyebrow {
@@ -53,9 +66,9 @@ defineProps({
 
 .ta-page-header__title {
   color: #ffffff;
-  font-size: 1.45rem;
+  font-size: 1.55rem;
   font-weight: 850;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 @media (max-width: 599px) {

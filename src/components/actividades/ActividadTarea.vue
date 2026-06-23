@@ -84,7 +84,7 @@
               <q-item-label caption>{{ archivo.tamano }} — {{ archivo.fecha }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-btn flat round dense icon="delete" color="negative" @click="archivosMock.splice(i, 1)" />
+              <q-btn flat round dense icon="delete" color="negative" aria-label="Eliminar archivo" @click="archivosMock.splice(i, 1)" />
             </q-item-section>
           </q-item>
         </q-list>

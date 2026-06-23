@@ -16,6 +16,14 @@ export default defineRouter(function () {
   })
 
   Router.beforeEach((to, from, next) => {
+    const baseTitle = 'UNITEPC Aula Virtual'
+    const pageTitle = to.matched.slice().reverse().find((r) => r.meta?.title)?.meta?.title
+    if (pageTitle) {
+      document.title = `${pageTitle} | ${baseTitle}`
+    } else {
+      document.title = baseTitle
+    }
+
     const stored = localStorage.getItem('auth_usuario')
     let user = null
     try {

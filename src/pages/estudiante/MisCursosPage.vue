@@ -2,7 +2,7 @@
   <q-page class="av-dashboard-page">
     <TaPageHeader title="Mis Cursos" data-tour="student-courses-header" />
 
-    <AppSkeleton v-if="cargando" :count="3" />
+    <AppSkeleton v-if="cargando" variant="card-grid" :count="3" />
 
     <template v-else>
       <div class="av-section-heading">
@@ -12,45 +12,48 @@
         </div>
       </div>
 
-      <div class="row q-col-gutter-md q-pa-md" data-tour="student-courses-list">
+      <div class="row q-col-gutter-md" data-tour="student-courses-list">
         <div v-for="curso in misCursos" :key="curso.id" class="col-12 col-md-6 col-lg-4 card-item">
-          <div
-            class="av-course-card cursor-pointer"
+          <TaCard
+            :padding="false"
+            :shadow="true"
+            custom-class="av-course-card cursor-pointer"
             data-tour="student-course-progress"
             @click="$router.push(`/estudiante/curso/${curso.id}`)"
           >
             <q-card-section>
-              <div class="text-h6">{{ curso.nombre }}</div>
-              <div class="text-caption text-grey-7">{{ curso.codigo }}</div>
-              <div class="text-body2 q-mt-sm">{{ curso.descripcion }}</div>
+              <div class="text-h6 av-course-card__title">{{ curso.nombre }}</div>
+              <div class="text-caption av-text-secondary">{{ curso.codigo }}</div>
+              <div class="text-body2 q-mt-sm av-text-secondary line-clamp-2">{{ curso.descripcion }}</div>
             </q-card-section>
 
             <q-card-section class="q-pt-none">
               <div class="row items-center q-mb-xs">
-                <div class="col text-body2">Progreso</div>
-                <div class="col-auto text-caption text-grey-7">{{ contadoresCurso(curso).labelRealizadas }}</div>
+                <div class="col text-body2 av-text-primary">Progreso</div>
+                <div class="col-auto text-caption av-text-secondary">{{ contadoresCurso(curso).labelRealizadas }}</div>
               </div>
               <q-linear-progress
                 :value="ratio(contadoresCurso(curso).realizadas, contadoresCurso(curso).total)"
-                :color="contadoresCurso(curso).realizadas >= contadoresCurso(curso).pendientes ? 'green' : 'orange'"
+                :color="contadoresCurso(curso).realizadas >= contadoresCurso(curso).pendientes ? 'positive' : 'warning'"
                 size="12px"
                 rounded
+                class="av-course-card__progress"
               />
             </q-card-section>
 
-            <q-separator />
+            <q-separator class="av-card-separator" />
 
-            <q-card-actions>
-              <div class="text-caption text-grey-6 q-mr-auto">
+            <q-card-actions class="av-course-card__actions">
+              <div class="text-caption av-text-muted q-mr-auto">
                 {{ curso.total_actividades }} actividades
               </div>
               <TaButton variant="ghost" label="Ver Curso" />
             </q-card-actions>
-          </div>
+          </TaCard>
         </div>
 
         <div v-if="misCursos.length === 0" class="col-12">
-          <DashboardEmptyState
+          <AppEmptyState
             icon="library_books"
             title="No estas matriculado"
             message="Cuando SISA confirme tu matricula, tus cursos apareceran aqui."
@@ -62,22 +65,24 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useCursosStore } from 'src/stores/cursos'
 import { useAuthStore } from 'src/stores/auth'
 import { matriculas as mockMatriculas } from 'src/mock/index.js'
 import { useActividadesStore } from 'src/stores/actividades'
 import { useStaggerCards, useReflectionHover } from 'src/composables/useAnimations'
+import { useLoadingState } from 'src/composables/useLoadingState'
 import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
-import DashboardEmptyState from 'src/components/dashboard/DashboardEmptyState.vue'
+import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 import TaPageHeader from 'src/components/tailadmin/TaPageHeader.vue'
+import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaButton from 'src/components/tailadmin/TaButton.vue'
 
 const cursosStore = useCursosStore()
 const auth = useAuthStore()
 const actividadesStore = useActividadesStore()
 
-const cargando = ref(true)
+const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 600 })
 
 const misCursos = computed(() => {
   const userMatriculas = mockMatriculas.filter((m) => m.estudiante_id === auth.usuario?.id)
@@ -98,6 +103,39 @@ useStaggerCards('.card-item')
 useReflectionHover('.av-course-card')
 
 onMounted(() => {
-  setTimeout(() => { cargando.value = false }, 600)
+  finalizarCarga()
 })
 </script>
+
+<style scoped>
+.av-text-primary { color: var(--ta-text-primary); }
+.av-text-secondary { color: var(--ta-text-secondary); }
+.av-text-muted { color: var(--ta-text-muted); }
+.av-card-separator { background: var(--ta-border-card); }
+
+.av-course-card {
+  height: 100%;
+  border-radius: 22px;
+  overflow: hidden;
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+}
+.av-course-card:hover {
+  transform: translateY(-4px);
+}
+.av-course-card__title {
+  color: var(--ta-text-primary);
+}
+.av-course-card__progress {
+  border-radius: 999px;
+  overflow: hidden;
+}
+.av-course-card__actions {
+  padding: 12px 16px;
+}
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>

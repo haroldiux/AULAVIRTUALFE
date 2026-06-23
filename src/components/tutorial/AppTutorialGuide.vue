@@ -13,7 +13,7 @@
           <q-chip dense color="primary" text-color="white" icon="tips_and_updates">
             Tutorial
           </q-chip>
-          <q-btn flat round dense icon="close" @click="closeTour">
+          <q-btn flat round dense icon="close" aria-label="Cerrar tutorial" @click="closeTour">
             <q-tooltip>Cerrar tutorial</q-tooltip>
           </q-btn>
         </div>

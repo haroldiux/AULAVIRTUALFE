@@ -7,13 +7,13 @@
     <q-card-section>
       <div class="flex items-center justify-between">
         <div class="ta-kpi-icon" :style="`background: ${iconColor}`">
-          <q-icon :name="icon" size="24px" color="white" />
+          <q-icon :name="icon" size="26px" color="white" />
         </div>
         <q-chip
           v-if="trend !== undefined"
           dense
           size="sm"
-          class="text-caption text-weight-medium"
+          class="text-caption text-weight-medium ta-kpi-trend"
           :color="trend >= 0 ? 'positive' : 'negative'"
           text-color="white"
         >
@@ -22,8 +22,8 @@
         </q-chip>
       </div>
       <div class="q-mt-md">
-        <div class="text-caption text-weight-medium text-grey">{{ label }}</div>
-        <div class="text-h5 text-weight-bold q-mt-xs">{{ value }}</div>
+        <div class="ta-kpi-label">{{ label }}</div>
+        <div class="ta-kpi-value" :style="valueGradient">{{ value }}</div>
       </div>
     </q-card-section>
   </q-card>
@@ -43,24 +43,33 @@ defineProps({
   trend: { type: Number, default: undefined },
 })
 
-const borderColor = computed(() => $q.dark.isActive ? 'var(--ta-border-card)' : 'var(--ta-border-card)')
-const bgColor     = computed(() => $q.dark.isActive ? 'var(--ta-bg-card)' : 'var(--ta-bg-card)')
-const bgHover     = computed(() => $q.dark.isActive ? 'var(--ta-bg-hover)' : 'var(--ta-bg-hover)')
-const shadowBase  = computed(() =>
+const borderColor = computed(() => 'var(--ta-border-card)')
+const bgColor     = computed(() => 'var(--ta-bg-card)')
+const bgHover     = computed(() => 'var(--ta-bg-hover)')
+const shadowBase = computed(() =>
   $q.dark.isActive
-    ? '0 1px 3px rgba(0,0,0,0.2)'
-    : '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)'
+    ? '0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04)'
+    : '0 1px 2px rgba(15,23,42,0.06), 0 0 0 1px rgba(15,23,42,0.02)'
 )
 const shadowHover = computed(() =>
   $q.dark.isActive
-    ? '0 12px 32px rgba(0,0,0,0.35)'
-    : '0 12px 32px rgba(37, 99, 235, 0.10), 0 4px 12px rgba(0,0,0,0.06)'
+    ? '0 20px 50px rgba(0,0,0,0.48), 0 0 0 1px rgba(167,139,250,0.12)'
+    : '0 20px 50px rgba(107, 63, 160, 0.12), 0 10px 20px rgba(13, 148, 136, 0.08)'
 )
+const valueGradient = computed(() => {
+  if ($q.dark.isActive) return {}
+  return {
+    background: 'linear-gradient(135deg, var(--brand-unitepc-purple) 0%, var(--brand-unitepc-turquoise) 100%)',
+    '-webkit-background-clip': 'text',
+    '-webkit-text-fill-color': 'transparent',
+    backgroundClip: 'text',
+  }
+})
 </script>
 
 <style scoped>
 .ta-kpi-card {
-  border-radius: 20px;
+  border-radius: 22px;
   border: 1px solid v-bind(borderColor);
   background: v-bind(bgColor);
   box-shadow: v-bind(shadowBase);
@@ -75,15 +84,36 @@ const shadowHover = computed(() =>
   transform: translateY(-4px);
   box-shadow: v-bind(shadowHover);
   background: v-bind(bgHover);
+  border-color: rgba(var(--primary-rgb), 0.22);
 }
 
 .ta-kpi-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 18px rgba(107, 63, 160, 0.22);
+}
+
+.ta-kpi-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ta-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.ta-kpi-value {
+  font-size: 1.65rem;
+  font-weight: 850;
+  line-height: 1.15;
+  color: var(--ta-text-primary);
+  margin-top: 6px;
+}
+
+.ta-kpi-trend {
+  border-radius: 999px;
+  padding: 2px 8px;
 }
 </style>
