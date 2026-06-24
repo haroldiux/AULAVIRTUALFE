@@ -7,7 +7,7 @@
         <template #actions>
           <TaButton variant="primary" icon="download" label="Exportar CSV" @click="exportarCsv" />
           <TaButton variant="outline" icon="picture_as_pdf" label="Exportar PDF" @click="exportarPdf" />
-          <TaButton variant="secondary" icon="sync" label="Sincronizar Notas" @click="sincronizar" />
+          <TaButton variant="secondary" icon="sync" label="Sincronizar Notas" :loading="sincronizandoNotas" @click="sincronizar" />
         </template>
       </TaPageHeader>
       <p class="q-mb-lg q-mt-sm" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">{{ curso?.nombre }} — {{ curso?.codigo }}</p>
@@ -118,43 +118,65 @@
     </div>
 
     <q-dialog v-model="dialogoCalificar" persistent>
-      <q-card style="min-width: 600px; max-width: 750px">
+      <q-card class="calificar-dialog">
         <q-card-section>
           <div class="text-h6">Calificar: {{ estudianteCalificando?.nombre }}</div>
           <div class="text-caption text-grey-7">{{ actividadCalificando?.titulo }}</div>
         </q-card-section>
 
         <q-card-section>
-          <div class="row q-col-gutter-md q-mb-md">
-            <div class="col-4 text-center">
-              <div class="text-caption text-grey-7">Nota</div>
-              <q-input v-model.number="formCalificar.nota" outlined type="number" :max="actividadCalificando?.nota_maxima" class="text-center" input-style="font-size: 2em; text-align: center" />
+          <q-form @submit.prevent="guardarCalificacion">
+            <div class="row q-col-gutter-md q-mb-md">
+              <div class="col-4">
+                <q-input
+                  v-model.number="formCalificar.nota"
+                  label="Nota"
+                  outlined
+                  type="number"
+                  :min="0"
+                  :max="actividadCalificando?.nota_maxima"
+                  :rules="[
+                    (val) => (val !== null && val !== '') || 'Ingresa una nota',
+                    (val) => val >= 0 || 'La nota no puede ser negativa',
+                    (val) => val <= (actividadCalificando?.nota_maxima || 100) || `Maximo ${actividadCalificando?.nota_maxima} pts`,
+                  ]"
+                  class="text-center"
+                  input-style="font-size: 2em; text-align: center"
+                />
+              </div>
+              <div class="col-4 text-center">
+                <div class="calificar-label">Nota Maxima</div>
+                <div class="text-h5 q-mt-sm av-text-primary">{{ actividadCalificando?.nota_maxima }}</div>
+              </div>
+              <div class="col-4 text-center">
+                <div class="calificar-label">Resultado</div>
+                <div class="text-h5 q-mt-sm" :class="colorNota(porcentajeActual)">{{ formCalificar.nota || 0 }}/{{ actividadCalificando?.nota_maxima || 0 }}</div>
+              </div>
             </div>
-            <div class="col-4 text-center">
-              <div class="text-caption text-grey-7">Nota Maxima</div>
-              <div class="text-h5 q-mt-sm">{{ actividadCalificando?.nota_maxima }}</div>
-            </div>
-            <div class="col-4 text-center">
-              <div class="text-caption text-grey-7">Resultado</div>
-              <div class="text-h5 q-mt-sm" :class="colorNota(porcentajeActual)">{{ formCalificar.nota || 0 }}/{{ actividadCalificando?.nota_maxima || 0 }}</div>
-            </div>
-          </div>
 
-          <q-separator class="q-my-md" />
+            <q-separator class="q-my-md" />
 
-          <div class="text-subtitle2 q-mb-sm">Retroalimentacion</div>
-          <q-input v-model="formCalificar.retroalimentacion" outlined type="textarea" rows="3" placeholder="Comentarios para el estudiante..." />
+            <q-input
+              v-model="formCalificar.retroalimentacion"
+              label="Retroalimentacion"
+              outlined
+              type="textarea"
+              rows="3"
+              placeholder="Comentarios para el estudiante..."
+              class="q-mb-md"
+            />
 
-          <q-separator class="q-my-md" />
+            <q-separator class="q-my-md" />
 
-          <div class="text-subtitle2 q-mb-sm">Rubrica Rapida</div>
-          <RubricaEditor v-if="actividadCalificando" :actividad="actividadCalificando" v-model="rubricaPuntaje" @update:total="formCalificar.nota = $event" />
+            <div class="text-subtitle2 q-mb-sm av-text-primary">Rubrica Rapida</div>
+            <RubricaEditor v-if="actividadCalificando" :actividad="actividadCalificando" v-model="rubricaPuntaje" @update:total="formCalificar.nota = $event" />
+
+            <q-card-actions align="right" class="q-px-none q-pt-md">
+              <TaButton variant="ghost" label="Cancelar" v-close-popup />
+              <TaButton type="submit" variant="primary" label="Guardar Calificacion" />
+            </q-card-actions>
+          </q-form>
         </q-card-section>
-
-        <q-card-actions align="right">
-          <TaButton variant="ghost" label="Cancelar" v-close-popup />
-          <TaButton variant="primary" label="Guardar Calificacion" @click="guardarCalificacion" />
-        </q-card-actions>
       </q-card>
       </q-dialog>
     </template>
@@ -168,9 +190,9 @@ import { useQuasar } from 'quasar'
 import { Bar as BarChart } from 'vue-chartjs'
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
 import { useCursosStore } from 'src/stores/cursos'
-import { useActividadesStore } from 'src/stores/actividades'
 import { useAuthStore } from 'src/stores/auth'
-import { usuarios as mockUsuarios, matriculas as mockMatriculas, calificaciones as mockCalificaciones } from 'src/mock/index.js'
+import { calificacionService } from 'src/services/calificacionService.js'
+import { integracionService } from 'src/services/integracionService.js'
 import RubricaEditor from 'src/components/calificaciones/RubricaEditor.vue'
 import TaPageHeader from 'src/components/tailadmin/TaPageHeader.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
@@ -186,7 +208,6 @@ const $q = useQuasar()
 const route = useRoute()
 const router = useRouter()
 const cursosStore = useCursosStore()
-const actividadesStore = useActividadesStore()
 const auth = useAuthStore()
 const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 600 })
 
@@ -197,85 +218,60 @@ const cursosDocente = computed(() =>
   cursosStore.cursos.filter((c) => c.docente_id === auth.usuario?.id).map((c) => ({ label: `${c.codigo} — ${c.nombre}`, value: c.id }))
 )
 
+const libro = ref({ curso: {}, actividades: [], estudiantes: [], promedio_general: null, pendientes_calificar: 0 })
+const cargandoLibro = ref(false)
+
+async function cargarLibro(cursoId) {
+  cargandoLibro.value = true
+  try {
+    const res = await calificacionService.libroCurso(cursoId)
+    libro.value = res.data || { curso: {}, actividades: [], estudiantes: [], promedio_general: null, pendientes_calificar: 0 }
+  } catch {
+    libro.value = { curso: {}, actividades: [], estudiantes: [], promedio_general: null, pendientes_calificar: 0 }
+  } finally {
+    cargandoLibro.value = false
+  }
+}
+
 const curso = computed(() => cursosStore.getCursoById(cursoSeleccionado.value))
+const actividadesCurso = computed(() => libro.value.actividades || [])
+const estudiantes = computed(() => libro.value.estudiantes || [])
 
-const actividadesCurso = computed(() => {
-  if (!curso.value) return []
-  const seccionIds = curso.value.secciones.map((s) => s.id)
-  return actividadesStore.actividades.filter((a) => seccionIds.includes(a.seccion_id))
-})
-
-const estudiantes = computed(() => {
-  if (!curso.value) return []
-  const matriculados = mockMatriculas.filter((m) => m.curso_id === curso.value.id && m.estado === 'activo')
-  return matriculados.map((m) => mockUsuarios.find((u) => u.id === m.estudiante_id)).filter(Boolean)
-})
-
-// Notas locales mutables (parten del mock)
-const notasLocales = ref(JSON.parse(JSON.stringify(mockCalificaciones)))
-
-// Combinar notas locales + entregas auto-calificadas del store
 function getNota(estudianteId, actividadId) {
-  const cid = curso.value?.id
-  if (!cid) return null
-
-  // 1. Priorizar nota manual del docente
-  const manual = notasLocales.value[cid]?.[estudianteId]?.[actividadId]
-  if (manual) return { ...manual, fuente: 'manual' }
-
-  // 2. Buscar entrega auto-calificada del store
-  const entrega = actividadesStore.entregas.find(
-    (e) => e.estudiante_id === estudianteId && e.actividad_id === actividadId && e.estado === 'calificado'
-  )
-  if (entrega && entrega.nota !== undefined && entrega.nota !== null) {
-    const act = actividadesCurso.value.find((a) => a.id === actividadId)
-    const max = act?.nota_maxima || 100
+  const est = estudiantes.value.find((e) => e.id === estudianteId)
+  if (!est || !est.notas) return null
+  const nota = est.notas[actividadId]
+  if (!nota) return null
+  if (nota.nota !== null && nota.nota !== undefined) {
     return {
-      nota: entrega.nota,
-      porcentaje: Math.round((entrega.nota / max) * 100),
-      retro: entrega.retroalimentacion || 'Calificacion automatica',
-      fuente: 'auto',
+      nota: nota.nota,
+      porcentaje: nota.porcentaje || 0,
+      retro: nota.retroalimentacion,
+      fuente: nota.pendiente_calificar ? 'auto' : 'manual',
     }
   }
-
   return null
 }
 
 function estaEntregado(estudianteId, actividadId) {
-  return actividadesStore.entregas.some(
-    (e) => e.estudiante_id === estudianteId && e.actividad_id === actividadId && e.estado === 'entregado'
-  )
+  const est = estudiantes.value.find((e) => e.id === estudianteId)
+  if (!est || !est.notas) return false
+  const nota = est.notas[actividadId]
+  return nota && nota.pendiente_calificar
 }
 
 function promedioEstudiante(estudianteId) {
-  const actCalif = actividadesCurso.value.filter((a) => a.tiene_nota)
-  const notas = actCalif.map((a) => getNota(estudianteId, a.id)).filter(Boolean)
-  if (!notas.length) return 0
-  return Math.round(notas.reduce((s, n) => s + n.porcentaje, 0) / notas.length)
+  const est = estudiantes.value.find((e) => e.id === estudianteId)
+  return est?.promedio || 0
 }
 
-const promedioGeneral = computed(() => {
-  const promedios = estudiantes.value.map((e) => promedioEstudiante(e.id)).filter((p) => p > 0)
-  if (!promedios.length) return 0
-  return Math.round(promedios.reduce((s, p) => s + p, 0) / promedios.length)
-})
-
-const pendientesCalificar = computed(() => {
-  let count = 0
-  estudiantes.value.forEach((e) => {
-    actividadesCurso.value.filter((a) => a.tiene_nota).forEach((a) => {
-      const nota = getNota(e.id, a.id)
-      const entregado = estaEntregado(e.id, a.id)
-      if (!nota && entregado) count++
-    })
-  })
-  return count
-})
+const promedioGeneral = computed(() => libro.value.promedio_general || 0)
+const pendientesCalificar = computed(() => libro.value.pendientes_calificar || 0)
 
 const entregasRealizadas = computed(() => {
   let count = 0
   estudiantes.value.forEach((e) => {
-    actividadesCurso.value.filter((a) => a.tiene_nota).forEach((a) => {
+    actividadesCurso.value.forEach((a) => {
       if (getNota(e.id, a.id) || estaEntregado(e.id, a.id)) count++
     })
   })
@@ -297,7 +293,7 @@ const porcentajeActual = computed(() => {
 function abrirCalificar(est, act) {
   estudianteCalificando.value = est
   actividadCalificando.value = act
-  const notaExistente = notasLocales.value[curso.value?.id]?.[est.id]?.[act.id]
+  const notaExistente = getNota(est.id, act.id)
   formCalificar.value = {
     nota: notaExistente?.nota ?? 0,
     retroalimentacion: notaExistente?.retro ?? '',
@@ -306,22 +302,59 @@ function abrirCalificar(est, act) {
   dialogoCalificar.value = true
 }
 
-function guardarCalificacion() {
-  const cid = curso.value.id
+async function guardarCalificacion() {
   const estId = estudianteCalificando.value.id
   const actId = actividadCalificando.value.id
-  if (!notasLocales.value[cid]) notasLocales.value[cid] = {}
-  if (!notasLocales.value[cid][estId]) notasLocales.value[cid][estId] = {}
-  notasLocales.value[cid][estId][actId] = {
-    nota: formCalificar.value.nota,
-    porcentaje: porcentajeActual.value,
-    retro: formCalificar.value.retroalimentacion,
+  try {
+    // Buscar la entrega del estudiante para esta actividad
+    const est = estudiantes.value.find((e) => e.id === estId)
+    const entregaInfo = est?.notas?.[actId]
+
+    if (entregaInfo && entregaInfo.pendiente_calificar) {
+      // Hay entrega sin calificar — necesitamos el entregaId
+      // Como no tenemos el entregaId directo en el libro, usamos el endpoint de calificar por entrega
+      // Buscamos la entrega via API
+      const { default: api } = await import('src/services/api.js')
+      const res = await api.get('/entregas', { params: { actividad_id: actId, estudiante_id: estId } })
+      const entrega = res.data?.[0]
+      if (entrega) {
+        await calificacionService.calificar(entrega.id, {
+          nota: formCalificar.value.nota,
+          retroalimentacion: formCalificar.value.retroalimentacion,
+        })
+      }
+    } else {
+      // No hay entrega o ya está calificada — crear entrega fantasma y calificar, o actualizar
+      const { default: api } = await import('src/services/api.js')
+      const res = await api.get('/entregas', { params: { actividad_id: actId, estudiante_id: estId } })
+      const entrega = res.data?.[0]
+      if (entrega) {
+        await calificacionService.calificar(entrega.id, {
+          nota: formCalificar.value.nota,
+          retroalimentacion: formCalificar.value.retroalimentacion,
+        })
+      } else {
+        // Crear entrega fantasma y calificar
+        const entregaRes = await api.post('/entregas', {
+          actividad_id: actId,
+          contenido: { texto: 'Calificacion directa del docente', archivos: [] },
+        })
+        await calificacionService.calificar(entregaRes.data.id, {
+          nota: formCalificar.value.nota,
+          retroalimentacion: formCalificar.value.retroalimentacion,
+        })
+      }
+    }
+
+    dialogoCalificar.value = false
+    $q.notify({ message: 'Calificacion guardada', color: 'positive', timeout: 1500 })
+    await cargarLibro(cursoSeleccionado.value)
+  } catch (err) {
+    $q.notify({ message: err?.message || 'Error al guardar calificacion', color: 'negative', timeout: 3000 })
   }
-  dialogoCalificar.value = false
-  $q.notify({ message: 'Calificacion guardada', color: 'positive', timeout: 1500 })
 }
 
-// Gráficos
+// Graficos
 const chartOptionsBar = {
   responsive: true,
   maintainAspectRatio: false,
@@ -350,29 +383,20 @@ const chartDataDistribucion = computed(() => {
 })
 
 const chartDataActividades = computed(() => {
-  const actCalif = actividadesCurso.value.filter((a) => a.tiene_nota)
-  const labels = actCalif.map((a) => a.titulo.slice(0, 20))
-  const data = actCalif.map((a) => {
+  const labels = actividadesCurso.value.map((a) => a.titulo.slice(0, 20))
+  const data = actividadesCurso.value.map((a) => {
     const notas = estudiantes.value.map((e) => getNota(e.id, a.id)).filter(Boolean)
     if (!notas.length) return 0
     return Math.round(notas.reduce((s, n) => s + n.porcentaje, 0) / notas.length)
   })
-  return {
-    labels,
-    datasets: [{
-      label: 'Promedio (%)',
-      data,
-      backgroundColor: '#6B3FA0',
-      borderRadius: 6,
-    }],
-  }
+  return { labels, datasets: [{ label: 'Promedio (%)', data, backgroundColor: '#6B3FA0', borderRadius: 6 }] }
 })
 
-// Exportar CSV real
+// Exportar CSV
 function exportarCsv() {
   const cid = curso.value?.id
   if (!cid) return
-  const actCalif = actividadesCurso.value.filter((a) => a.tiene_nota)
+  const actCalif = actividadesCurso.value
   const headers = ['Estudiante', 'Email', ...actCalif.map((a) => a.titulo), 'Promedio']
   const rows = estudiantes.value.map((est) => {
     const notas = actCalif.map((a) => {
@@ -399,8 +423,31 @@ function exportarPdf() {
   $q.notify({ message: 'Exportando a PDF (mock)...', color: 'info', timeout: 2000 })
 }
 
-function sincronizar() {
-  $q.notify({ message: 'Sincronizando con sistema externo (mock)...', color: 'info', timeout: 2000 })
+const sincronizandoNotas = ref(false)
+
+async function sincronizar() {
+  if (!cursoSeleccionado.value) return
+  sincronizandoNotas.value = true
+  try {
+    const res = await integracionService.sincronizarNotas(cursoSeleccionado.value)
+    const data = res.data?.data || res.data
+    $q.notify({
+      message: `Sincronización de notas completada: ${data.notas_enviadas} notas enviadas al Sistema de Notas Centralizado.`,
+      color: 'positive',
+      icon: 'check_circle',
+      timeout: 3000
+    })
+    await cargarLibro(cursoSeleccionado.value)
+  } catch (err) {
+    console.error('[Calificar] Error al sincronizar notas:', err)
+    $q.notify({
+      message: 'Error al sincronizar notas con el sistema central',
+      color: 'negative',
+      timeout: 3000
+    })
+  } finally {
+    sincronizandoNotas.value = false
+  }
 }
 
 function limpiarContexto() {
@@ -411,14 +458,17 @@ function labelTipo(t) { const m = { leccion: 'Lec', tarea: 'Tar', foro: 'For', c
 function colorTipo(t) { const m = { leccion: 'indigo', tarea: 'orange', foro: 'teal', cuestionario: 'purple', encuesta: 'green', h5p: 'pink' }; return m[t] ?? 'grey' }
 function colorNota(p) { if (p >= 80) return 'text-green'; if (p >= 60) return 'text-primary'; if (p >= 40) return 'text-orange'; return 'text-negative' }
 
-watch(cursoSeleccionado, () => {
-  // recalcular si cambia de curso
+watch(cursoSeleccionado, (newId) => {
+  cargarLibro(newId)
 })
 
 watch(
   () => [route.query.curso, route.query.estudiante, route.query.actividad],
   async ([cursoId, estudianteId, actividadId]) => {
-    if (cursoId) cursoSeleccionado.value = Number(cursoId)
+    if (cursoId) {
+      cursoSeleccionado.value = Number(cursoId)
+      await cargarLibro(Number(cursoId))
+    }
     if (!estudianteId || !actividadId) return
     await nextTick()
     const estudiante = estudiantes.value.find((item) => item.id === Number(estudianteId))
@@ -428,7 +478,8 @@ watch(
   { immediate: true }
 )
 
-onMounted(() => {
+onMounted(async () => {
+  await cargarLibro(cursoSeleccionado.value)
   finalizarCarga()
 })
 </script>
@@ -436,8 +487,17 @@ onMounted(() => {
 <style scoped>
 .seguimiento-banner {
   background: var(--gradient-unitepc-soft);
-  border: 1px solid rgba(var(--primary-rgb), 0.18);
-  color: var(--ta-primary);
+  border: 1px solid var(--ta-border-card);
+  color: var(--ta-text-primary);
+}
+.calificar-label {
+  font-size: 12px;
+  color: var(--ta-text-secondary);
+  margin-bottom: 4px;
+}
+.calificar-dialog {
+  width: min(750px, 92vw);
+  max-width: 750px;
 }
 .entregado-badge {
   background: rgba(var(--accent-rgb), 0.14);

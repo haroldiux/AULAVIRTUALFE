@@ -46,7 +46,7 @@
                       :key="user.id"
                       class="dev-user-btn"
                       :aria-label="`Ingresar como ${user.nombre}`"
-                      @click="doLogin(user.id)"
+                      @click="doLogin(user)"
                     >
                       <img :src="user.avatar" class="dev-user-avatar" />
                       <div class="dev-user-info">
@@ -77,9 +77,11 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/auth'
 
 const router = useRouter()
+const $q = useQuasar()
 const auth = useAuthStore()
 const cargando = ref(false)
 
@@ -90,25 +92,43 @@ const expandido = reactive({
   admin: false,
 })
 
-const todos = auth.getMockUsuarios()
+// Usuarios del seeder del backend (password: clave-aula-2026)
+const DEV_PASSWORD = 'clave-aula-2026'
+const USUARIOS_SEEDER = [
+  { id: 1, nombre: 'Dr. Carlos Mendoza', email: 'carlos.mendoza@unitepc.edu', rol: 'docente', avatar: 'https://i.pravatar.cc/100?img=12' },
+  { id: 2, nombre: 'Ing. Lucia Fernandez', email: 'lucia.fernandez@unitepc.edu', rol: 'docente', avatar: 'https://i.pravatar.cc/100?img=45' },
+  { id: 3, nombre: 'Lic. Roberto Suarez', email: 'roberto.suarez@unitepc.edu', rol: 'director', avatar: 'https://i.pravatar.cc/100?img=33' },
+  { id: 4, nombre: 'Administrador UNITEPC', email: 'admin@unitepc.edu', rol: 'admin', avatar: 'https://i.pravatar.cc/100?img=68' },
+  { id: 5, nombre: 'Ana Vargas', email: 'ana.vargas@estudiante.unitepc.edu', rol: 'estudiante', avatar: 'https://i.pravatar.cc/100?img=5' },
+  { id: 6, nombre: 'Bruno Calle', email: 'bruno.calle@estudiante.unitepc.edu', rol: 'estudiante', avatar: 'https://i.pravatar.cc/100?img=15' },
+  { id: 7, nombre: 'Camila Paz', email: 'camila.paz@estudiante.unitepc.edu', rol: 'estudiante', avatar: 'https://i.pravatar.cc/100?img=25' },
+  { id: 8, nombre: 'Diego Rojas', email: 'diego.rojas@estudiante.unitepc.edu', rol: 'estudiante', avatar: 'https://i.pravatar.cc/100?img=13' },
+  { id: 9, nombre: 'Eliana Quispe', email: 'eliana.quispe@estudiante.unitepc.edu', rol: 'estudiante', avatar: 'https://i.pravatar.cc/100?img=32' },
+  { id: 10, nombre: 'Felix Mamani', email: 'felix.mamani@estudiante.unitepc.edu', rol: 'estudiante', avatar: 'https://i.pravatar.cc/100?img=51' },
+]
 
 const roles = {
-  docente: { label: 'Docentes', icon: 'school', color: 'primary', iconColor: 'white', usuarios: todos.filter((u) => u.rol === 'docente') },
-  estudiante: { label: 'Estudiantes', icon: 'person', color: 'secondary', iconColor: 'white', usuarios: todos.filter((u) => u.rol === 'estudiante') },
-  director: { label: 'Directores', icon: 'supervisor_account', color: 'white', iconColor: 'primary', usuarios: todos.filter((u) => u.rol === 'director') },
-  admin: { label: 'Administradores', icon: 'admin_panel_settings', color: 'white', iconColor: 'secondary', usuarios: todos.filter((u) => u.rol === 'admin') },
+  docente: { label: 'Docentes', icon: 'school', color: 'primary', iconColor: 'white', usuarios: USUARIOS_SEEDER.filter((u) => u.rol === 'docente') },
+  estudiante: { label: 'Estudiantes', icon: 'person', color: 'secondary', iconColor: 'white', usuarios: USUARIOS_SEEDER.filter((u) => u.rol === 'estudiante') },
+  director: { label: 'Directores', icon: 'supervisor_account', color: 'white', iconColor: 'primary', usuarios: USUARIOS_SEEDER.filter((u) => u.rol === 'director') },
+  admin: { label: 'Administradores', icon: 'admin_panel_settings', color: 'white', iconColor: 'secondary', usuarios: USUARIOS_SEEDER.filter((u) => u.rol === 'admin') },
 }
 
 function toggleRol(nombre) {
   expandido[nombre] = !expandido[nombre]
 }
 
-function doLogin(usuarioId) {
+async function doLogin(user) {
   cargando.value = true
-  setTimeout(() => {
-    auth.login(usuarioId)
+  try {
+    await auth.login(user.email, DEV_PASSWORD)
+    $q.notify({ message: `Bienvenido, ${auth.userName}`, color: 'positive', timeout: 1500 })
     router.push(auth.redirectPath)
-  }, 1500)
+  } catch (err) {
+    $q.notify({ message: err?.message || 'No se pudo iniciar sesion', color: 'negative', timeout: 3000 })
+  } finally {
+    cargando.value = false
+  }
 }
 </script>
 

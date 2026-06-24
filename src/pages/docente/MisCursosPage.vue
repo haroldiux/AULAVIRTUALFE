@@ -104,15 +104,84 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <q-dialog v-model="dialogoSisa" persistent>
+      <q-card class="sisa-wizard">
+        <q-bar class="bg-primary text-white">
+          <div>Generar Curso desde SISA</div>
+          <q-space />
+          <q-btn dense flat icon="close" aria-label="Cerrar dialogo" v-close-popup />
+        </q-bar>
+        <q-card-section class="q-pa-lg">
+          <div class="text-h5 text-center q-mb-lg">Importar Plan Analítico de Curso (PAC)</div>
+          <q-stepper v-model="sisaPaso" vertical color="primary" animated>
+            <q-step name="conectar" title="Conectar con SISA" icon="cloud" :done="sisaPaso !== 'conectar'">
+              <p class="text-grey-7">El sistema se conectará a la API de SISA para obtener las asignaturas de la gestión actual.</p>
+              <q-select 
+                v-model="sisaAsignatura" 
+                :options="opcionesSisa" 
+                label="Seleccionar asignatura en SISA" 
+                outlined 
+                style="max-width: 450px; margin: 0 auto;"
+                :loading="cargandoAsignaturas"
+                :option-disable="(opt) => !opt.pac_disponible"
+              >
+                <template v-slot:option="scope">
+                  <q-item v-bind="scope.itemProps">
+                    <q-item-section>
+                      <q-item-label>{{ scope.opt.label }}</q-item-label>
+                      <q-item-label v-if="!scope.opt.pac_disponible" caption class="text-negative">
+                        No tiene PAC disponible en SISA
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </template>
+              </q-select>
+              <q-stepper-navigation class="text-center q-mt-md">
+                <q-btn color="primary" label="Siguiente" @click="sisaConectar" :disable="!sisaAsignatura" />
+              </q-stepper-navigation>
+            </q-step>
+            <q-step name="mapear" title="Mapear PAC a Curso" icon="compare_arrows" :done="sisaPaso === 'confirmar'">
+              <p class="text-grey-7">El sistema mapeará automáticamente la estructura del PAC de <strong>{{ sisaAsignatura?.label }}</strong> a la estructura del curso LMS:</p>
+              <q-list bordered separator class="q-mb-md" style="max-width: 500px; margin: 0 auto;">
+                <q-item v-for="(map, i) in sisaMapeo" :key="i">
+                  <q-item-section avatar><q-icon name="arrow_forward" color="primary" /></q-item-section>
+                  <q-item-section>
+                    <q-item-label>{{ map.sisa }}</q-item-label>
+                    <q-item-label caption>{{ map.lms }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+              <q-stepper-navigation class="text-center">
+                <q-btn flat color="primary" label="Atrás" @click="sisaPaso = 'conectar'" class="q-mr-sm" />
+                <q-btn color="primary" label="Generar Curso" @click="sisaGenerar" :loading="generandoCurso" />
+              </q-stepper-navigation>
+            </q-step>
+            <q-step name="confirmar" title="Curso Generado" icon="check_circle">
+              <div class="text-center q-pa-lg">
+                <q-icon name="check_circle" size="64px" color="green" />
+                <h6 class="text-green q-mt-md">¡Curso generado exitosamente!</h6>
+                <p class="text-grey-7">Se han creado {{ sisaSeccionesCreadas }} secciones y {{ sisaActividadesCreadas }} actividades base en el LMS a partir del PAC.</p>
+              </div>
+              <q-stepper-navigation class="text-center">
+                <q-btn color="primary" label="Ir al Builder" @click="irAlBuilder" />
+              </q-stepper-navigation>
+            </q-step>
+          </q-stepper>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useCursosStore } from 'src/stores/cursos'
 import { useAuthStore } from 'src/stores/auth'
 import { useActividadesStore } from 'src/stores/actividades'
+import { integracionService } from 'src/services/integracionService.js'
 import { useStaggerCards, useReflectionHover, useButtonPress } from 'src/composables/useAnimations'
 import { useLoadingState } from 'src/composables/useLoadingState'
 import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
@@ -122,12 +191,33 @@ import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaButton from 'src/components/tailadmin/TaButton.vue'
 
 const $q = useQuasar()
+const router = useRouter()
 const cursosStore = useCursosStore()
 const auth = useAuthStore()
 const actividadesStore = useActividadesStore()
 
 const nuevoCurso = ref(false)
 const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 600 })
+
+// SISA Wizard State
+const dialogoSisa = ref(false)
+const cargandoAsignaturas = ref(false)
+const opcionesSisa = ref([])
+const sisaAsignatura = ref(null)
+const sisaPaso = ref('conectar')
+const generandoCurso = ref(false)
+const sisaSeccionesCreadas = ref(0)
+const sisaActividadesCreadas = ref(0)
+const nuevoCursoId = ref(null)
+
+const sisaMapeo = [
+  { sisa: 'Asignatura', lms: 'Curso' },
+  { sisa: 'Unidad I, II, III...', lms: 'Sección' },
+  { sisa: 'Temas por unidad', lms: 'Actividades sugeridas' },
+  { sisa: 'Logros de aprendizaje', lms: 'Objetivos de la sección' },
+  { sisa: 'Cronograma maestro', lms: 'Fechas sugeridas' },
+  { sisa: 'Sistema de evaluación', lms: 'Esquema de calificación inicial' },
+]
 
 const cursos = computed(() => {
   return cursosStore.cursos.filter((c) => c.docente_id === auth.usuario?.id)
@@ -145,16 +235,65 @@ useStaggerCards('.card-item')
 useReflectionHover('.curso-card')
 useButtonPress('.ta-btn-premium')
 
-onMounted(() => {
+onMounted(async () => {
+  await cursosStore.cargarCursos()
   finalizarCarga()
 })
 
-function crearDesdeSisa() {
+async function crearDesdeSisa() {
   nuevoCurso.value = false
-  $q.notify({ message: 'Mock: Conectando con API SISA...', color: 'info', timeout: 2000 })
-  setTimeout(() => {
-    $q.notify({ message: 'Curso generado desde SISA exitosamente (mock)', color: 'positive', timeout: 3000 })
-  }, 1500)
+  dialogoSisa.value = true
+  sisaPaso.value = 'conectar'
+  sisaAsignatura.value = null
+  cargandoAsignaturas.value = true
+  try {
+    const res = await integracionService.asignaturasSisa(auth.usuario?.id, '1-2026')
+    opcionesSisa.value = (res.data?.data || res.data || []).map(a => ({
+      label: `${a.codigo} — ${a.nombre} (${a.carrera})`,
+      value: a.codigo,
+      pac_disponible: a.pac_disponible
+    }))
+  } catch (err) {
+    console.error('[MisCursos] Error al cargar asignaturas SISA:', err)
+    $q.notify({ message: 'Error al conectar con SISA', color: 'negative', timeout: 3000 })
+  } finally {
+    cargandoAsignaturas.value = false
+  }
+}
+
+function sisaConectar() {
+  if (!sisaAsignatura.value) return
+  sisaPaso.value = 'mapear'
+}
+
+async function sisaGenerar() {
+  if (!sisaAsignatura.value) return
+  generandoCurso.value = true
+  try {
+    const res = await integracionService.generarCursoSisa(sisaAsignatura.value.value, '1-2026', auth.usuario?.id)
+    const data = res.data?.data || res.data
+    sisaSeccionesCreadas.value = data.secciones_creadas || 3
+    sisaActividadesCreadas.value = (data.secciones_creadas || 3) * 2
+    nuevoCursoId.value = data.curso_id
+
+    // Recargar el curso recién creado en el store
+    await cursosStore.cargarCurso(data.curso_id)
+
+    sisaPaso.value = 'confirmar'
+    $q.notify({ message: 'Curso generado desde SISA exitosamente', color: 'positive', timeout: 3000 })
+  } catch (err) {
+    console.error('[MisCursos] Error al generar curso SISA:', err)
+    $q.notify({ message: 'Error al generar curso desde SISA', color: 'negative', timeout: 3000 })
+  } finally {
+    generandoCurso.value = false
+  }
+}
+
+function irAlBuilder() {
+  dialogoSisa.value = false
+  if (nuevoCursoId.value) {
+    router.push(`/docente/curso/${nuevoCursoId.value}/builder`)
+  }
 }
 
 function crearManual() {
@@ -171,7 +310,12 @@ function crearManual() {
   transform: translateY(-4px);
 }
 .dialog-card {
-  min-width: 400px;
+  width: min(620px, 92vw);
+  border-radius: 20px;
+}
+.sisa-wizard {
+  width: min(700px, 92vw);
+  max-width: 700px;
   border-radius: 20px;
 }
 </style>

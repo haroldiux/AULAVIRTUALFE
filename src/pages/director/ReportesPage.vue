@@ -33,11 +33,23 @@
       <div class="col-12 col-md-6">
         <TaCard title="Promedio por Curso" class="card-item">
           <BarChart v-if="chartDataCursos.labels.length" :data="chartDataCursos" :options="chartOptionsBar" :style="{ height: '260px' }" />
+          <AppEmptyState
+            v-else
+            icon="bar_chart"
+            title="Sin datos de cursos"
+            message="No hay cursos disponibles para mostrar el promedio."
+          />
         </TaCard>
       </div>
       <div class="col-12 col-md-6">
         <TaCard title="Distribucion de Estudiantes por Rango" class="card-item">
           <DoughnutChart v-if="chartDataRangos.labels.length" :data="chartDataRangos" :options="chartOptionsDoughnut" :style="{ height: '260px' }" />
+          <AppEmptyState
+            v-else
+            icon="donut_large"
+            title="Sin datos de rangos"
+            message="No hay estudiantes con calificaciones registradas."
+          />
         </TaCard>
       </div>
     </div>
@@ -70,12 +82,70 @@
         </TaCard>
       </div>
     </div>
+
+    <div class="row q-col-gutter-md q-mt-md" data-tour="director-reports-export">
+      <div class="col-12">
+        <TaCard class="card-item">
+          <template #header>
+            <div class="row items-center q-gutter-sm">
+              <q-icon name="download" color="primary" />
+              <span class="text-subtitle1 text-weight-bold">Exportar Reportes</span>
+              <q-badge color="teal" class="q-ml-auto q-pa-xs">CSV · UTF-8</q-badge>
+            </div>
+          </template>
+          <div class="row q-col-gutter-md">
+            <div class="col-12 col-md-4">
+              <div class="export-card">
+                <q-icon name="school" size="36px" color="primary" />
+                <div class="text-subtitle2 text-weight-bold q-mt-sm">Rendimiento Estudiantil</div>
+                <div class="text-caption text-grey q-mb-md">Promedios por curso, secciones y estudiantes</div>
+                <TaButton
+                  variant="primary"
+                  icon="download"
+                  label="Exportar"
+                  :loading="exportando.rendimiento"
+                  @click="exportarReporte('rendimiento')"
+                />
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="export-card">
+                <q-icon name="groups" size="36px" color="teal" />
+                <div class="text-subtitle2 text-weight-bold q-mt-sm">Asistencia y Actividad</div>
+                <div class="text-caption text-grey q-mb-md">Entregas, participacion y accesos por periodo</div>
+                <TaButton
+                  variant="secondary"
+                  icon="download"
+                  label="Exportar"
+                  :loading="exportando.actividad"
+                  @click="exportarReporte('actividad')"
+                />
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="export-card">
+                <q-icon name="inventory_2" size="36px" color="orange" />
+                <div class="text-subtitle2 text-weight-bold q-mt-sm">Banco Docente</div>
+                <div class="text-caption text-grey q-mb-md">Plantillas institucionales y contadores de uso</div>
+                <TaButton
+                  variant="outline"
+                  icon="download"
+                  label="Exportar"
+                  :loading="exportando.banco"
+                  @click="exportarReporte('banco-docente')"
+                />
+              </div>
+            </div>
+          </div>
+        </TaCard>
+      </div>
+    </div>
     </template>
   </q-page>
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, reactive, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { Bar as BarChart, Doughnut as DoughnutChart } from 'vue-chartjs'
 import { Chart as ChartJS, BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
@@ -84,10 +154,12 @@ import { useActividadesStore } from 'src/stores/actividades'
 import { calificaciones as mockCalificaciones, matriculas as mockMatriculas, usuarios as mockUsuarios } from 'src/mock/index.js'
 import TaPageHeader from 'src/components/tailadmin/TaPageHeader.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
+import TaButton from 'src/components/tailadmin/TaButton.vue'
 import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
 import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 import { useStaggerCards } from 'src/composables/useAnimations'
 import { useLoadingState } from 'src/composables/useLoadingState'
+import api from 'src/services/api.js'
 
 ChartJS.register(BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend)
 useStaggerCards('.card-item')
@@ -96,6 +168,7 @@ const $q = useQuasar()
 const cursosStore = useCursosStore()
 const actividadesStore = useActividadesStore()
 const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 700 })
+const exportando = reactive({ rendimiento: false, actividad: false, 'banco-docente': false })
 
 const cursos = computed(() => cursosStore.cursos)
 const cursosActivos = computed(() => cursos.value.filter((c) => c.estado === 'publicado').length)
@@ -202,6 +275,48 @@ const cursosInactivosList = computed(() => {
     })
 })
 
+async function exportarReporte(tipo) {
+  exportando[tipo] = true
+  try {
+    const res = await api.get(`/reportes/${tipo}`, { responseType: 'blob' })
+    const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv;charset=utf-8;' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `reporte-${tipo}-${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+    $q.notify({ message: `Reporte "${tipo}" exportado exitosamente`, color: 'positive', icon: 'download' })
+  } catch {
+    // Fallback: exportar datos locales como CSV
+    exportarCSVLocal(tipo)
+  } finally {
+    exportando[tipo] = false
+  }
+}
+
+function exportarCSVLocal(tipo) {
+  let filas = []
+  if (tipo === 'rendimiento') {
+    filas = [['Curso', 'Codigo', 'Promedio (%)']]
+    cursos.value.forEach((c) => filas.push([c.nombre, c.codigo, promedioCurso(c.id)]))
+  } else if (tipo === 'actividad') {
+    filas = [['Curso', 'Codigo', 'Estado']]
+    cursos.value.forEach((c) => filas.push([c.nombre, c.codigo, c.estado]))
+  } else {
+    filas = [['Tipo', 'Cursos Activos', 'Cursos Inactivos']]
+    filas.push(['Resumen', cursosActivos.value, cursosInactivos.value])
+  }
+  const bom = '\uFEFF'
+  const csvContent = bom + filas.map((fila) => fila.join(',')).join('\n')
+  const url = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `reporte-${tipo}-${new Date().toISOString().slice(0, 10)}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+  $q.notify({ message: `Reporte exportado (modo local)`, color: 'info', icon: 'download' })
+}
+
 onMounted(() => {
   finalizarCarga()
 })
@@ -222,4 +337,21 @@ onMounted(() => {
 .report-kpi--purple::before { background: linear-gradient(135deg, #6B3FA0 0%, #0D9488 100%); }
 .report-kpi--teal::before { background: linear-gradient(135deg, #0D9488 0%, #6B3FA0 100%); }
 .report-kpi--orange::before { background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); }
+.export-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 16px;
+  border: 1px solid var(--ta-border-card);
+  border-radius: 16px;
+  background: var(--ta-bg-card);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  height: 100%;
+}
+.export-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: rgba(var(--primary-rgb), 0.22);
+}
 </style>

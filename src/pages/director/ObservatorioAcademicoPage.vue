@@ -19,9 +19,9 @@
     <div class="row q-col-gutter-lg">
       <div class="col-12 col-xl-8">
         <TaCard title="Mapa de riesgo por curso" subtitle="Rendimiento, cobertura de contenidos y calificacion pendiente" :padding="false" class="card-item q-mb-lg">
-          <q-table :rows="cursosFiltrados" :columns="columns" row-key="id" flat bordered class="risk-table" :pagination="{ rowsPerPage: 6 }">
+          <q-table :rows="cursosFiltrados" :columns="columns" row-key="id" flat bordered class="risk-table" :grid="$q.screen.lt.md" :pagination="{ rowsPerPage: 6 }">
             <template #top-right>
-              <q-input v-model="busqueda" dense outlined placeholder="Buscar curso o docente...">
+              <q-input v-model="busqueda" dense outlined label="Buscar curso o docente" aria-label="Buscar curso o docente" placeholder="Buscar curso o docente...">
                 <template #prepend><q-icon name="search" /></template>
               </q-input>
             </template>
@@ -46,7 +46,13 @@
         </TaCard>
 
         <TaCard title="Seguimiento a docentes" subtitle="Cumplimiento de contenido, respuesta y evaluacion" :padding="false" class="card-item">
-          <q-list separator>
+          <AppEmptyState
+            v-if="!observatorio.docentes.length"
+            icon="groups"
+            title="Sin docentes registrados"
+            message="No hay docentes en el observatorio para este periodo."
+          />
+          <q-list v-else separator>
             <q-item v-for="docente in observatorio.docentes" :key="docente.id" class="av-list-item q-py-md">
               <q-item-section avatar><q-avatar size="46px"><img :src="docente.avatar" /></q-avatar></q-item-section>
               <q-item-section>
@@ -109,6 +115,7 @@ import TaButton from 'src/components/tailadmin/TaButton.vue'
 import TaKpiCard from 'src/components/tailadmin/TaKpiCard.vue'
 import DashboardChartCard from 'src/components/dashboard/DashboardChartCard.vue'
 import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
+import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 import { useStaggerCards } from 'src/composables/useAnimations'
 import { useLoadingState } from 'src/composables/useLoadingState'
 
@@ -170,7 +177,8 @@ onMounted(() => {
 
 <style scoped>
 .risk-table { border-radius: 14px; overflow: hidden; }
-.director-dialog { width: min(620px, 92vw); border-radius: 20px; }
+.director-dialog { width: min(700px, 92vw); max-height: 90vh; border-radius: 20px; display: flex; flex-direction: column; }
+.director-dialog .q-card__section:nth-of-type(2) { overflow-y: auto; }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .detail-grid div {
   border: 1px solid var(--ta-border-card);

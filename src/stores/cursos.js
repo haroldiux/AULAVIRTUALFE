@@ -1,19 +1,21 @@
 import { defineStore } from 'pinia'
-import { cursos as mockCursos } from 'src/mock/index.js'
+import { cursoService } from 'src/services/cursoService.js'
 
-/**
- * MODO DE USO:
- * - Sin VITE_API_BASE_URL (prototipo): usa mock data directo
- * - Con VITE_API_BASE_URL (backend disponible): importa y usa cursoService
- *
- * Para migrar a API real, descomentar y reemplazar acciones con llamadas a:
- *   import { cursoService } from 'src/services/cursoService'
- *   async crearCurso(curso) { const { data } = await cursoService.crear(curso); this.cursos.push(data); }
- */
+function normalizarCurso(c) {
+  return {
+    ...c,
+    secciones: Array.isArray(c.secciones) ? c.secciones : [],
+    docente: c.docente || { id: c.docente_id, nombre: '' },
+    total_estudiantes: c.total_estudiantes ?? 0,
+    config: c.config || null,
+  }
+}
 
 export const useCursosStore = defineStore('cursos', {
   state: () => ({
-    cursos: [...mockCursos],
+    cursos: [],
+    cargados: false,
+    cargando: false,
   }),
 
   getters: {
@@ -23,50 +25,106 @@ export const useCursosStore = defineStore('cursos', {
   },
 
   actions: {
-    crearCurso(curso) {
-      const id = Math.max(0, ...this.cursos.map((c) => c.id)) + 1
-      this.cursos.push({ ...curso, id })
-      return id
+    async cargarCursos() {
+      if (this.cargados || this.cargando) return
+      this.cargando = true
+      try {
+        const res = await cursoService.listar()
+        const lista = Array.isArray(res?.data) ? res.data : (res?.data?.data || [])
+        this.cursos = lista.map(normalizarCurso)
+        this.cargados = true
+      } catch (err) {
+        console.error('[cursos] Error al cargar:', err)
+      } finally {
+        this.cargando = false
+      }
     },
 
-    actualizarCurso(id, datos) {
-      const idx = this.cursos.findIndex((c) => c.id === id)
-      if (idx !== -1) Object.assign(this.cursos[idx], datos)
+    async cargarCurso(id) {
+      try {
+        const res = await cursoService.obtener(id)
+        const curso = normalizarCurso(res.data)
+        const idx = this.cursos.findIndex((c) => c.id === id)
+        if (idx !== -1) {
+          this.cursos[idx] = curso
+        } else {
+          this.cursos.push(curso)
+        }
+        return curso
+      } catch (err) {
+        console.error('[cursos] Error al cargar curso:', err)
+        throw err
+      }
     },
 
-    archivarCurso(id) {
+    async crearCurso(curso) {
+      const res = await cursoService.crear(curso)
+      const nuevo = normalizarCurso(res.data)
+      this.cursos.push(nuevo)
+      return nuevo.id
+    },
+
+    async actualizarCurso(id, datos) {
+      const res = await cursoService.actualizar(id, datos)
+      const actualizado = normalizarCurso(res.data)
       const idx = this.cursos.findIndex((c) => c.id === id)
-      if (idx !== -1) this.cursos[idx].estado = 'archivado'
+      if (idx !== -1) {
+        this.cursos[idx] = { ...this.cursos[idx], ...actualizado }
+      }
+    },
+
+    async archivarCurso(id) {
+      await cursoService.archivar(id)
+      const idx = this.cursos.findIndex((c) => c.id === id)
+      if (idx !== -1) {
+        this.cursos[idx].estado = 'archivado'
+      }
+    },
+
+    async publicarCurso(id) {
+      const res = await cursoService.publicar(id)
+      const actualizado = normalizarCurso(res.data)
+      const idx = this.cursos.findIndex((c) => c.id === id)
+      if (idx !== -1) {
+        this.cursos[idx] = { ...this.cursos[idx], ...actualizado }
+      }
     },
 
     getCursosPorDocente(docenteId) {
       return this.cursos.filter((c) => c.docente_id === docenteId)
     },
 
-    agregarSeccion(cursoId, datos) {
+    // --- Secciones ---
+    async agregarSeccion(cursoId, datos) {
+      const res = await cursoService.agregarSeccion(cursoId, datos)
       const curso = this.cursos.find((c) => c.id === cursoId)
-      if (!curso) return
-      const maxId = curso.secciones.reduce((m, s) => Math.max(m, s.id), 0)
-      curso.secciones.push({
-        id: maxId + 1,
-        titulo: datos.titulo || 'Nueva Seccion',
-        descripcion: datos.descripcion || '',
-        orden: curso.secciones.length + 1,
-        visible: true,
-      })
+      if (curso && res.data) curso.secciones.push(res.data)
+      return res.data
     },
 
-    actualizarSeccion(cursoId, seccionId, datos) {
+    async actualizarSeccion(cursoId, seccionId, datos) {
+      const res = await cursoService.actualizarSeccion(cursoId, seccionId, datos)
       const curso = this.cursos.find((c) => c.id === cursoId)
-      if (!curso) return
-      const seccion = curso.secciones.find((s) => s.id === seccionId)
-      if (seccion) Object.assign(seccion, datos)
+      if (curso) {
+        const sec = curso.secciones.find((s) => s.id === seccionId)
+        if (sec) Object.assign(sec, res.data || datos)
+      }
     },
 
-    eliminarSeccion(cursoId, seccionId) {
+    async eliminarSeccion(cursoId, seccionId) {
+      await cursoService.eliminarSeccion(cursoId, seccionId)
       const curso = this.cursos.find((c) => c.id === cursoId)
-      if (!curso) return
-      curso.secciones = curso.secciones.filter((s) => s.id !== seccionId)
+      if (curso) {
+        curso.secciones = curso.secciones.filter((s) => s.id !== seccionId)
+      }
+    },
+
+    async reordenarSecciones(cursoId, seccionIds) {
+      await cursoService.reordenarSecciones(cursoId, seccionIds)
+      const curso = this.cursos.find((c) => c.id === cursoId)
+      if (curso) {
+        curso.secciones.sort((a, b) => seccionIds.indexOf(a.id) - seccionIds.indexOf(b.id))
+      }
     },
   },
 })

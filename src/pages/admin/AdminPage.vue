@@ -19,7 +19,7 @@
         <div class="text-caption text-weight-bold uppercase">Salud API</div>
         <div class="text-h3 text-weight-bold q-mt-xs">{{ sincOk }}/{{ sincOk + sincError }}</div>
         <div class="text-caption" style="opacity: 0.82">Conexiones operativas</div>
-        <q-linear-progress class="q-mt-md" :value="sincOk / (sincOk + sincError)" color="secondary" track-color="white" rounded size="10px" />
+        <q-linear-progress class="q-mt-md" :value="sincOk / (sincOk + sincError)" color="secondary" track-color="rgba(255,255,255,0.2)" rounded size="10px" />
       </div>
     </template>
 
@@ -28,7 +28,14 @@
         <TaKpiCard icon="library_books" icon-color="var(--gradient-unitepc)" label="Cursos" :value="totalCursos" class="card-item" />
       </div>
       <div class="col-12 col-sm-6 col-lg-3">
-        <TaKpiCard icon="people" icon-color="var(--gradient-unitepc-reverse)" label="Usuarios" :value="totalUsuarios" class="card-item" />
+        <TaKpiCard 
+          icon="people" 
+          icon-color="var(--gradient-unitepc-reverse)" 
+          label="Usuarios" 
+          :value="totalUsuarios" 
+          class="card-item cursor-pointer" 
+          @click="router.push('/admin/usuarios')"
+        />
       </div>
       <div class="col-12 col-sm-6 col-lg-3">
         <TaKpiCard icon="sync" icon-color="linear-gradient(135deg, #6B3FA0 0%, #0D9488 100%)" label="Sync OK" :value="sincOk" class="card-item" />
@@ -54,7 +61,13 @@
     <div class="row q-col-gutter-lg">
       <div class="col-12 col-xl-6">
         <TaCard title="Gestion de cursos" subtitle="Acciones administrativas frecuentes" :padding="false" class="card-item q-mb-lg" data-tour="admin-course-management">
-          <q-list separator>
+          <AppEmptyState
+            v-if="!accionesCursos.length"
+            icon="folder_off"
+            title="Sin acciones disponibles"
+            message="No hay acciones de gestion configuradas."
+          />
+          <q-list v-else separator>
             <q-item v-for="accion in accionesCursos" :key="accion.label" clickable v-ripple class="av-list-item q-py-md">
               <q-item-section avatar><q-icon :name="accion.icon" :color="accion.color" /></q-item-section>
               <q-item-section>
@@ -67,7 +80,13 @@
         </TaCard>
 
         <TaCard title="Usuarios cacheados" subtitle="Muestra de cuentas sincronizadas" :padding="false" class="card-item">
-          <q-list separator>
+          <AppEmptyState
+            v-if="!usuarios.length"
+            icon="person_off"
+            title="Sin usuarios cacheados"
+            message="No hay cuentas sincronizadas para mostrar."
+          />
+          <q-list v-else separator>
             <q-item v-for="user in usuarios.slice(0, 6)" :key="user.id" class="av-list-item q-py-md">
               <q-item-section avatar>
                 <q-avatar size="38px"><img :src="user.avatar" /></q-avatar>
@@ -86,10 +105,16 @@
 
       <div class="col-12 col-xl-6">
         <TaCard title="Conexiones API externas" subtitle="Estado de integraciones previstas" :padding="false" class="card-item q-mb-lg" data-tour="admin-integrations">
-          <q-list separator>
+          <AppEmptyState
+            v-if="!apis.length"
+            icon="cloud_off"
+            title="Sin conexiones configuradas"
+            message="No hay integraciones externas registradas."
+          />
+          <q-list v-else separator>
             <q-item v-for="api in apis" :key="api.name" class="av-list-item q-py-md">
               <q-item-section avatar>
-                <q-avatar :color="api.online ? 'green' : 'red'" text-color="white" size="42px">
+                <q-avatar :color="api.online ? 'positive' : 'negative'" text-color="white" size="42px">
                   <q-icon :name="api.online ? 'check_circle' : 'error'" />
                 </q-avatar>
               </q-item-section>
@@ -98,14 +123,20 @@
                 <q-item-label caption>{{ api.url }} - {{ api.status }}</q-item-label>
               </q-item-section>
               <q-item-section side>
-                <q-badge :color="api.online ? 'green' : 'red'" text-color="white">{{ api.online ? 'Online' : 'Offline' }}</q-badge>
+                <q-badge :color="api.online ? 'positive' : 'negative'" text-color="white">{{ api.online ? 'Online' : 'Offline' }}</q-badge>
               </q-item-section>
             </q-item>
           </q-list>
         </TaCard>
 
         <TaCard title="Logs de sincronizacion" subtitle="Ultimos eventos de integracion" :padding="false" class="card-item">
-          <q-list separator>
+          <AppEmptyState
+            v-if="!logs.length"
+            icon="history"
+            title="Sin logs de sincronizacion"
+            message="No hay eventos de integracion recientes."
+          />
+          <q-list v-else separator>
             <q-item v-for="log in logs" :key="log.id" class="av-list-item q-py-md">
               <q-item-section avatar>
                 <q-avatar :color="log.color" text-color="white" size="38px">
@@ -125,15 +156,18 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useCursosStore } from 'src/stores/cursos'
-import { usuarios as mockUsuarios } from 'src/mock/index.js'
+import { integracionService } from 'src/services/integracionService.js'
+import { adminUsuarioService } from 'src/services/adminUsuarioService.js'
 import { Bar as BarChart, Doughnut as DoughnutChart } from 'vue-chartjs'
 import { Chart as ChartJS, BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
 import DashboardShell from 'src/components/dashboard/DashboardShell.vue'
 import DashboardChartCard from 'src/components/dashboard/DashboardChartCard.vue'
 import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
+import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaKpiCard from 'src/components/tailadmin/TaKpiCard.vue'
 import { useStaggerCards } from 'src/composables/useAnimations'
@@ -143,15 +177,31 @@ ChartJS.register(BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Le
 useStaggerCards('.card-item')
 
 const $q = useQuasar()
+const router = useRouter()
 const cursosStore = useCursosStore()
 const fechaHoy = new Date().toLocaleDateString('es-BO', { day: 'numeric', month: 'long', year: 'numeric' })
 const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 700 })
 
 const totalCursos = computed(() => cursosStore.cursos.length)
-const totalUsuarios = mockUsuarios.length
-const sincOk = 5
-const sincError = 1
-const usuarios = mockUsuarios
+const totalUsuarios = ref(0)
+const usuarios = ref([])
+const datosIntegraciones = ref({ integraciones: [], politica_aprobacion: { minimo: 60 }, sisa_stub: true })
+
+const chartDataUsuarios = computed(() => {
+  const roles = { estudiante: 0, docente: 0, director: 0, admin: 0 }
+  usuarios.value.forEach((u) => {
+    if (roles[u.rol] !== undefined) {
+      roles[u.rol]++
+    }
+  })
+  return {
+    labels: ['Estudiantes', 'Docentes', 'Directores', 'Admins'],
+    datasets: [{
+      data: [roles.estudiante, roles.docente, roles.director, roles.admin],
+      backgroundColor: ['#0D9488', '#6B3FA0', '#f59e0b', '#ef4444'],
+    }],
+  }
+})
 
 const chartTextColor = computed(() => ($q.dark.isActive ? '#e2e8f0' : '#475569'))
 const chartGridColor = computed(() => ($q.dark.isActive ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'))
@@ -173,19 +223,6 @@ const chartOptionsDoughnut = computed(() => ({
   plugins: { legend: { position: 'bottom', labels: { color: chartTextColor.value, usePointStyle: true, boxWidth: 8 } } },
 }))
 
-const chartDataUsuarios = computed(() => {
-  const conteo = {}
-  usuarios.forEach((u) => { conteo[u.rol] = (conteo[u.rol] || 0) + 1 })
-  return {
-    labels: Object.keys(conteo).map((r) => labelRol(r)),
-    datasets: [{
-      data: Object.values(conteo),
-      backgroundColor: ['#6B3FA0', '#0D9488', '#A78BFA', '#14B8A6'],
-      borderWidth: 0,
-    }],
-  }
-})
-
 const chartDataCursos = computed(() => {
   const estados = { publicado: 0, borrador: 0, archivado: 0 }
   cursosStore.cursos.forEach((c) => {
@@ -205,28 +242,37 @@ const chartDataCursos = computed(() => {
   }
 })
 
-const accionesCursos = [
-  { label: 'Todos los cursos', caption: `${totalCursos.value} registros cacheados`, icon: 'list', color: 'primary' },
+const apis = computed(() =>
+  (datosIntegraciones.value.integraciones || []).map((i) => ({
+    name: `API ${i.nombre}`,
+    url: i.id === 'sisa' ? 'https://sisa.unitepc.edu/api' : i.id === 'estudiantes' ? 'https://estudiantes.unitepc.edu/api' : 'https://notas.unitepc.edu/api',
+    status: i.estado === 'online' ? 'Conectado' : 'Desconectado',
+    online: i.estado === 'online',
+    ultimoSync: i.ultimo_sync,
+    ultimoMensaje: i.ultimo_mensaje,
+    stub: i.stub,
+  }))
+)
+
+const sincOk = computed(() => apis.value.filter((a) => a.online).length)
+const sincError = computed(() => apis.value.filter((a) => !a.online).length)
+
+const accionesCursos = computed(() => [
+  { label: 'Todos los cursos', caption: `${totalCursos.value} registros`, icon: 'list', color: 'primary' },
   { label: 'Archivar cursos', caption: 'Gestionar cursos inactivos o cerrados', icon: 'archive', color: 'grey' },
   { label: 'Duplicar curso', caption: 'Preparar estructura para nueva gestion', icon: 'content_copy', color: 'teal' },
-]
+])
 
-const apis = [
-  { name: 'API SISA', url: 'https://sisa.unitech.edu/api', status: 'Conectado', online: true },
-  { name: 'API Estudiantes', url: 'https://estudiantes.unitech.edu/api', status: 'Timeout', online: false },
-  { name: 'API Notas Centralizadas', url: 'https://notas.unitech.edu/api', status: 'Conectado', online: true },
-]
-
-const logs = [
-  { id: 1, icon: 'check_circle', color: 'green', mensaje: 'SISA Sync - Exitoso: 3 cursos actualizados', fecha: '2026-06-02 08:00' },
-  { id: 2, icon: 'error', color: 'red', mensaje: 'Student Sync - Fallido: Timeout de conexion', fecha: '2026-06-02 08:00' },
-  { id: 3, icon: 'check_circle', color: 'green', mensaje: 'Grade Sync - Exitoso: 42 notas enviadas', fecha: '2026-06-01 18:00' },
-  { id: 4, icon: 'sync', color: 'orange', mensaje: 'Grade Sync - Parcial: 3 notas pendientes', fecha: '2026-06-01 17:55' },
-]
-
-function colorRol(r) {
-  const m = { docente: 'primary', estudiante: 'secondary', director: 'primary', admin: 'secondary' }
-  return m[r] ?? 'grey'
+async function notifySync() {
+  $q.loading.show({ message: 'Sincronizando integraciones...' })
+  try {
+    await integracionService.estado()
+    $q.notify({ message: 'Estado de integraciones actualizado', color: 'positive', icon: 'sync', timeout: 2200 })
+  } catch {
+    $q.notify({ message: 'Error al sincronizar', color: 'negative', timeout: 3000 })
+  } finally {
+    $q.loading.hide()
+  }
 }
 
 function labelRol(r) {
@@ -234,11 +280,20 @@ function labelRol(r) {
   return m[r] ?? r
 }
 
-function notifySync() {
-  $q.notify({ message: 'Mock: sincronizacion administrativa iniciada', color: 'info', icon: 'sync', timeout: 2200 })
-}
-
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const res = await integracionService.estado()
+    datosIntegraciones.value = res.data || datosIntegraciones.value
+  } catch {
+    // ignorar
+  }
+  try {
+    const userRes = await adminUsuarioService.listar({ per_page: 9999 })
+    usuarios.value = userRes.data?.data || userRes.data || []
+    totalUsuarios.value = usuarios.value.length
+  } catch (err) {
+    console.error(err)
+  }
   finalizarCarga()
 })
 </script>

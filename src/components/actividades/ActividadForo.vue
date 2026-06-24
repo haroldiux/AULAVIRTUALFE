@@ -86,7 +86,7 @@
     </template>
 
     <q-dialog v-model="mostrarFormHilo">
-      <q-card style="min-width: 450px">
+      <q-card class="foro-dialog">
         <q-card-section>
           <div class="text-h6">Nuevo Hilo de Discusion</div>
         </q-card-section>
@@ -108,7 +108,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useActividadesStore } from 'src/stores/actividades.js'
 import { useAuthStore } from 'src/stores/auth.js'
@@ -122,6 +122,7 @@ const authStore = useAuthStore()
 
 const hiloActivo = ref(null)
 const mostrarFormHilo = ref(false)
+const cargandoHilos = ref(false)
 const nuevoHilo = ref({ titulo: '', contenido: '' })
 const nuevaRespuesta = ref('')
 
@@ -132,11 +133,7 @@ const labelTipoForo = computed(() => {
   return m[props.actividad.config?.tipo_foro] || 'General'
 })
 
-const hilos = computed(() => {
-  // Asegurar inicializacion del array de hilos para esta actividad
-  actividadesStore.getHilosForo(props.actividad.id)
-  return actividadesStore.hilosForo[props.actividad.id] || []
-})
+const hilos = computed(() => actividadesStore.hilosForo[props.actividad.id] || [])
 
 const respuestasHilo = computed(() => {
   if (!hiloActivo.value) return []
@@ -152,43 +149,47 @@ function formatFecha(fecha) {
   }
 }
 
-function crearHilo() {
+onMounted(async () => {
+  cargandoHilos.value = true
+  await actividadesStore.cargarHilosForo(props.actividad.id)
+  cargandoHilos.value = false
+})
+
+async function crearHilo() {
   if (!authStore.usuario) {
     $q.notify({ message: 'Debes iniciar sesion para crear un hilo', color: 'negative', icon: 'warning' })
     return
   }
-  const autorNombre = props.actividad.config?.anonimo
-    ? 'Anonimo'
-    : (authStore.usuario?.nombre || 'Estudiante')
-  const hilo = {
-    titulo: nuevoHilo.value.titulo,
-    contenido: nuevoHilo.value.contenido,
-    autor: autorNombre,
-    autorId: authStore.usuario?.id ?? null,
-    autorAvatar: authStore.usuario?.avatar || defaultAvatar,
-    fijado: false,
+  try {
+    await actividadesStore.crearHiloForo(props.actividad.id, {
+      titulo: nuevoHilo.value.titulo,
+      contenido: nuevoHilo.value.contenido,
+      anonimo: props.actividad.config?.anonimo || false,
+    })
+    nuevoHilo.value = { titulo: '', contenido: '' }
+    mostrarFormHilo.value = false
+    $q.notify({ message: 'Hilo creado exitosamente', color: 'positive', timeout: 2000 })
+  } catch (err) {
+    $q.notify({ message: err?.message || 'Error al crear hilo', color: 'negative', timeout: 3000 })
   }
-  actividadesStore.crearHiloForo(props.actividad.id, hilo)
-  nuevoHilo.value = { titulo: '', contenido: '' }
-  mostrarFormHilo.value = false
-  $q.notify({ message: 'Hilo creado exitosamente', color: 'positive', timeout: 2000 })
 }
 
-function enviarRespuesta() {
+async function enviarRespuesta() {
   if (!authStore.usuario) {
     $q.notify({ message: 'Debes iniciar sesion para responder', color: 'negative', icon: 'warning' })
     return
   }
   if (!hiloActivo.value) return
-  const respuesta = {
-    autor: authStore.usuario?.nombre || 'Estudiante',
-    autorId: authStore.usuario?.id ?? null,
-    autorAvatar: authStore.usuario?.avatar || defaultAvatar,
-    contenido: nuevaRespuesta.value,
+  try {
+    await actividadesStore.crearRespuestaForo(props.actividad.id, hiloActivo.value.id, {
+      contenido: nuevaRespuesta.value,
+      anonimo: props.actividad.config?.anonimo || false,
+    })
+    nuevaRespuesta.value = ''
+    $q.notify({ message: 'Respuesta enviada', color: 'positive', timeout: 1500 })
+  } catch (err) {
+    $q.notify({ message: err?.message || 'Error al enviar respuesta', color: 'negative', timeout: 3000 })
   }
-  actividadesStore.crearRespuestaForo(props.actividad.id, hiloActivo.value.id, respuesta)
-  nuevaRespuesta.value = ''
-  $q.notify({ message: 'Respuesta enviada', color: 'positive', timeout: 1500 })
 }
 
 watch(() => props.actividad.id, () => {
@@ -200,4 +201,8 @@ watch(() => props.actividad.id, () => {
 .hilo-item { transition: background 0.15s; }
 .hilo-item:hover { background: rgba(var(--primary-rgb), 0.04); }
 .body--dark .hilo-item:hover { background: rgba(255, 255, 255, 0.04); }
+.foro-dialog {
+  width: min(550px, 92vw);
+  border-radius: 20px;
+}
 </style>

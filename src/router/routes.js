@@ -24,6 +24,22 @@ const routes = [
     meta: { public: true, title: 'Iniciar Sesion' },
   },
   {
+    path: '/',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      {
+        path: 'calendario',
+        component: () => import('pages/shared/CalendarioPage.vue'),
+        meta: { title: 'Calendario' },
+      },
+      {
+        path: 'mensajes',
+        component: () => import('pages/shared/MensajeriaPage.vue'),
+        meta: { title: 'Mensajes' },
+      },
+    ],
+  },
+  {
     path: '/docente',
     component: () => import('layouts/MainLayout.vue'),
     meta: { roles: ['docente'] },
@@ -149,6 +165,11 @@ const routes = [
         path: 'configuracion',
         component: () => import('pages/admin/ConfiguracionSistemaPage.vue'),
         meta: { title: 'Configuracion' },
+      },
+      {
+        path: 'usuarios',
+        component: () => import('pages/admin/UsuariosPage.vue'),
+        meta: { title: 'Gestion de Usuarios' },
       },
     ],
   },

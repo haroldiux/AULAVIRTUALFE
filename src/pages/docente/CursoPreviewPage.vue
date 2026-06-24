@@ -129,10 +129,11 @@
     </div>
 
     <div v-else class="flex flex-center q-pa-xl">
-      <div class="text-center" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-6'">
-        <q-icon name="error_outline" size="48px" :color="$q.dark.isActive ? 'grey-6' : 'grey-4'" />
-        <p class="q-mt-md">Curso no encontrado.</p>
-      </div>
+      <AppEmptyState
+        icon="error_outline"
+        title="Curso no encontrado"
+        message="El curso que buscas no existe o no tienes acceso."
+      />
     </div>
     </template>
   </q-page>
@@ -166,7 +167,9 @@ const actividadSeleccionada = ref(null)
 
 const curso = computed(() => cursosStore.getCursoById(Number(route.params.id)))
 
-onMounted(() => {
+onMounted(async () => {
+  const curso = await cursosStore.cargarCurso(Number(route.params.id))
+  if (curso) actividadesStore.cargarDesdeCursos([curso])
   finalizarCarga()
 })
 

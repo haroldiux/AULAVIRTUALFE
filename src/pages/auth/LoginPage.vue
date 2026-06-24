@@ -39,31 +39,41 @@
             </div>
 
             <!-- Fallback -->
-            <div class="space-y-3">
-              <div class="login-input-wrap">
-                <q-icon name="person" size="18px" class="login-input-icon" />
-                <input
-                  v-model="credenciales.username"
-                  type="text"
-                  placeholder="Usuario"
-                  class="login-input"
-                  @keyup.enter="loginFallback"
-                />
+            <form class="space-y-3" @submit.prevent="loginFallback">
+              <div>
+                <label for="login-user" class="login-label">Email</label>
+                <div class="login-input-wrap">
+                  <q-icon name="person" size="18px" class="login-input-icon" />
+                  <input
+                    id="login-user"
+                    v-model="credenciales.email"
+                    type="email"
+                    placeholder="correo@unitepc.edu"
+                    class="login-input"
+                    autocomplete="username"
+                    required
+                  />
+                </div>
               </div>
-              <div class="login-input-wrap">
-                <q-icon name="lock" size="18px" class="login-input-icon" />
-                <input
-                  v-model="credenciales.password"
-                  type="password"
-                  placeholder="Contrasena"
-                  class="login-input"
-                  @keyup.enter="loginFallback"
-                />
+              <div>
+                <label for="login-pass" class="login-label">Contrasena</label>
+                <div class="login-input-wrap">
+                  <q-icon name="lock" size="18px" class="login-input-icon" />
+                  <input
+                    id="login-pass"
+                    v-model="credenciales.password"
+                    type="password"
+                    placeholder="Ingresa tu contrasena"
+                    class="login-input"
+                    autocomplete="current-password"
+                    required
+                  />
+                </div>
               </div>
-              <button class="login-btn-submit" @click="loginFallback">
+              <button type="submit" class="login-btn-submit">
                 Ingresar
               </button>
-            </div>
+            </form>
           </div>
 
           <!-- Links -->
@@ -92,15 +102,15 @@ const $q = useQuasar()
 const auth = useAuthStore()
 const cargando = ref(false)
 
-const credenciales = reactive({ username: '', password: '' })
+const credenciales = reactive({ email: '', password: '' })
 
-// Mapa de credenciales simples para fallback
-const USUARIOS_FALLBACK = {
-  docente: { username: 'docente', password: 'docente', id: 1 },
-  estudiante: { username: 'estudiante', password: 'estudiante', id: 100 },
-  director: { username: 'director', password: 'director', id: 200 },
-  admin: { username: 'admin', password: 'admin', id: 300 },
-}
+// Tokens SISA de demostracion (backend stub). El backend los acepta en /auth/login con { sisa_token }
+const SSO_TOKENS = [
+  { label: 'Docente — Carlos Mendoza', token: 'sisa-token-docente-1' },
+  { label: 'Docente — Lucia Fernandez', token: 'sisa-token-docente-2' },
+  { label: 'Estudiante — Ana Vargas', token: 'sisa-token-estudiante-1' },
+  { label: 'Director — Roberto Suarez', token: 'sisa-token-director-1' },
+]
 
 function particleStyle(i) {
   const positions = [
@@ -115,44 +125,37 @@ function particleStyle(i) {
   return { top: p.top, left: p.left, width: p.size, height: p.size, animationDelay: p.delay, animationDuration: p.duration }
 }
 
-function loginSSO() {
-  cargando.value = true
-  $q.notify({ message: 'Redirigiendo a SSO UNITEPC...', color: 'info', timeout: 2000 })
+async function loginFallback() {
+  const { email, password } = credenciales
+  if (!email || !password) {
+    $q.notify({ message: 'Ingresa email y contrasena', color: 'negative', timeout: 2000 })
+    return
+  }
 
-  // TODO: Implementar flujo SSO real cuando el backend este listo
-  // Por ahora: simular delay y mostrar mensaje
-  setTimeout(() => {
+  cargando.value = true
+  try {
+    await auth.login(email.trim(), password)
+    $q.notify({ message: `Bienvenido, ${auth.userName}`, color: 'positive', timeout: 1500 })
+    router.push(auth.redirectPath)
+  } catch (err) {
+    $q.notify({ message: err?.message || 'Credenciales incorrectas', color: 'negative', timeout: 3000 })
+  } finally {
     cargando.value = false
-    $q.notify({
-      message: 'El servicio SSO aun no esta disponible. Usa el acceso alternativo.',
-      color: 'warning',
-      timeout: 4000,
-    })
-  }, 2000)
+  }
 }
 
-function loginFallback() {
-  const { username, password } = credenciales
-  if (!username || !password) {
-    $q.notify({ message: 'Ingresa usuario y contrasena', color: 'negative', timeout: 2000 })
-    return
-  }
-
-  // Buscar usuario por credenciales
-  const entrada = Object.values(USUARIOS_FALLBACK).find(
-    (u) => u.username === username.toLowerCase().trim() && u.password === password
-  )
-
-  if (!entrada) {
-    $q.notify({ message: 'Usuario o contrasena incorrectos', color: 'negative', timeout: 2000 })
-    return
-  }
-
+async function loginSSO() {
+  // SSO real: usa el primer token de demostracion (docente Carlos Mendoza)
   cargando.value = true
-  setTimeout(() => {
-    auth.login(entrada.id)
+  try {
+    await auth.loginSso(SSO_TOKENS[0].token)
+    $q.notify({ message: `Bienvenido, ${auth.userName}`, color: 'positive', timeout: 1500 })
     router.push(auth.redirectPath)
-  }, 1500)
+  } catch (err) {
+    $q.notify({ message: err?.message || 'No se pudo iniciar sesion via SSO', color: 'negative', timeout: 3000 })
+  } finally {
+    cargando.value = false
+  }
 }
 </script>
 
@@ -285,6 +288,13 @@ function loginFallback() {
   position: relative;
   display: flex;
   align-items: center;
+}
+.login-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.72);
 }
 .login-input-icon {
   position: absolute;

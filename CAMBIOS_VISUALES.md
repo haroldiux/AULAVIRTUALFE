@@ -149,6 +149,59 @@ Cambios aplicados en estas paginas:
 #### Empty states
 - `AppEmptyState.vue`: icono con fondo degradado suave de marca, forma redondeada moderna y sombra sutil.
 
+### 3.9 Auditoria UX/UI exhaustiva (fase 1)
+
+Se realizo una auditoria completa de formularios, tablas, dialogos, estados vacios, contraste y accesibilidad en las vistas restantes.
+
+#### Formularios
+- `ConfiguracionSistemaPage.vue`: envuelto en `<q-form @submit.prevent>`; selects con `:rules` y `hint`.
+- `ActividadGuiadaWizard.vue`: envuelto en `<q-form @submit.prevent>`; curso, seccion y titulo con `:rules`.
+- `HerramientasDocentePage.vue` (Asistente): envuelto en `<q-form>`; curso, tipo, tema y objetivo con `:rules`.
+- `HerramientasDocentePage.vue` (Copiar plantilla): dialogo envuelto en `<q-form>`; curso y seccion destino con `:rules`.
+- `ActividadTarea.vue`: seccion de entrega envuelta en `<q-form @submit.prevent>`; boton "Enviar Entrega" como `type="submit"`.
+- `ActividadCuestionario.vue`: fase activa envuelta en `<q-form>`; validacion de respuestas completas antes de finalizar.
+- `ActividadEncuesta.vue`: envuelta en `<q-form>`; validacion manual de preguntas obligatorias.
+
+#### Tablas mobile-friendly
+- `MisNotasPage.vue`: `q-markup-table` envuelta en `.overflow-x-auto` con `min-width: 640px`.
+- `ObservatorioAcademicoPage.vue`: `q-table` con `:grid="$q.screen.lt.md"`.
+- `SeguimientoCursoPage.vue`: `q-table` con `:grid="$q.screen.lt.md"`; slot `#no-data` con `AppEmptyState`.
+- `RubricaEditor.vue`: tabla envuelta en contenedor scrollable con `min-width: 600px`.
+
+#### Dialogos responsive
+- `ObservatorioAcademicoPage.vue`: `.director-dialog` a `width: min(700px, 92vw)` con `max-height: 90vh` y scroll interno.
+- `HerramientasDocentePage.vue`: `.dialog-card` a `width: min(700px, 92vw)` con `max-height: 90vh` y scroll interno.
+
+#### Estados vacios adicionales
+- `AdminPage.vue`: `AppEmptyState` en gestion de cursos, usuarios, APIs y logs.
+- `ConfiguracionSistemaPage.vue`: `AppEmptyState` en integraciones, politicas y auditoria.
+- `ObservatorioAcademicoPage.vue`: `AppEmptyState` en seguimiento a docentes.
+- `ReportesPage.vue`: `AppEmptyState` en graficos sin datos.
+- `HerramientasDocentePage.vue`: `AppEmptyState` en agenda, automatizaciones y banco docente.
+- `DashboardDocentePage.vue`: `AppEmptyState` en entregas por revisar.
+- `DashboardEstudiantePage.vue`: `AppEmptyState` en docentes activos.
+- `VerCursoPage.vue`: `AppEmptyState` en pendientes vacios.
+- `CursoPreviewPage.vue`: `AppEmptyState` en curso no encontrado.
+- `ActividadLeccion.vue`: `AppEmptyState` en contenido vacio.
+- `RubricaEditor.vue`: `AppEmptyState` en criterios vacios.
+
+#### Contraste y dark mode
+- `RubricaEditor.vue`: reemplazados colores fijos por variables del tema (`--ta-border-card`, `--ta-bg-card`, `--ta-bg-elevated`, `--ta-primary`) con overrides `body--dark`.
+- `ActividadH5P.vue`: wrapper usa variables del tema con soporte dark.
+- `AdminPage.vue`: `track-color` de progreso usa transparencia; colores API cambiados a `positive`/`negative`.
+- `DashboardDocentePage.vue`: `track-color` del progreso de curso adaptativo a dark mode.
+- `DashboardEstudiantePage.vue`: `track-color` del hero adaptativo a dark mode.
+- `ConfiguracionSistemaPage.vue`: avatar de advertencia usa `text-color="black"` para mejor contraste.
+
+#### Accesibilidad adicional
+- `ActividadCuestionario.vue`: eliminado label duplicado en opciones de radio; botones de paginacion con `aria-label`.
+- `ObservatorioAcademicoPage.vue`: input de busqueda con `label` y `aria-label`.
+- `DashboardEstudiantePage.vue`: input de busqueda con `label` y `aria-label`.
+
+#### Mobile
+- `HerramientasDocentePage.vue`: fila de alertas en mobile ya no oculta el badge de severidad ni los factores; se apilan debajo de la identidad.
+- `SeguimientoCursoPage.vue`: botones de accion ahora navegan a curso/reporte con `:to`.
+
 ---
 
 ## 4. Archivos clave modificados
@@ -179,6 +232,13 @@ Cambios aplicados en estas paginas:
 - `src/pages/docente/*.vue`
 - `src/pages/director/*.vue`
 - `src/pages/admin/*.vue`
+- `src/components/calificaciones/RubricaEditor.vue`
+- `src/components/docente/ActividadGuiadaWizard.vue`
+- `src/components/actividades/ActividadTarea.vue`
+- `src/components/actividades/ActividadCuestionario.vue`
+- `src/components/actividades/ActividadEncuesta.vue`
+- `src/components/actividades/ActividadLeccion.vue`
+- `src/components/actividades/ActividadH5P.vue`
 
 ---
 

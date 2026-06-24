@@ -115,20 +115,24 @@
               <div class="text-h6 text-weight-bold">Asistente de creacion</div>
               <div class="text-caption text-grey">Genera temas, actividades y estructuras listas para editar en el builder.</div>
             </div>
-            <TaButton variant="primary" icon="auto_fix_high" label="Generar estructura" @click="generarEstructura" />
           </div>
 
           <div class="assistant-layout">
             <TaCard title="Entrada rapida" subtitle="Define la intencion pedagogica" class="assistant-card">
-              <q-select v-model="asistente.cursoId" :options="opcionesCurso" label="Curso" outlined emit-value map-options class="q-mb-md" />
-              <q-select v-model="asistente.tipo" :options="opcionesAsistente" label="Tipo de herramienta" outlined emit-value map-options class="q-mb-md" />
-              <q-input v-model="asistente.tema" label="Tema o unidad" outlined class="q-mb-md" />
-              <q-input v-model="asistente.objetivo" label="Objetivo de aprendizaje" outlined type="textarea" rows="3" />
-              <div class="row q-gutter-sm q-mt-md">
-                <q-chip dense color="primary" text-color="white">Plantilla editable</q-chip>
-                <q-chip dense color="teal" text-color="white">Compatible SISA</q-chip>
-                <q-chip dense color="orange" text-color="white">Mock funcional</q-chip>
-              </div>
+              <q-form @submit.prevent="generarEstructura" greedy>
+                <q-select v-model="asistente.cursoId" :options="opcionesCurso" label="Curso" outlined emit-value map-options class="q-mb-md" :rules="[val => !!val || 'Selecciona un curso']" />
+                <q-select v-model="asistente.tipo" :options="opcionesAsistente" label="Tipo de herramienta" outlined emit-value map-options class="q-mb-md" :rules="[val => !!val || 'Selecciona un tipo de herramienta']" />
+                <q-input v-model="asistente.tema" label="Tema o unidad" outlined class="q-mb-md" :rules="[val => !!val?.trim() || 'Escribe el tema o unidad']" />
+                <q-input v-model="asistente.objetivo" label="Objetivo de aprendizaje" outlined type="textarea" rows="3" :rules="[val => !!val?.trim() || 'Escribe el objetivo de aprendizaje']" />
+                <div class="row q-gutter-sm q-mt-md">
+                  <q-chip dense color="primary" text-color="white">Plantilla editable</q-chip>
+                  <q-chip dense color="teal" text-color="white">Compatible SISA</q-chip>
+                  <q-chip dense color="orange" text-color="white">Mock funcional</q-chip>
+                </div>
+                <div class="row q-mt-md">
+                  <TaButton variant="primary" icon="auto_fix_high" label="Generar estructura" type="submit" />
+                </div>
+              </q-form>
             </TaCard>
 
             <div class="assistant-tools">
@@ -184,7 +188,13 @@
             </div>
 
             <div class="agenda-list">
-              <q-list separator>
+              <AppEmptyState
+                v-if="!agendaFiltrada.length"
+                icon="event_available"
+                title="Sin eventos"
+                message="No hay fechas que coincidan con los filtros seleccionados."
+              />
+              <q-list v-else separator>
                 <q-item v-for="item in agendaFiltrada" :key="item.id" class="agenda-item q-py-md">
                   <q-item-section avatar>
                     <q-avatar :color="colorAgenda(item.estadoAgenda)" text-color="white" size="44px">
@@ -223,6 +233,13 @@
           </div>
 
           <div class="row q-col-gutter-md">
+            <div v-if="!herramientas.reglas.length" class="col-12">
+              <AppEmptyState
+                icon="auto_mode"
+                title="Sin automatizaciones"
+                message="No tienes reglas configuradas para ejecutar."
+              />
+            </div>
             <div v-for="regla in herramientas.reglas" :key="regla.id" class="col-12 col-md-6 col-xl-4">
               <div class="automation-card">
                 <div class="row items-start justify-between no-wrap">
@@ -264,6 +281,13 @@
           </div>
 
           <div class="row q-col-gutter-md">
+            <div v-if="!plantillasFiltradas.length" class="col-12">
+              <AppEmptyState
+                icon="inventory_2"
+                title="Sin plantillas"
+                message="No hay recursos en el banco docente para esta categoria."
+              />
+            </div>
             <div v-for="plantilla in plantillasFiltradas" :key="plantilla.id" class="col-12 col-md-6">
               <div class="template-row">
                 <q-avatar :color="colorTipo(plantilla.tipo)" text-color="white" :icon="iconoTipo(plantilla.tipo)" size="50px" />
@@ -354,18 +378,20 @@
 
     <q-dialog v-model="dialogCopiar">
       <q-card class="dialog-card">
-        <q-card-section>
-          <div class="text-h6">Usar plantilla</div>
-          <div class="text-caption text-grey">{{ plantillaSeleccionada?.nombre }}</div>
-        </q-card-section>
-        <q-card-section>
-          <q-select v-model="cursoDestino" :options="opcionesCurso" label="Curso destino" outlined emit-value map-options class="q-mb-md" />
-          <q-select v-model="seccionDestino" :options="opcionesSeccionDestino" label="Seccion destino" outlined emit-value map-options :disable="!cursoDestino" />
-        </q-card-section>
-        <q-card-actions align="right">
-          <TaButton variant="ghost" label="Cancelar" v-close-popup />
-          <TaButton variant="primary" icon="content_copy" label="Copiar al curso" :disable="!seccionDestino" @click="copiarPlantilla" />
-        </q-card-actions>
+        <q-form @submit.prevent="copiarPlantilla" greedy>
+          <q-card-section>
+            <div class="text-h6">Usar plantilla</div>
+            <div class="text-caption text-grey">{{ plantillaSeleccionada?.nombre }}</div>
+          </q-card-section>
+          <q-card-section>
+            <q-select v-model="cursoDestino" :options="opcionesCurso" label="Curso destino" outlined emit-value map-options class="q-mb-md" :rules="[val => !!val || 'Selecciona un curso destino']" />
+            <q-select v-model="seccionDestino" :options="opcionesSeccionDestino" label="Seccion destino" outlined emit-value map-options :disable="!cursoDestino" :rules="[val => !!val || 'Selecciona una seccion destino']" />
+          </q-card-section>
+          <q-card-actions align="right">
+            <TaButton variant="ghost" label="Cancelar" v-close-popup />
+            <TaButton variant="primary" icon="content_copy" label="Copiar al curso" type="submit" />
+          </q-card-actions>
+        </q-form>
       </q-card>
     </q-dialog>
     </template>
@@ -384,6 +410,7 @@ import { useActividadesStore } from 'src/stores/actividades'
 import { useHerramientasDocenteStore } from 'src/stores/herramientasDocente'
 import { useNotificacionesStore } from 'src/stores/notificaciones'
 import { useSuiteRolesStore } from 'src/stores/suiteRoles'
+import { bancoDocenteService } from 'src/services/bancoDocenteService'
 import TaPageHeader from 'src/components/tailadmin/TaPageHeader.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaButton from 'src/components/tailadmin/TaButton.vue'
@@ -421,6 +448,8 @@ const plantillaSeleccionada = ref(null)
 const cursoDestino = ref(null)
 const seccionDestino = ref(null)
 const asistente = ref({ cursoId: null, tipo: 'tema-guiado', tema: 'Nueva unidad', objetivo: 'Comprender y aplicar los conceptos clave del tema.' })
+const plantillasBackend = ref([])
+const cargandoBanco = ref(false)
 
 const cursosDocente = computed(() => cursosStore.cursos.filter((curso) => curso.docente_id === auth.usuario?.id))
 const alertas = computed(() => herramientas.alertasPorDocente(auth.usuario?.id))
@@ -465,7 +494,8 @@ const agendaFiltrada = computed(() => agenda.value.filter((item) =>
 const agendaVencidas = computed(() => agenda.value.filter((item) => item.estadoAgenda === 'vencida').length)
 const agendaProximas = computed(() => agenda.value.filter((item) => item.estadoAgenda === 'proxima').length)
 const agendaProgramadas = computed(() => agenda.value.filter((item) => item.estadoAgenda === 'programada').length)
-const plantillasFiltradas = computed(() => herramientas.plantillas.filter((plantilla) => bancoCategoria.value === 'todos' || plantilla.categoria === bancoCategoria.value))
+const plantillasFuente = computed(() => plantillasBackend.value.length ? plantillasBackend.value : herramientas.plantillas)
+const plantillasFiltradas = computed(() => plantillasFuente.value.filter((plantilla) => bancoCategoria.value === 'todos' || plantilla.categoria === bancoCategoria.value))
 const opcionesSeccionDestino = computed(() => {
   const curso = cursosStore.getCursoById(cursoDestino.value)
   return curso?.secciones?.map((seccion) => ({ label: seccion.titulo, value: seccion.id })) || []
@@ -607,7 +637,7 @@ function abrirCopiarPlantilla(plantilla) {
   dialogCopiar.value = true
 }
 
-function copiarPlantilla() {
+async function copiarPlantilla() {
   const plantilla = plantillaSeleccionada.value
   if (!plantilla || !seccionDestino.value) return
   const orden = actividadesStore.actividades.filter((actividad) => actividad.seccion_id === seccionDestino.value).length + 1
@@ -638,7 +668,16 @@ function copiarPlantilla() {
       config: { preguntas: plantilla.datos.preguntas || [], banco_preguntas_id: plantilla.id, intentos_maximos: 1, seguimiento_requerido: true },
     })
   }
-  herramientas.registrarUsoPlantilla(plantilla.id)
+  // Registrar uso en backend (no bloquea si falla)
+  try {
+    await bancoDocenteService.usar(plantilla.id)
+    // Actualizar contador local si es plantilla de backend
+    const idx = plantillasBackend.value.findIndex((p) => p.id === plantilla.id)
+    if (idx !== -1) plantillasBackend.value[idx] = { ...plantillasBackend.value[idx], uso: (plantillasBackend.value[idx].uso || 0) + 1 }
+  } catch {
+    // Fallback: registrar uso solo en store local
+    herramientas.registrarUsoPlantilla(plantilla.id)
+  }
   dialogCopiar.value = false
   $q.notify({ message: `"${plantilla.nombre}" copiada al curso`, color: 'positive', icon: 'content_copy' })
 }
@@ -658,8 +697,32 @@ function labelCategoria(categoria) { return { actividad: 'Actividad', rubrica: '
 
 useStaggerCards('.card-item')
 
-onMounted(() => {
+async function cargarPlantillasBanco() {
+  cargandoBanco.value = true
+  try {
+    const res = await bancoDocenteService.listar()
+    const datos = res.data?.data || res.data || []
+    if (datos.length) {
+      plantillasBackend.value = datos.map((p) => ({
+        id: p.id,
+        nombre: p.nombre,
+        descripcion: p.descripcion || '',
+        tipo: p.tipo || 'actividad',
+        categoria: p.categoria,
+        uso: p.uso || 0,
+        datos: typeof p.datos === 'string' ? JSON.parse(p.datos) : (p.datos || {}),
+      }))
+    }
+  } catch {
+    // sin backend: usar datos mock del store
+  } finally {
+    cargandoBanco.value = false
+  }
+}
+
+onMounted(async () => {
   finalizarCarga()
+  await cargarPlantillasBanco()
 })
 </script>
 
@@ -743,7 +806,8 @@ onMounted(() => {
 .template-row { display: flex; gap: 16px; }
 .template-row__body { flex: 1; min-width: 0; }
 .course-progress-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.dialog-card { width: min(620px, 92vw); border-radius: 20px; }
+.dialog-card { width: min(700px, 92vw); max-height: 90vh; border-radius: 20px; display: flex; flex-direction: column; }
+.dialog-card .q-card__section:nth-of-type(2) { overflow-y: auto; }
 .assistant-layout { display: grid; grid-template-columns: minmax(260px, 0.85fr) minmax(260px, 1fr) minmax(260px, 0.9fr); gap: 16px; align-items: start; }
 .assistant-card:hover, .assistant-preview:hover { transform: none; }
 .assistant-tools { display: grid; gap: 12px; }
@@ -773,10 +837,11 @@ onMounted(() => {
 @media (max-width: 700px) {
   .section-toolbar { align-items: stretch; flex-direction: column; }
   .section-toolbar > .row { display: grid; }
-  .risk-row { grid-template-columns: 5px 40px minmax(0, 1fr) auto; padding-right: 10px; gap: 10px; }
-  .risk-row > .q-badge { display: none; }
-  .risk-row > .row { grid-column: 3 / -1; justify-self: end; }
-  .risk-row__identity .row { display: none; }
+  .risk-row { grid-template-columns: 5px 40px minmax(0, 1fr); align-items: start; padding-right: 10px; gap: 10px; }
+  .risk-row__identity .row { display: flex; flex-wrap: wrap; margin-top: 6px; }
+  .risk-row > .q-badge { display: inline-flex; margin-top: 6px; justify-self: start; }
+  .risk-row > .row { grid-column: 3 / -1; justify-self: start; margin-top: 6px; }
+  .risk-metric { display: none; }
   .agenda-layout, .course-progress-grid { grid-template-columns: 1fr; }
   .assistant-layout { grid-template-columns: 1fr; }
   .agenda-summary { display: grid; grid-template-columns: 120px 1fr; }

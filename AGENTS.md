@@ -38,22 +38,36 @@ Aula-virtual/
 └── AGENTS.md
 ```
 
-## Codex + CodeGraph
+## Codex / Antigravity + CodeGraph
 
-CodeGraph esta configurado como MCP global de Codex. El indice vive en `.codegraph/codegraph.db`.
+CodeGraph esta configurado como MCP global de Codex y Antigravity. El indice vive en `.codegraph/codegraph.db`.
 
-Antes de sesiones grandes o cambios estructurales:
+Como se usa `--no-watch`, actualizar manualmente el indice antes de sesiones grandes. Debido a que el frontend es un submódulo Git y el backend está en la raíz, ambos comparten la misma base de datos de CodeGraph mediante un enlace simbólico (Junction).
+
+Para actualizar el índice de cada parte, ejecuta:
 
 ```powershell
+# Sincronizar cambios del backend (PHP/Laravel) en la raíz:
+cd "C:\PROYECTOS\PROYECTO AULA VIRTUAL"
+codegraph sync .
+
+# Sincronizar cambios del frontend (Vue/Quasar) en su subdirectorio:
+cd "C:\PROYECTOS\PROYECTO AULA VIRTUAL\Aula-virtual"
 codegraph sync .
 ```
 
-Si CodeGraph se bloquea o el contexto parece viejo:
+Si el índice se bloquea o queda inconsistente, puedes recrearlo ejecutando:
 
 ```powershell
+# En la raíz (reindexa backend):
+cd "C:\PROYECTOS\PROYECTO AULA VIRTUAL"
 codegraph unlock .
 codegraph index .
-codegraph context "tarea concreta"
+
+# En Aula-virtual (reindexa frontend):
+cd "C:\PROYECTOS\PROYECTO AULA VIRTUAL\Aula-virtual"
+codegraph unlock .
+codegraph index .
 ```
 
 ## Skills Recomendados

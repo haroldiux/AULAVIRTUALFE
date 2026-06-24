@@ -1,14 +1,19 @@
 <template>
   <div class="activity-studio">
     <div class="studio-form">
+      <q-form @submit.prevent="crearActividad" greedy>
+      <q-banner v-if="!opcionesCurso.length" rounded class="bg-warning text-black q-mb-md">
+        <template #avatar><q-icon name="warning" /></template>
+        No tienes cursos asignados. Crea un curso antes de continuar.
+      </q-banner>
       <q-stepper v-model="paso" flat animated color="primary" class="studio-stepper">
         <q-step :name="1" title="Ubicacion" icon="folder_open" :done="paso > 1">
           <div class="row q-col-gutter-md">
             <div class="col-12 col-md-6">
-              <q-select v-model="form.cursoId" :options="opcionesCurso" label="Curso" outlined emit-value map-options @update:model-value="form.seccionId = null" />
+              <q-select v-model="form.cursoId" :options="opcionesCurso" label="Curso" outlined emit-value map-options :rules="[val => !!val || 'Selecciona un curso']" @update:model-value="form.seccionId = null" />
             </div>
             <div class="col-12 col-md-6">
-              <q-select v-model="form.seccionId" :options="opcionesSeccion" label="Unidad o seccion" outlined emit-value map-options :disable="!form.cursoId" />
+              <q-select v-model="form.seccionId" :options="opcionesSeccion" label="Unidad o seccion" outlined emit-value map-options :disable="!form.cursoId" :rules="[val => !!val || 'Selecciona una unidad o seccion']" />
             </div>
           </div>
           <q-stepper-navigation><TaButton variant="primary" label="Continuar" icon="arrow_forward" :disable="!form.seccionId" @click="paso = 2" /></q-stepper-navigation>
@@ -28,7 +33,7 @@
               <span><strong>{{ tipo.label }}</strong><small>{{ tipo.descripcion }}</small></span>
             </button>
           </div>
-          <q-input v-model="form.titulo" label="Titulo claro para el estudiante" outlined class="q-mt-md" />
+          <q-input v-model="form.titulo" label="Titulo claro para el estudiante" outlined class="q-mt-md" :rules="[val => !!val?.trim() || 'El titulo es obligatorio']" />
           <q-input v-model="form.objetivo" label="Objetivo de aprendizaje" outlined type="textarea" rows="2" class="q-mt-md" />
           <q-stepper-navigation class="row q-gutter-sm">
             <TaButton variant="ghost" label="Atras" icon="arrow_back" @click="paso = 1" />
@@ -98,10 +103,11 @@
           </div>
           <q-stepper-navigation class="row q-gutter-sm">
             <TaButton variant="ghost" label="Atras" icon="arrow_back" @click="paso = 3" />
-            <TaButton variant="primary" label="Crear actividad" icon="add_task" @click="crearActividad" />
+            <TaButton variant="primary" label="Crear actividad" icon="add_task" type="submit" />
           </q-stepper-navigation>
         </q-step>
       </q-stepper>
+      </q-form>
     </div>
 
     <aside class="studio-summary">

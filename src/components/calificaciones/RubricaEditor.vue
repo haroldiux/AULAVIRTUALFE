@@ -9,42 +9,47 @@
       </div>
     </div>
 
-    <div class="rubrica-grid">
-      <div class="rubrica-header">
-        <div class="header-criterio">Criterio</div>
-        <div v-for="nivel in niveles" :key="nivel.nombre" class="header-nivel text-center">
-          <div class="text-weight-medium">{{ nivel.nombre }}</div>
-          <div class="text-caption">{{ nivel.descripcion }}</div>
+    <div class="rubrica-scroll">
+      <div class="rubrica-grid">
+        <div class="rubrica-header">
+          <div class="header-criterio">Criterio</div>
+          <div v-for="nivel in niveles" :key="nivel.nombre" class="header-nivel text-center">
+            <div class="text-weight-medium">{{ nivel.nombre }}</div>
+            <div class="text-caption av-text-secondary">{{ nivel.descripcion }}</div>
+          </div>
         </div>
-      </div>
 
-      <div v-for="(criterio, ci) in criterios" :key="ci" class="rubrica-row">
-        <div class="celda-criterio">
-          <div class="text-body2 text-weight-medium">{{ criterio.nombre }}</div>
-          <div class="text-caption text-grey-6">Valor: {{ criterio.puntos }} pts</div>
-        </div>
-        <div
-          v-for="(nivel, ni) in niveles"
-          :key="ni"
-          class="celda-nivel text-center cursor-pointer"
-          :class="{ 'nivel-seleccionado': seleccion[ci] === ni }"
-          @click="seleccionar(ci, ni)"
-        >
-          <div class="text-body2 text-weight-medium">{{ nivel.puntaje * criterio.puntos / 100 }}</div>
-          <div class="text-caption">{{ nivel.nombre }}</div>
+        <div v-for="(criterio, ci) in criterios" :key="ci" class="rubrica-row">
+          <div class="celda-criterio">
+            <div class="text-body2 text-weight-medium">{{ criterio.nombre }}</div>
+            <div class="text-caption av-text-secondary">Valor: {{ criterio.puntos }} pts</div>
+          </div>
+          <div
+            v-for="(nivel, ni) in niveles"
+            :key="ni"
+            class="celda-nivel text-center cursor-pointer"
+            :class="{ 'nivel-seleccionado': seleccion[ci] === ni }"
+            @click="seleccionar(ci, ni)"
+          >
+            <div class="text-body2 text-weight-medium">{{ nivel.puntaje * criterio.puntos / 100 }}</div>
+            <div class="text-caption av-text-secondary">{{ nivel.nombre }}</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div v-if="criterios.length === 0" class="text-center q-pa-md text-grey-6">
-      <q-icon name="rule" size="32px" color="grey-4" />
-      <p class="q-mt-sm">Sin criterios definidos para esta rubrica.</p>
-    </div>
+    <AppEmptyState
+      v-if="criterios.length === 0"
+      icon="rule"
+      title="Sin criterios definidos"
+      message="Esta rubrica aun no tiene criterios configurados."
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 
 const props = defineProps({
   actividad: { type: Object, required: true },
@@ -105,43 +110,53 @@ watch(() => props.modelValue, (val) => {
 </script>
 
 <style scoped>
+.rubrica-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .rubrica-grid {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
+  min-width: 600px;
+  border: 1px solid var(--ta-border-card);
+  border-radius: 8px;
   overflow: hidden;
 }
 .rubrica-header {
   display: grid;
   grid-template-columns: 180px repeat(4, 1fr);
-  background: #f5f5f5;
-  border-bottom: 2px solid #e0e0e0;
+  background: rgba(var(--primary-rgb), 0.06);
+  border-bottom: 2px solid var(--ta-border-card);
+}
+.body--dark .rubrica-header {
+  background: rgba(255, 255, 255, 0.06);
 }
 .header-criterio, .header-nivel {
   padding: 10px;
-  border-right: 1px solid #e0e0e0;
+  border-right: 1px solid var(--ta-border-card);
 }
 .rubrica-row {
   display: grid;
   grid-template-columns: 180px repeat(4, 1fr);
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--ta-border-card);
   transition: background 0.15s;
 }
 .rubrica-row:last-child { border-bottom: none; }
 .celda-criterio {
   padding: 10px;
-  border-right: 1px solid #e0e0e0;
-  background: #fafafa;
+  border-right: 1px solid var(--ta-border-card);
+  background: var(--ta-bg-card);
 }
 .celda-nivel {
   padding: 12px 8px;
-  border-right: 1px solid #e0e0e0;
+  border-right: 1px solid var(--ta-border-card);
   transition: all 0.15s;
 }
 .celda-nivel:last-child { border-right: none; }
-.celda-nivel:hover { background: #e8f5e9; }
+.celda-nivel:hover { background: rgba(var(--primary-rgb), 0.08); }
+.body--dark .celda-nivel:hover { background: rgba(var(--primary-rgb), 0.18); }
 .nivel-seleccionado {
-  background: var(--q-primary-light, #e3f2fd);
-  border: 2px solid var(--q-primary);
+  background: rgba(var(--primary-rgb), 0.14);
+  border: 2px solid var(--ta-primary);
   font-weight: bold;
 }
+.av-text-secondary { color: var(--ta-text-secondary); }
 </style>

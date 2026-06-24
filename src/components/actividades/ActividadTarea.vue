@@ -58,7 +58,7 @@
 
     <q-separator class="q-my-md" />
 
-    <template v-if="estadoEntrega === 'pendiente'">
+    <q-form v-if="estadoEntrega === 'pendiente'" @submit.prevent="entregar">
       <div class="text-subtitle2 text-weight-medium q-mb-sm">Subir Archivos</div>
       <q-card flat bordered class="q-mb-md drop-zone" :class="{ 'drag-over': isDragging }"
         @dragover.prevent="isDragging = true"
@@ -93,11 +93,11 @@
       <q-input v-model="textoEntrega" label="Texto de la entrega (opcional)" outlined type="textarea" rows="3" class="q-mb-md" />
 
       <div class="row q-gutter-sm">
-        <q-btn color="primary" icon="send" label="Enviar Entrega" @click="entregar"
+        <q-btn type="submit" color="primary" icon="send" label="Enviar Entrega"
           :disable="archivosMock.length === 0 && !textoEntrega.trim()" />
         <q-btn outline color="grey" icon="save" label="Guardar Borrador" />
       </div>
-    </template>
+    </q-form>
 
     <template v-else-if="estadoEntrega === 'entregado'">
       <q-banner rounded class="bg-green-1 text-green-8 q-mb-md">
@@ -145,7 +145,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useActividadesStore } from 'src/stores/actividades.js'
 import { useAuthStore } from 'src/stores/auth.js'
@@ -161,13 +161,11 @@ const isDragging = ref(false)
 const archivosMock = ref([])
 const textoEntrega = ref('')
 const reenviarModo = ref(false)
+const cargandoEntrega = ref(false)
 
-// Buscar entrega existente para este estudiante y actividad
 const entregaExistente = computed(() => {
   if (!authStore.usuario) return null
-  return actividadesStore.entregas.find(
-    (e) => e.estudiante_id === authStore.usuario.id && e.actividad_id === props.actividad.id
-  ) || null
+  return actividadesStore.getEntrega(authStore.usuario.id, props.actividad.id) || null
 })
 
 const estadoEntrega = computed({
@@ -178,16 +176,10 @@ const estadoEntrega = computed({
   set(val) {
     if (val === 'pendiente') {
       reenviarModo.value = true
-      // Precargar datos previos si existen
       if (entregaExistente.value) {
-        try {
-          const data = JSON.parse(entregaExistente.value.contenido || '{}')
-          textoEntrega.value = data.texto || ''
-          archivosMock.value = data.archivos || []
-        } catch {
-          textoEntrega.value = entregaExistente.value.contenido || ''
-          archivosMock.value = []
-        }
+        const data = entregaExistente.value.contenido || {}
+        textoEntrega.value = data.texto || ''
+        archivosMock.value = data.archivos || []
       }
     } else {
       reenviarModo.value = false
@@ -202,39 +194,31 @@ const fechaEntrega = computed(() => {
 
 const archivosEntregados = computed(() => {
   if (!entregaExistente.value) return []
-  try {
-    const data = JSON.parse(entregaExistente.value.contenido || '{}')
-    return data.archivos || []
-  } catch {
-    return []
-  }
+  const data = entregaExistente.value.contenido || {}
+  return data.archivos || []
 })
 
 const textoEntregado = computed(() => {
   if (!entregaExistente.value) return ''
-  try {
-    const data = JSON.parse(entregaExistente.value.contenido || '{}')
-    return data.texto || ''
-  } catch {
-    return entregaExistente.value.contenido || ''
-  }
+  const data = entregaExistente.value.contenido || {}
+  return data.texto || ''
 })
 
 const calificacion = computed(() => {
-  if (!entregaExistente.value || entregaExistente.value.estado !== 'calificado') return null
+  if (!entregaExistente.value?.calificacion) return null
   return {
-    nota: entregaExistente.value.nota ?? 0,
-    retroalimentacion: entregaExistente.value.retroalimentacion || 'Buen trabajo.',
+    nota: entregaExistente.value.calificacion.nota ?? 0,
+    retroalimentacion: entregaExistente.value.calificacion.retroalimentacion || 'Buen trabajo.',
   }
 })
 
 const colorEstado = computed(() => {
-  const m = { pendiente: 'orange', entregado: 'green', calificado: 'blue' }
+  const m = { pendiente: 'orange', entregado: 'green', revisado: 'blue', rechazado: 'red', calificado: 'blue' }
   return m[estadoEntrega.value] || 'grey'
 })
 
 const labelEstado = computed(() => {
-  const m = { pendiente: 'Pendiente', entregado: 'Entregado', calificado: 'Calificado' }
+  const m = { pendiente: 'Pendiente', entregado: 'Entregado', revisado: 'Calificado', rechazado: 'Rechazado', calificado: 'Calificado' }
   return m[estadoEntrega.value] || estadoEntrega.value
 })
 
@@ -255,23 +239,35 @@ function onDrop() {
   simularSeleccion()
 }
 
-function entregar() {
+async function entregar() {
   if (!authStore.usuario) {
     $q.notify({ message: 'Debes iniciar sesion para entregar', color: 'negative', icon: 'warning' })
     return
   }
-  const contenido = JSON.stringify({
-    texto: textoEntrega.value,
-    archivos: archivosMock.value,
-  })
-  actividadesStore.crearEntrega(authStore.usuario.id, props.actividad.id, contenido)
-  reenviarModo.value = false
-  archivosMock.value = []
-  textoEntrega.value = ''
-  $q.notify({ message: 'Tarea entregada exitosamente!', color: 'positive', icon: 'check_circle', timeout: 3000 })
+  cargandoEntrega.value = true
+  try {
+    const contenido = {
+      texto: textoEntrega.value,
+      archivos: archivosMock.value,
+    }
+    await actividadesStore.crearEntrega(authStore.usuario.id, props.actividad.id, contenido)
+    reenviarModo.value = false
+    archivosMock.value = []
+    textoEntrega.value = ''
+    $q.notify({ message: 'Tarea entregada exitosamente!', color: 'positive', icon: 'check_circle', timeout: 3000 })
+  } catch (err) {
+    $q.notify({ message: err?.message || 'Error al entregar tarea', color: 'negative', timeout: 3000 })
+  } finally {
+    cargandoEntrega.value = false
+  }
 }
 
-// Si cambia la actividad, resetear modo reenviar
+onMounted(async () => {
+  if (authStore.usuario) {
+    await actividadesStore.cargarMisEntregas()
+  }
+})
+
 watch(() => props.actividad.id, () => {
   reenviarModo.value = false
   archivosMock.value = []

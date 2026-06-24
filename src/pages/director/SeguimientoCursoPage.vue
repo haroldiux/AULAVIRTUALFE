@@ -12,6 +12,7 @@
           row-key="id"
           flat
           bordered
+          :grid="$q.screen.lt.md"
           :pagination="{ rowsPerPage: 8 }"
         >
           <template #body-cell-estado="props">
@@ -37,9 +38,16 @@
           </template>
           <template #body-cell-acciones="props">
             <q-td :props="props">
-              <TaButton variant="ghost" icon="visibility" aria-label="Ver curso" custom-class="q-pa-sm" />
-              <TaButton variant="ghost" icon="assessment" aria-label="Ver reporte" custom-class="q-pa-sm" />
+              <TaButton variant="ghost" icon="visibility" aria-label="Ver curso" custom-class="q-pa-sm" :to="`/director/curso/${props.row.id}`" />
+              <TaButton variant="ghost" icon="assessment" aria-label="Ver reporte" custom-class="q-pa-sm" :to="`/director/reportes?curso=${props.row.id}`" />
             </q-td>
+          </template>
+          <template #no-data>
+            <AppEmptyState
+              icon="school"
+              title="Sin cursos para seguimiento"
+              message="No hay cursos registrados en este periodo."
+            />
           </template>
         </q-table>
       </TaCard>
@@ -55,6 +63,7 @@ import TaPageHeader from 'src/components/tailadmin/TaPageHeader.vue'
 import TaCard from 'src/components/tailadmin/TaCard.vue'
 import TaButton from 'src/components/tailadmin/TaButton.vue'
 import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
+import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 import { useStaggerCards } from 'src/composables/useAnimations'
 import { useLoadingState } from 'src/composables/useLoadingState'
 

@@ -13,6 +13,7 @@
           <TaButton variant="primary" icon="visibility" label="Previsualizar" @click="previsualizarCurso" />
           <TaButton v-if="curso.estado === 'borrador'" variant="primary" icon="publish" label="Publicar" @click="publicarCurso" />
           <TaButton v-else variant="secondary" icon="unpublished" label="Despublicar" />
+          <TaButton variant="outline" icon="sync" label="Sincronizar Estudiantes" :loading="sincronizandoEstudiantes" @click="syncEstudiantes" />
           <TaButton variant="ghost" icon="more_vert" aria-label="Opciones del curso">
             <q-menu>
               <q-list dense style="min-width: 180px">
@@ -75,6 +76,7 @@
                 item-key="id"
                 animation="200"
                 ghost-class="ghost-card"
+                @change="onSeccionesChange"
               >
                 <template #item="{ element: seccion }">
                   <q-card flat bordered class="q-mb-sm seccion-card">
@@ -142,6 +144,10 @@
                                     <q-item clickable v-close-popup>
                                       <q-item-section avatar><q-icon name="content_copy" /></q-item-section>
                                       <q-item-section>Duplicar</q-item-section>
+                                    </q-item>
+                                    <q-item clickable v-close-popup @click.stop="guardarComoPlantilla(act)">
+                                      <q-item-section avatar><q-icon name="archive" color="primary" /></q-item-section>
+                                      <q-item-section class="text-primary">Guardar como Plantilla</q-item-section>
                                     </q-item>
                                     <q-separator />
                                     <q-item clickable v-close-popup @click.stop="eliminarActividad(act.id)">
@@ -215,7 +221,7 @@
 
     <!-- Dialogos (seccion, tipo actividad, formulario actividad, SISA, confirmar eliminar) -->
     <q-dialog v-model="dialogoSeccion">
-      <q-card class="dialog-card" style="min-width: 450px">
+      <q-card class="dialog-card">
         <q-card-section>
           <div class="text-h6">{{ seccionEditando ? 'Editar Seccion' : 'Nueva Seccion' }}</div>
         </q-card-section>
@@ -231,12 +237,24 @@
     </q-dialog>
 
     <q-dialog v-model="tipoActividadDialog">
-      <q-card class="dialog-card" style="min-width: 350px">
+      <q-card class="dialog-card">
         <q-card-section>
           <div class="text-h6">Seleccionar Tipo de Actividad</div>
         </q-card-section>
         <q-card-section>
           <q-list>
+            <!-- Banco Docente Item -->
+            <q-item clickable v-ripple @click="abrirBancoDocente" class="bg-purple-1 text-primary q-mb-sm rounded" style="border-radius: 8px;">
+              <q-item-section avatar>
+                <q-icon name="archive" color="primary" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-bold">Banco Docente (Plantillas)</q-item-label>
+                <q-item-label caption class="text-primary">Importa una actividad prediseñada de la biblioteca institucional</q-item-label>
+              </q-item-section>
+            </q-item>
+            <q-separator class="q-mb-md" />
+
             <q-item v-for="tipo in tiposActividad" :key="tipo.valor" clickable v-ripple v-close-popup @click="abrirFormularioActividad(tipo.valor)">
               <q-item-section avatar>
                 <q-icon :name="tipo.icon" :color="tipo.color" />
@@ -255,7 +273,7 @@
     </q-dialog>
 
     <q-dialog v-model="dialogoActividad" persistent>
-      <q-card class="dialog-card" style="min-width: 550px; max-width: 700px">
+      <q-card class="dialog-card">
         <q-card-section>
           <div class="text-h6">{{ actividadEditando ? 'Editar ' + labelTipo(formActividad.tipo) : 'Nueva ' + labelTipo(formActividad.tipo) }}</div>
         </q-card-section>
@@ -427,7 +445,7 @@
 
     <!-- Dialogo Cargar Plantilla -->
     <q-dialog v-model="dialogoPlantillas">
-      <q-card class="dialog-card" style="min-width: 500px; max-width: 650px">
+      <q-card class="dialog-card">
         <q-card-section>
           <div class="text-h6">Cargar Plantilla</div>
           <p class="text-grey-7 q-mb-none">Selecciona una plantilla para aplicar su estructura al curso actual.</p>
@@ -464,6 +482,139 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Dialogo Guardar como Plantilla en Banco Docente -->
+    <q-dialog v-model="dialogoGuardarPlantillaActividad" persistent>
+      <q-card style="width: 460px; max-width: 90vw; border-radius: 16px;">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6 text-weight-bold">Guardar en Banco Docente</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section class="q-gutter-y-md">
+          <p class="text-caption text-grey-7 q-mb-none">
+            Guarda esta actividad como plantilla para reutilizarla en tus cursos o compartirla con otros docentes de la institución.
+          </p>
+          <q-input
+            v-model="plantillaActividadForm.nombre"
+            label="Nombre de la Plantilla"
+            outlined
+            dense
+            :rules="[val => !!val || 'El nombre es obligatorio']"
+          />
+          <q-input
+            v-model="plantillaActividadForm.descripcion"
+            label="Descripción / Recomendaciones de Uso"
+            type="textarea"
+            rows="3"
+            outlined
+            dense
+          />
+          <q-toggle
+            v-model="plantillaActividadForm.publica"
+            label="Hacer pública para otros docentes"
+            color="primary"
+          />
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md">
+          <TaButton variant="ghost" label="Cancelar" v-close-popup />
+          <TaButton variant="primary" label="Guardar Plantilla" @click="confirmarGuardarPlantilla" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Dialogo Banco Docente (Cargar Plantilla) -->
+    <q-dialog v-model="dialogoBancoDocente" persistent>
+      <q-card style="width: 600px; max-width: 95vw; border-radius: 16px;">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6 text-weight-bold">Banco Docente Institucional</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <!-- Filtros del Banco -->
+          <div class="row q-col-gutter-sm items-center q-mb-md">
+            <div class="col-6">
+              <q-select
+                v-model="filtroCategoriaBanco"
+                :options="[
+                  {label: 'Todas las Categorías', value: 'todos'},
+                  {label: 'Actividades', value: 'actividad'},
+                  {label: 'Rúbricas', value: 'rubrica'},
+                  {label: 'Preguntas', value: 'preguntas'}
+                ]"
+                label="Categoría"
+                outlined
+                dense
+                emit-value
+                map-options
+                @update:model-value="cargarPlantillasBanco"
+              />
+            </div>
+            <div class="col-6">
+              <q-select
+                v-model="filtroTipoBanco"
+                :options="[
+                  {label: 'Todos los Tipos', value: 'todos'},
+                  {label: 'Tareas', value: 'tarea'},
+                  {label: 'Cuestionarios', value: 'cuestionario'},
+                  {label: 'Foros', value: 'foro'}
+                ]"
+                label="Tipo"
+                outlined
+                dense
+                emit-value
+                map-options
+                @update:model-value="cargarPlantillasBanco"
+              />
+            </div>
+          </div>
+
+          <!-- Listado de Plantillas -->
+          <q-scroll-area style="height: 300px;" class="border rounded q-pa-sm bg-glass-soft">
+            <q-list separator v-if="plantillasBancoDocente.length > 0">
+              <q-item v-for="p in plantillasBancoDocente" :key="p.id" class="q-py-md">
+                <q-item-section avatar>
+                  <q-avatar color="primary-1" text-color="primary" size="40px">
+                    <q-icon :name="iconoTipo(p.tipo)" />
+                  </q-avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-weight-bold">{{ p.nombre }}</q-item-label>
+                  <q-item-label caption lines="2">{{ p.descripcion || 'Sin descripción' }}</q-item-label>
+                  <q-item-label caption class="q-mt-xs text-xs text-grey-5">
+                    Por: {{ p.docente?.nombre || 'Docente UNITEPC' }} · Usada {{ p.uso_count }} veces
+                    <q-badge v-if="p.publica" color="teal-1" text-color="teal-9" class="q-ml-sm">Pública</q-badge>
+                    <q-badge v-else color="grey-3" text-color="grey-8" class="q-ml-sm">Privada</q-badge>
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <TaButton
+                    variant="primary"
+                    label="Importar"
+                    size="sm"
+                    dense
+                    @click="importarPlantillaBanco(p)"
+                  />
+                </q-item-section>
+              </q-item>
+            </q-list>
+
+            <div v-else class="text-center q-pa-xl text-grey-6">
+              <q-icon name="archive" size="48px" color="grey-4" />
+              <p class="q-mt-sm">No se encontraron plantillas disponibles.</p>
+            </div>
+          </q-scroll-area>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md">
+          <TaButton variant="ghost" label="Cerrar" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -484,6 +635,8 @@ import AppSkeleton from 'src/components/ui/AppSkeleton.vue'
 import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 import { useLoadingState } from 'src/composables/useLoadingState'
 import { getActivityModel } from 'src/utils/activityModel'
+import { integracionService } from 'src/services/integracionService.js'
+import { bancoDocenteService } from 'src/services/bancoDocenteService.js'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -534,7 +687,10 @@ function inicializarListas() {
 
 inicializarListas()
 
-onMounted(() => {
+onMounted(async () => {
+  const curso = await cursosStore.cargarCurso(Number(route.params.id))
+  if (curso) actividadesStore.cargarDesdeCursos([curso])
+  inicializarListas()
   finalizarCarga()
 })
 
@@ -577,16 +733,52 @@ function onActividadMove() {
   return true
 }
 
-function onActividadChange(seccionId, evt) {
-  sincronizarAlStore(seccionId)
-  if (evt.added) {
-    const originalSeccion = evt.added.element.seccion_id
-    if (originalSeccion && originalSeccion !== seccionId) {
-      sincronizarAlStore(originalSeccion)
+async function onSeccionesChange(evt) {
+  if (evt.moved || evt.added || evt.removed) {
+    const ids = curso.value.secciones.map((s) => s.id)
+    try {
+      await cursosStore.reordenarSecciones(curso.value.id, ids)
+      $q.notify({ message: 'Orden de secciones actualizado', color: 'positive', timeout: 1000 })
+    } catch (err) {
+      console.error('[builder] Error al reordenar secciones:', err)
+      $q.notify({ message: 'Error al guardar el orden de secciones', color: 'negative', timeout: 2000 })
     }
   }
+}
+
+async function onActividadChange(seccionId, evt) {
+  sincronizarAlStore(seccionId)
+  
   if (evt.moved) {
-    evt.moved.element.seccion_id = seccionId
+    const ids = listasActividades[seccionId].map((a) => a.id)
+    try {
+      await actividadesStore.reordenarActividades(seccionId, ids)
+    } catch (err) {
+      console.error('[builder] Error al reordenar actividades:', err)
+      $q.notify({ message: 'Error al guardar el orden de actividades', color: 'negative', timeout: 2000 })
+    }
+  }
+  
+  if (evt.added) {
+    const act = evt.added.element
+    try {
+      await actividadesStore.actualizarActividad(act.id, { seccion_id: seccionId })
+      act.seccion_id = seccionId
+      const ids = listasActividades[seccionId].map((a) => a.id)
+      await actividadesStore.reordenarActividades(seccionId, ids)
+    } catch (err) {
+      console.error('[builder] Error al mover actividad:', err)
+      $q.notify({ message: 'Error al trasladar actividad de seccion', color: 'negative', timeout: 2000 })
+    }
+  }
+
+  if (evt.removed) {
+    const ids = listasActividades[seccionId].map((a) => a.id)
+    try {
+      await actividadesStore.reordenarActividades(seccionId, ids)
+    } catch (err) {
+      console.error('[builder] Error al reordenar origen de actividad:', err)
+    }
   }
 }
 
@@ -618,13 +810,13 @@ function abrirDialogoSeccion(seccion = null) {
   dialogoSeccion.value = true
 }
 
-function guardarSeccion() {
+async function guardarSeccion() {
   if (!formSeccion.value.titulo.trim()) return
   if (seccionEditando.value) {
-    cursosStore.actualizarSeccion(curso.value.id, seccionEditando.value.id, { ...formSeccion.value })
+    await cursosStore.actualizarSeccion(curso.value.id, seccionEditando.value.id, { ...formSeccion.value })
     $q.notify({ message: 'Seccion actualizada', color: 'positive', timeout: 1500 })
   } else {
-    cursosStore.agregarSeccion(curso.value.id, { ...formSeccion.value })
+    await cursosStore.agregarSeccion(curso.value.id, { ...formSeccion.value })
     $q.notify({ message: 'Seccion agregada', color: 'positive', timeout: 1500 })
   }
   dialogoSeccion.value = false
@@ -637,6 +829,117 @@ const dialogoActividad = ref(false)
 const actividadEditando = ref(null)
 const formActividad = ref(initFormActividad())
 const modeloFormActividad = computed(() => getActivityModel(formActividad.value))
+
+// Banco Docente variables and methods
+const dialogoGuardarPlantillaActividad = ref(false)
+const plantillaActividadForm = ref({ nombre: '', descripcion: '', publica: true })
+const actividadParaPlantilla = ref(null)
+
+const dialogoBancoDocente = ref(false)
+const plantillasBancoDocente = ref([])
+const filtroCategoriaBanco = ref('todos')
+const filtroTipoBanco = ref('todos')
+
+function guardarComoPlantilla(act) {
+  actividadParaPlantilla.value = act
+  plantillaActividadForm.value = {
+    nombre: act.titulo,
+    descripcion: act.descripcion || '',
+    publica: true
+  }
+  dialogoGuardarPlantillaActividad.value = true
+}
+
+async function confirmarGuardarPlantilla() {
+  if (!plantillaActividadForm.value.nombre.trim()) return
+  const act = actividadParaPlantilla.value
+  
+  const data = {
+    categoria: 'actividad',
+    tipo: act.tipo,
+    nombre: plantillaActividadForm.value.nombre,
+    descripcion: plantillaActividadForm.value.descripcion,
+    datos: {
+      titulo: act.titulo,
+      descripcion: act.descripcion,
+      tiene_nota: act.tiene_nota,
+      nota_maxima: act.nota_maxima,
+      peso: act.peso,
+      config: act.config || {}
+    },
+    publica: plantillaActividadForm.value.publica
+  }
+
+  try {
+    await bancoDocenteService.crear(data)
+    $q.notify({ message: 'Guardado exitosamente en el Banco Docente', color: 'positive', timeout: 2000 })
+    dialogoGuardarPlantillaActividad.value = false
+  } catch (err) {
+    console.error(err)
+    $q.notify({ message: 'Error al guardar la plantilla', color: 'negative' })
+  }
+}
+
+function abrirBancoDocente() {
+  tipoActividadDialog.value = false
+  dialogoBancoDocente.value = true
+  filtroCategoriaBanco.value = 'todos'
+  filtroTipoBanco.value = 'todos'
+  cargarPlantillasBanco()
+}
+
+async function cargarPlantillasBanco() {
+  try {
+    const params = {}
+    if (filtroCategoriaBanco.value !== 'todos') {
+      params.categoria = filtroCategoriaBanco.value
+    }
+    if (filtroTipoBanco.value !== 'todos') {
+      params.tipo = filtroTipoBanco.value
+    }
+    const res = await bancoDocenteService.listar(params)
+    plantillasBancoDocente.value = res.data?.data || res.data || []
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+async function importarPlantillaBanco(plantilla) {
+  const sid = seccionActivaParaAgregar.value
+  const datos = plantilla.datos
+  
+  try {
+    await bancoDocenteService.usar(plantilla.id)
+  } catch (err) {
+    console.error(err)
+  }
+
+  const nuevoBloque = {
+    tipo: plantilla.tipo,
+    titulo: datos.titulo || plantilla.nombre,
+    descripcion: datos.descripcion || plantilla.descripcion || '',
+    tiene_nota: datos.tiene_nota !== undefined ? datos.tiene_nota : true,
+    nota_maxima: datos.nota_maxima || 100,
+    peso: datos.peso || 1.0,
+    seccion_id: sid,
+    orden: (listasActividades[sid] || []).length + 1,
+    config: datos.config || {}
+  }
+
+  try {
+    const id = await actividadesStore.agregarActividad(sid, nuevoBloque)
+    nuevoBloque.id = id
+    if (!listasActividades[sid]) listasActividades[sid] = []
+    listasActividades[sid].push(nuevoBloque)
+    
+    $q.notify({ message: 'Actividad importada desde el Banco Docente', color: 'positive', timeout: 2000 })
+    dialogoBancoDocente.value = false
+    inicializarListas()
+  } catch (err) {
+    console.error(err)
+    $q.notify({ message: 'Error al importar actividad', color: 'negative' })
+  }
+}
 
 function initFormActividad() {
   return {
@@ -712,7 +1015,7 @@ async function onH5pFileChange(file) {
   }
 }
 
-function guardarActividad() {
+async function guardarActividad() {
   if (!formActividad.value.titulo.trim()) return
   const esActividad = ['leccion', 'tarea', 'foro', 'cuestionario', 'encuesta', 'h5p'].includes(formActividad.value.tipo)
   const sid = seccionActivaParaAgregar.value
@@ -726,7 +1029,7 @@ function guardarActividad() {
 
   if (actividadEditando.value) {
     if (esActividad) {
-      actividadesStore.actualizarActividad(actividadEditando.value.id, { ...formActividad.value })
+      await actividadesStore.actualizarActividad(actividadEditando.value.id, { ...formActividad.value })
     }
     $q.notify({ message: 'Bloque actualizado', color: 'positive', timeout: 1500 })
   } else {
@@ -736,7 +1039,8 @@ function guardarActividad() {
       orden: (listasActividades[sid] || []).length + 1,
     }
     if (esActividad) {
-      actividadesStore.agregarActividad(nuevoBloque)
+      const id = await actividadesStore.agregarActividad(sid, nuevoBloque)
+      nuevoBloque.id = id
     }
     if (!listasActividades[sid]) listasActividades[sid] = []
     listasActividades[sid].push(nuevoBloque)
@@ -768,12 +1072,12 @@ function eliminarActividad(id) {
   dialogoConfirmar.value = true
 }
 
-function confirmarEliminacion() {
+async function confirmarEliminacion() {
   if (modoEliminar.value === 'seccion' && itemAEliminarSeccion.value) {
-    cursosStore.eliminarSeccion(curso.value.id, itemAEliminarSeccion.value.id)
+    await cursosStore.eliminarSeccion(curso.value.id, itemAEliminarSeccion.value.id)
     $q.notify({ message: 'Seccion eliminada', color: 'warning', timeout: 1500 })
   } else if (itemAEliminarAct.value) {
-    actividadesStore.eliminarActividad(itemAEliminarAct.value.id)
+    await actividadesStore.eliminarActividad(itemAEliminarAct.value.id)
     $q.notify({ message: 'Actividad eliminada', color: 'warning', timeout: 1500 })
   }
   dialogoConfirmar.value = false
@@ -786,9 +1090,37 @@ function previsualizarCurso() {
   router.push(`/docente/curso/${cursoId}/preview`)
 }
 
-function publicarCurso() {
-  cursosStore.actualizarCurso(curso.value.id, { estado: 'publicado' })
+async function publicarCurso() {
+  await cursosStore.publicarCurso(curso.value.id)
   $q.notify({ message: 'Curso publicado! Los estudiantes ya pueden verlo.', color: 'positive', timeout: 3000, icon: 'check_circle' })
+}
+
+const sincronizandoEstudiantes = ref(false)
+
+async function syncEstudiantes() {
+  if (!curso.value) return
+  sincronizandoEstudiantes.value = true
+  try {
+    const res = await integracionService.sincronizarEstudiantes(curso.value.id)
+    const data = res.data?.data || res.data
+    $q.notify({
+      message: `Sincronización de estudiantes completada: ${data.total_matriculas} matriculados (${data.estudiantes_matriculados} nuevos).`,
+      color: 'positive',
+      icon: 'check_circle',
+      timeout: 3000
+    })
+    // Reload course to update student count in the header
+    await cursosStore.cargarCurso(curso.value.id)
+  } catch (err) {
+    console.error('[Builder] Error al sincronizar estudiantes:', err)
+    $q.notify({
+      message: 'Error al sincronizar estudiantes con el sistema de matrículas',
+      color: 'negative',
+      timeout: 3000
+    })
+  } finally {
+    sincronizandoEstudiantes.value = false
+  }
 }
 
 function duplicarCurso() {
@@ -820,10 +1152,10 @@ function sisaConectar() {
   setTimeout(() => { $q.loading.hide(); sisaPaso.value = 'mapear' }, 1200)
 }
 
-function sisaGenerar() {
+async function sisaGenerar() {
   const nroSecciones = Math.floor(Math.random() * 3) + 2
   for (let i = 0; i < nroSecciones; i++) {
-    cursosStore.agregarSeccion(curso.value.id, {
+    await cursosStore.agregarSeccion(curso.value.id, {
       titulo: `Unidad ${['I', 'II', 'III', 'IV'][i]} — Importada desde SISA`,
       descripcion: `Contenido del PAC de ${sisaAsignatura.value?.label ?? 'SISA'}`,
     })
@@ -947,30 +1279,31 @@ function guardarPlantilla() {
   $q.notify({ message: `Plantilla "${nueva.nombre}" guardada`, color: 'positive', timeout: 2000 })
 }
 
-function cargarPlantilla(plantilla) {
+async function cargarPlantilla(plantilla) {
   if (!curso.value) return
   // Limpiar secciones existentes
   const seccionesActuales = [...curso.value.secciones]
-  seccionesActuales.forEach((s) => cursosStore.eliminarSeccion(curso.value.id, s.id))
+  for (const s of seccionesActuales) {
+    await cursosStore.eliminarSeccion(curso.value.id, s.id)
+  }
 
   // Crear nuevas secciones desde la plantilla
-  plantilla.data.forEach((secData) => {
-    cursosStore.agregarSeccion(curso.value.id, {
+  for (const secData of plantilla.data) {
+    await cursosStore.agregarSeccion(curso.value.id, {
       titulo: secData.titulo,
       descripcion: secData.descripcion,
     })
     const nuevaSeccion = curso.value.secciones[curso.value.secciones.length - 1]
     if (nuevaSeccion && secData.actividades) {
-      secData.actividades.forEach((actData) => {
-        actividadesStore.agregarActividad({
-          seccion_id: nuevaSeccion.id,
+      for (const actData of secData.actividades) {
+        await actividadesStore.agregarActividad(nuevaSeccion.id, {
           orden: actividadesStore.actividades.filter((a) => a.seccion_id === nuevaSeccion.id).length + 1,
           ...actData,
           config: { ...actData.config },
         })
-      })
+      }
     }
-  })
+  }
   recargarActividades()
   $q.notify({ message: `Plantilla "${plantilla.nombre}" cargada!`, color: 'positive', timeout: 3000, icon: 'check_circle' })
 }
@@ -1056,7 +1389,7 @@ if (plantillas.value.length === 0) {
 }
 
 .sisa-wizard { max-width: 700px; width: 100%; border-radius: 20px; }
-.dialog-card { border-radius: 20px; }
+.dialog-card { width: min(700px, 92vw); border-radius: 20px; }
 .section-count {
   background: rgba(var(--primary-rgb), 0.12);
   color: var(--ta-primary);

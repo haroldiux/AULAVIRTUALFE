@@ -117,10 +117,14 @@ onUnmounted(() => {
 
 <style scoped>
 .h5p-wrapper {
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--ta-border-card);
   border-radius: 6px;
   overflow: hidden;
-  background: #fafafa;
+  background: var(--ta-bg-card);
+}
+.body--dark .h5p-wrapper {
+  background: var(--ta-bg-elevated);
+  border-color: var(--ta-border-card);
 }
 .h5p-container {
   min-height: 400px;

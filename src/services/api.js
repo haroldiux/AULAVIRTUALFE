@@ -25,7 +25,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       const auth = useAuthStore()
       auth.logout()
-      window.location.href = '/login'
+      window.location.href = '/'
     }
     return Promise.reject({ error: true, message, status: error.response?.status })
   }

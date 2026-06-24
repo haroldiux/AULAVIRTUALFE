@@ -26,7 +26,7 @@
           size="10px"
           rounded
           color="secondary"
-          track-color="white"
+          :track-color="$q.dark.isActive ? 'grey-8' : 'white'"
         />
       </div>
     </template>
@@ -80,6 +80,8 @@
           dense
           outlined
           debounce="150"
+          label="Buscar cursos, docentes o codigos"
+          aria-label="Buscar cursos, docentes o codigos"
           placeholder="Buscar cursos, docentes o codigos..."
           class="search-input"
         >
@@ -193,7 +195,13 @@
         </TaCard>
 
         <TaCard title="Docentes activos" subtitle="Referentes de tus cursos" :padding="false" class="card-item">
-          <q-list separator>
+          <AppEmptyState
+            v-if="!misInstructores.length"
+            icon="groups"
+            title="Sin docentes activos"
+            message="Tus docentes apareceran cuando tengas cursos matriculados."
+          />
+          <q-list v-else separator>
             <q-item v-for="instructor in misInstructores" :key="instructor.id + '-' + instructor.cursoId" class="av-list-item q-py-md">
               <q-item-section avatar>
                 <q-avatar size="42px"><img :src="instructor.avatar" /></q-avatar>

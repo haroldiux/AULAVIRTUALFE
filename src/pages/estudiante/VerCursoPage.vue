@@ -53,13 +53,13 @@
                 Pendientes
                 <q-badge v-if="pendientesMostrados.length" color="negative" text-color="white" dense class="q-ml-xs">{{ pendientesMostrados.length }}</q-badge>
               </div>
-              <q-list dense separator>
-                <q-item v-if="pendientesMostrados.length === 0" class="text-center q-py-sm av-text-secondary">
-                  <q-item-section>
-                    <q-icon name="check_circle" size="24px" color="positive" />
-                    <div class="text-caption av-text-secondary">Sin pendientes</div>
-                  </q-item-section>
-                </q-item>
+              <AppEmptyState
+                v-if="pendientesMostrados.length === 0"
+                icon="check_circle"
+                title="Sin pendientes"
+                message="No tienes actividades por entregar en esta seccion."
+              />
+              <q-list v-else dense separator>
                 <q-item
                   v-for="act in pendientesMostrados"
                   :key="act.id"
@@ -185,7 +185,6 @@ import { useRoute } from 'vue-router'
 import { useCursosStore } from 'src/stores/cursos'
 import { useActividadesStore } from 'src/stores/actividades'
 import { useAuthStore } from 'src/stores/auth'
-import { calificaciones as mockCalificaciones } from 'src/mock/index.js'
 import { useStaggerCards, useReflectionHover } from 'src/composables/useAnimations'
 import { useLoadingState } from 'src/composables/useLoadingState'
 import ActividadLeccion from 'src/components/actividades/ActividadLeccion.vue'
@@ -296,17 +295,13 @@ function onH5pCompleted({ raw, max, notaFinal }) {
   actividadesStore.crearEntrega(
     estudianteId.value,
     actId,
-    JSON.stringify({ texto: `H5P completado. Puntuacion: ${raw}/${max}`, archivos: [] })
+    {
+      texto: `H5P completado. Puntuacion: ${raw}/${max}`,
+      archivos: [],
+      nota: notaFinal
+    }
   )
   actividadesStore.marcarActividadRealizada(estudianteId.value, actId)
-  // Guardar calificacion en mock
-  if (!mockCalificaciones[cursoId]) mockCalificaciones[cursoId] = {}
-  if (!mockCalificaciones[cursoId][estudianteId.value]) mockCalificaciones[cursoId][estudianteId.value] = {}
-  mockCalificaciones[cursoId][estudianteId.value][actId] = {
-    nota: notaFinal,
-    porcentaje: Math.round((notaFinal / (actividadSeleccionada.value.nota_maxima || 100)) * 100),
-    retro: 'Calificacion automatica por H5P',
-  }
 }
 
 function colorEstado(estado) {
@@ -372,7 +367,9 @@ function abrirActividadDesdeQuery() {
   })
 }
 
-onMounted(() => {
+onMounted(async () => {
+  const curso = await cursosStore.cargarCurso(Number(route.params.id))
+  if (curso) actividadesStore.cargarDesdeCursos([curso])
   abrirActividadDesdeQuery()
   finalizarCarga()
 })

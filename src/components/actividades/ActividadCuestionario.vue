@@ -59,7 +59,7 @@
       </div>
     </template>
 
-    <template v-if="fase === 'activo'">
+    <q-form v-if="fase === 'activo'" ref="quizForm" @submit.prevent="finalizar" greedy>
       <div class="row items-center q-mb-lg">
         <div class="col">
           <div class="text-h6">{{ actividad.titulo }}</div>
@@ -89,7 +89,6 @@
                   <q-radio
                     v-model="respuestas[preguntaActual]"
                     :val="i"
-                    :label="opcion.texto"
                   />
                 </q-item-section>
                 <q-item-section>
@@ -148,10 +147,10 @@
         />
         <q-btn
           v-else
+          type="submit"
           color="green"
           icon="send"
           label="Finalizar Cuestionario"
-          @click="finalizar"
         />
       </div>
 
@@ -165,10 +164,11 @@
           :color="respuestas[i] !== undefined ? 'primary' : 'grey-4'"
           :text-color="respuestas[i] !== undefined ? 'white' : 'grey-7'"
           :label="String(i + 1)"
+          :aria-label="`Ir a la pregunta ${i + 1}`"
           @click="preguntaActual = i"
         />
       </div>
-    </template>
+    </q-form>
 
     <template v-if="fase === 'resultado'">
       <div class="text-center q-pa-lg">
@@ -220,7 +220,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useActividadesStore } from 'src/stores/actividades.js'
 import { useAuthStore } from 'src/stores/auth.js'
@@ -238,27 +238,20 @@ const respuestas = ref({})
 const tiempoRestante = ref((props.actividad.config?.tiempo_limite_minutos || 20) * 60)
 const tiempoUsado = ref('')
 const notaObtenida = ref(0)
+const quizForm = ref(null)
 let timer = null
+
+const datosIntentos = ref({ intentos: [], intentos_realizados: 0, intentos_maximos: 1, mejor_nota: null })
 
 const preguntas = computed(() => props.actividad.config?.preguntas || [])
 
-const intentosUsados = computed(() => {
-  if (!authStore.usuario) return 0
-  return actividadesStore.getIntentosCuestionario(authStore.usuario.id, props.actividad.id)
-})
-
-const intentosMaximos = computed(() => props.actividad.config?.intentos_maximos || 1)
-
+const intentosUsados = computed(() => datosIntentos.value.intentos_realizados || 0)
+const intentosMaximos = computed(() => datosIntentos.value.intentos_maximos || props.actividad.config?.intentos_maximos || 1)
 const puedeIntentar = computed(() => intentosUsados.value < intentosMaximos.value)
 
 const resultadoPrevio = computed(() => {
-  if (!authStore.usuario) return null
-  const entregas = actividadesStore.entregas.filter(
-    (e) => e.estudiante_id === authStore.usuario.id && e.actividad_id === props.actividad.id
-  )
-  if (!entregas.length) return null
-  // Tomar la entrega con mejor nota
-  return entregas.reduce((mejor, e) => ((e.nota || 0) > (mejor.nota || 0) ? e : mejor), entregas[0])
+  if (!datosIntentos.value.intentos?.length) return null
+  return datosIntentos.value.intentos.reduce((mejor, i) => ((i.nota || 0) > (mejor.nota || 0) ? i : mejor), datosIntentos.value.intentos[0])
 })
 
 const formatoTiempo = computed(() => {
@@ -274,6 +267,10 @@ const puntajeMaximo = computed(() => preguntas.value.reduce((s, p) => s + (p.pun
 const porcentaje = computed(() => {
   if (!puntajeMaximo.value) return 0
   return Math.round((notaObtenida.value / puntajeMaximo.value) * 100)
+})
+
+onMounted(async () => {
+  datosIntentos.value = await actividadesStore.cargarIntentosCuestionario(props.actividad.id)
 })
 
 function iniciar() {
@@ -296,7 +293,14 @@ function siguientePregunta() {
   if (preguntaActual.value < preguntas.value.length - 1) preguntaActual.value++
 }
 
-function finalizar() {
+async function finalizar() {
+  if (quizForm.value) {
+    const ok = await quizForm.value.validate()
+    if (!ok) {
+      $q.notify({ message: 'Responde todas las preguntas antes de finalizar.', color: 'negative', icon: 'warning' })
+      return
+    }
+  }
   clearInterval(timer)
   const tiempoTotal = (props.actividad.config?.tiempo_limite_minutos || 20) * 60
   const usado = tiempoTotal - tiempoRestante.value
@@ -310,12 +314,19 @@ function finalizar() {
   fase.value = 'resultado'
 
   if (authStore.usuario) {
-    actividadesStore.guardarResultadoCuestionario(
-      authStore.usuario.id,
-      props.actividad.id,
-      nota,
-      { ...respuestas.value }
-    )
+    try {
+      const resultado = await actividadesStore.guardarResultadoCuestionario(
+        authStore.usuario.id,
+        props.actividad.id,
+        { ...respuestas.value }
+      )
+      if (resultado) {
+        notaObtenida.value = resultado.nota || nota
+        datosIntentos.value = await actividadesStore.cargarIntentosCuestionario(props.actividad.id)
+      }
+    } catch (err) {
+      $q.notify({ message: err?.message || 'Error al guardar intento', color: 'negative', timeout: 3000 })
+    }
   }
 }
 

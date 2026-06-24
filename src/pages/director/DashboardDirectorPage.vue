@@ -21,7 +21,7 @@
         label="Carrera"
         map-options
         emit-value
-        style="min-width: 240px"
+        style="min-width: 180px; max-width: 260px; width: 100%"
       />
       <q-btn flat no-caps color="primary" icon="insights" label="Observatorio" to="/director/observatorio" />
       <q-btn outline no-caps color="primary" icon="assessment" label="Reportes" to="/director/reportes" />

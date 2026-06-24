@@ -68,7 +68,6 @@
 import { computed, onMounted } from 'vue'
 import { useCursosStore } from 'src/stores/cursos'
 import { useAuthStore } from 'src/stores/auth'
-import { matriculas as mockMatriculas } from 'src/mock/index.js'
 import { useActividadesStore } from 'src/stores/actividades'
 import { useStaggerCards, useReflectionHover } from 'src/composables/useAnimations'
 import { useLoadingState } from 'src/composables/useLoadingState'
@@ -85,9 +84,7 @@ const actividadesStore = useActividadesStore()
 const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 600 })
 
 const misCursos = computed(() => {
-  const userMatriculas = mockMatriculas.filter((m) => m.estudiante_id === auth.usuario?.id)
-  const cursoIds = userMatriculas.map((m) => m.curso_id)
-  return cursosStore.cursos.filter((c) => cursoIds.includes(c.id))
+  return cursosStore.publicados
 })
 
 function contadoresCurso(curso) {
@@ -102,7 +99,8 @@ function ratio(actual, total) {
 useStaggerCards('.card-item')
 useReflectionHover('.av-course-card')
 
-onMounted(() => {
+onMounted(async () => {
+  await cursosStore.cargarCursos()
   finalizarCarga()
 })
 </script>

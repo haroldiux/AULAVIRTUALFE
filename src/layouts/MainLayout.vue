@@ -133,7 +133,7 @@
                 <q-tooltip>Notificaciones</q-tooltip>
                 <q-badge v-if="notifStore.cantidadNoLeidas" floating rounded color="negative" />
               </q-btn>
-              <q-btn round flat icon="mail" size="sm" color="grey-6" aria-label="Mensajes">
+              <q-btn round flat icon="mail" size="sm" color="grey-6" aria-label="Mensajes" to="/mensajes">
                 <q-tooltip>Mensajes</q-tooltip>
               </q-btn>
               <q-btn round flat icon="bookmark" size="sm" color="grey-6" aria-label="Guardados">
@@ -333,10 +333,12 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/auth'
+import { useCursosStore } from 'src/stores/cursos'
+import { useActividadesStore } from 'src/stores/actividades'
 import { useNotificacionesStore } from 'src/stores/notificaciones'
 import AppTutorialGuide from 'src/components/tutorial/AppTutorialGuide.vue'
 import anime from 'animejs'
@@ -344,11 +346,19 @@ import anime from 'animejs'
 const $q = useQuasar()
 const router = useRouter()
 const auth = useAuthStore()
+const cursosStore = useCursosStore()
+const actividadesStore = useActividadesStore()
 const notifStore = useNotificacionesStore()
 
 const leftDrawerOpen = ref(false)
 const notifPanel = ref(false)
 const tutorialOpen = ref(false)
+
+onMounted(async () => {
+  await cursosStore.cargarCursos()
+  actividadesStore.cargarDesdeCursos(cursosStore.cursos)
+  notifStore.inicializar()
+})
 
 const menuItems = computed(() => {
   const menus = {
@@ -356,6 +366,8 @@ const menuItems = computed(() => {
       { label: 'Dashboard', icon: 'dashboard', path: '/docente/dashboard' },
       { label: 'Mis Cursos', icon: 'library_books', path: '/docente/cursos' },
       { label: 'Calificar', icon: 'grade', path: '/docente/calificar' },
+      { label: 'Calendario', icon: 'event', path: '/calendario' },
+      { label: 'Mensajes', icon: 'mail', path: '/mensajes' },
       { label: 'Herramientas', icon: 'auto_awesome', path: '/docente/herramientas' },
     ],
     estudiante: [
@@ -363,16 +375,23 @@ const menuItems = computed(() => {
       { label: 'Mis Cursos', icon: 'library_books', path: '/estudiante/cursos' },
       { label: 'Pendientes', icon: 'task_alt', path: '/estudiante/centro' },
       { label: 'Mis Notas', icon: 'grade', path: '/estudiante/notas' },
+      { label: 'Calendario', icon: 'event', path: '/calendario' },
+      { label: 'Mensajes', icon: 'mail', path: '/mensajes' },
     ],
     director: [
       { label: 'Dashboard', icon: 'dashboard', path: '/director/dashboard' },
       { label: 'Seguimiento', icon: 'visibility', path: '/director/seguimiento' },
       { label: 'Observatorio', icon: 'insights', path: '/director/observatorio' },
       { label: 'Reportes', icon: 'assessment', path: '/director/reportes' },
+      { label: 'Calendario', icon: 'event', path: '/calendario' },
+      { label: 'Mensajes', icon: 'mail', path: '/mensajes' },
     ],
     admin: [
-      { label: 'Gestion', icon: 'settings', path: '/admin/gestion' },
-      { label: 'Configuracion', icon: 'tune', path: '/admin/configuracion' },
+      { label: 'Gestión', icon: 'settings', path: '/admin/gestion' },
+      { label: 'Usuarios', icon: 'people', path: '/admin/usuarios' },
+      { label: 'Configuración', icon: 'tune', path: '/admin/configuracion' },
+      { label: 'Calendario', icon: 'event', path: '/calendario' },
+      { label: 'Mensajes', icon: 'mail', path: '/mensajes' },
     ],
   }
   return menus[auth.userRole] ?? []
@@ -442,8 +461,8 @@ function confirmarLogout() {
     message: 'Estas seguro de que deseas cerrar sesion?',
     cancel: true,
     persistent: false,
-  }).onOk(() => {
-    auth.logout()
+  }).onOk(async () => {
+    await auth.logout()
     router.push('/login')
   })
 }

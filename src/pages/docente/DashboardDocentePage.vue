@@ -94,7 +94,7 @@
                   :color="contenidoCurso(curso) >= contenidoObjetivo(curso) / 2 ? 'green' : 'orange'"
                   rounded
                   size="7px"
-                  track-color="grey-3"
+                  :track-color="$q.dark.isActive ? 'grey-8' : 'grey-3'"
                 />
               </q-item-section>
               <q-item-section side>
@@ -115,7 +115,13 @@
 
       <div class="col-12 col-xl-4">
         <TaCard title="Entregas por revisar" subtitle="Ultimos envios recibidos" :padding="false" class="card-item q-mb-lg" data-tour="teacher-dashboard-submissions">
-          <q-list separator>
+          <AppEmptyState
+            v-if="!entregasPendientes.length"
+            icon="inbox"
+            title="Sin entregas pendientes"
+            message="No hay envios esperando revision por el momento."
+          />
+          <q-list v-else separator>
             <q-item v-for="entrega in entregasPendientes" :key="entrega.id" class="av-list-item q-py-md">
               <q-item-section avatar>
                 <q-avatar size="42px"><img :src="entrega.avatar" /></q-avatar>

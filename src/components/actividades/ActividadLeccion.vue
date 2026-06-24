@@ -7,10 +7,12 @@
     <q-separator class="q-my-md" />
 
     <div v-if="actividad.config.contenido_html" class="contenido-leccion q-mb-lg" v-html="contenidoRenderizado" />
-    <div v-else class="text-center q-pa-xl text-grey-6">
-      <q-icon name="article" size="48px" color="grey-4" />
-      <p>No hay contenido disponible para esta leccion.</p>
-    </div>
+    <AppEmptyState
+      v-else
+      icon="article"
+      title="Sin contenido"
+      message="No hay contenido disponible para esta leccion."
+    />
 
     <q-separator class="q-my-md" v-if="archivos.length" />
 
@@ -62,6 +64,7 @@ import { computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { useActividadesStore } from 'src/stores/actividades.js'
 import { useAuthStore } from 'src/stores/auth.js'
+import AppEmptyState from 'src/components/ui/AppEmptyState.vue'
 
 const $q = useQuasar()
 const props = defineProps({

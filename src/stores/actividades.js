@@ -1,242 +1,226 @@
 import { defineStore } from 'pinia'
-import { actividades as mockActividades, entregasEstudiante as mockEntregas, cursos as mockCursos, matriculas as mockMatriculas, usuarios as mockUsuarios } from 'src/mock/index.js'
+import { actividadService } from 'src/services/actividadService.js'
+import { foroService } from 'src/services/foroService.js'
+import { encuestaService } from 'src/services/encuestaService.js'
+import { cuestionarioService } from 'src/services/cuestionarioService.js'
+import { entregaService } from 'src/services/entregaService.js'
+import { matriculas as mockMatriculas, usuarios as mockUsuarios } from 'src/mock/index.js'
 import { getActivityDueDate, getCourseCounters, getStudentActivityState, isDoneState, isTrackedActivity, withActivityModel } from 'src/utils/activityModel'
 
 export const useActividadesStore = defineStore('actividades', {
   state: () => ({
-    actividades: [...mockActividades],
-    entregas: [...mockEntregas],
-    // Hilos de foro por actividad: { [actividadId]: [hilo1, hilo2, ...] }
+    actividades: [],
+    entregas: [],
     hilosForo: {},
-    // Respuestas de encuesta: { `${estudianteId}-${actividadId}`: { respuestas, fecha } }
     respuestasEncuestas: {},
-    // Progreso de estudiante: { [estudianteId]: { [actividadId]: 'completado' } }
     progresoEstudiante: {},
+    cargadas: false,
   }),
 
   getters: {
     getActividadById: (state) => (id) => state.actividades.find((a) => a.id === id),
     getActividadesPorSeccion: (state) => (seccionId) =>
-      state.actividades.filter((a) => a.seccion_id === seccionId),
+      state.actividades.filter((a) => a.seccion_id === seccionId).sort((a, b) => (a.orden || 0) - (b.orden || 0)),
 
-    // Cursos donde un estudiante está matriculado
     getCursosMatriculados: () => (estudianteId) => {
-      const mats = mockMatriculas.filter((m) => m.estudiante_id === estudianteId && m.estado === 'activo')
-      return mockCursos.filter((c) => mats.some((m) => m.curso_id === c.id))
+      return mockMatriculas
+        .filter((m) => m.estudiante_id === estudianteId)
+        .map((m) => m.curso_id)
     },
 
-    // Docente de un curso
-    getDocenteDeCurso: () => (cursoId) => {
-      const curso = mockCursos.find((c) => c.id === cursoId)
-      if (!curso) return null
-      return mockUsuarios.find((u) => u.id === curso.docente_id)
+    getDocenteDeCurso: () => () => {
+      return mockUsuarios.find((u) => u.rol === 'docente' && u.id === 1) || null
     },
 
-    // Actividades pendientes de un estudiante, agrupadas por curso -> seccion
-    getPendientesPorEstudiante: (state) => (estudianteId) => {
-      // 1. Cursos del estudiante
-      const mats = mockMatriculas.filter((m) => m.estudiante_id === estudianteId && m.estado === 'activo')
-      const cursosIds = mats.map((m) => m.curso_id)
-
-      // 2. Actividades de esos cursos que son evaluables (tienen_nota o tienen fecha de entrega)
-      const cursosData = mockCursos.filter((c) => cursosIds.includes(c.id))
-
-      const resultado = []
-
-      cursosData.forEach((curso) => {
-        const docente = mockUsuarios.find((u) => u.id === curso.docente_id)
-        const seccionesMap = []
-
-        curso.secciones.forEach((seccion) => {
-          const acts = state.actividades.filter(
-            (a) => a.seccion_id === seccion.id && isTrackedActivity(a)
-          )
-
-          const actsPendientes = acts.filter((a) => {
-            const estado = getStudentActivityState({
-              actividad: a,
-              estudianteId,
-              entregas: state.entregas,
-              hilosForo: state.hilosForo,
-              respuestasEncuestas: state.respuestasEncuestas,
-              progresoEstudiante: state.progresoEstudiante,
-            })
-            return !isDoneState(estado)
-          })
-
-          if (actsPendientes.length > 0) {
-            seccionesMap.push({
-              seccion,
-              actividades: actsPendientes.map((a) => {
-                const estado = getStudentActivityState({
-                  actividad: a,
-                  estudianteId,
-                  entregas: state.entregas,
-                  hilosForo: state.hilosForo,
-                  respuestasEncuestas: state.respuestasEncuestas,
-                  progresoEstudiante: state.progresoEstudiante,
-                })
-                return {
-                  ...withActivityModel(a),
-                  estado,
-                  fechaLimite: getActivityDueDate(a),
-                }
-              }),
-            })
+    getPendientesPorEstudiante(state) {
+      return (estudianteId) => {
+        const pendientes = []
+        for (const act of state.actividades) {
+          if (!isTrackedActivity(act)) continue
+          const estado = this.getEstadoActividadEstudiante(estudianteId, act)
+          if (!isDoneState(estado)) {
+            pendientes.push({ ...act, estado_estudiante: estado })
           }
-        })
-
-        if (seccionesMap.length > 0) {
-          resultado.push({
-            curso,
-            docente,
-            secciones: seccionesMap,
-          })
         }
-      })
-
-      return resultado
+        return pendientes
+      }
     },
 
-    // Conteo total de pendientes para KPI
-    getTotalPendientes: (state) => (estudianteId) => {
-      const agrupado = state.getPendientesPorEstudiante(estudianteId)
-      return agrupado.reduce((sum, c) => sum + c.secciones.reduce((s2, sec) => s2 + sec.actividades.length, 0), 0)
+    getTotalPendientes() {
+      return (estudianteId) => this.getPendientesPorEstudiante(estudianteId).length
     },
 
-    // Proximas fechas limite (las más cercanas)
-    getProximasFechasLimite: (state) => (estudianteId, limite = 5) => {
-      const agrupado = state.getPendientesPorEstudiante(estudianteId)
-      const actividadesFlat = []
-      agrupado.forEach((c) => {
-        c.secciones.forEach((s) => {
-          s.actividades.forEach((a) => {
-            if (a.fechaLimite) {
-              actividadesFlat.push({
-                ...a,
-                cursoId: c.curso.id,
-                cursoNombre: c.curso.nombre,
-                cursoCodigo: c.curso.codigo,
-                docenteNombre: c.docente?.nombre || '',
-                seccionTitulo: s.seccion.titulo,
-              })
-            }
-          })
-        })
-      })
-      return actividadesFlat
-        .sort((a, b) => new Date(a.fechaLimite) - new Date(b.fechaLimite))
-        .slice(0, limite)
+    getProximasFechasLimite() {
+      return (estudianteId, limite = 5) =>
+        this.getPendientesPorEstudiante(estudianteId)
+          .filter((a) => getActivityDueDate(a))
+          .sort((a, b) => new Date(getActivityDueDate(a)) - new Date(getActivityDueDate(b)))
+          .slice(0, limite)
     },
 
     getModeloActividad: () => (actividad) => withActivityModel(actividad),
 
-    getEstadoActividadEstudiante: (state) => (estudianteId, actividad) =>
-      getStudentActivityState({
+    getEstadoActividadEstudiante: (state) => (estudianteId, actividad) => {
+      return getStudentActivityState({
         actividad,
-        estudianteId,
-        entregas: state.entregas,
-        hilosForo: state.hilosForo,
+        entregas: state.entregas.filter((e) => e.estudiante_id === estudianteId && e.actividad_id === actividad.id),
+        hilosForo: state.hilosForo[actividad.id] || [],
         respuestasEncuestas: state.respuestasEncuestas,
-        progresoEstudiante: state.progresoEstudiante,
-      }),
+        progresoEstudiante: state.progresoEstudiante[estudianteId] || {},
+        estudianteId,
+      })
+    },
 
-    getContadoresCursoEstudiante: (state) => (estudianteId, curso) =>
-      getCourseCounters({
-        curso,
-        estudianteId,
-        actividades: state.actividades,
-        entregas: state.entregas,
-        hilosForo: state.hilosForo,
-        respuestasEncuestas: state.respuestasEncuestas,
-        progresoEstudiante: state.progresoEstudiante,
-      }),
+    getContadoresCursoEstudiante() {
+      return (estudianteId, curso) => {
+        const actividadesCurso = curso?.secciones?.flatMap((s) => s.actividades || []) || []
+        return getCourseCounters({
+          actividades: actividadesCurso,
+          entregas: this.entregas.filter((e) => e.estudiante_id === estudianteId),
+          hilosForo: this.hilosForo,
+          respuestasEncuestas: this.respuestasEncuestas,
+          progresoEstudiante: this.progresoEstudiante[estudianteId] || {},
+          estudianteId,
+        })
+      }
+    },
   },
 
   actions: {
-    agregarActividad(actividad) {
-      const id = Math.max(0, ...this.actividades.map((a) => a.id)) + 1
-      this.actividades.push({ ...actividad, id })
-      return id
+    cargarDesdeCursos(cursos) {
+      const todas = []
+      for (const curso of cursos) {
+        for (const seccion of curso.secciones || []) {
+          for (const act of seccion.actividades || []) {
+            todas.push(act)
+          }
+        }
+      }
+      this.actividades = todas
+      this.cargadas = true
     },
 
-    actualizarActividad(id, datos) {
+    async cargarActividadesSeccion(seccionId) {
+      try {
+        const res = await actividadService.listarPorSeccion(seccionId)
+        const nuevas = res.data || []
+        this.actividades = this.actividades.filter((a) => a.seccion_id !== seccionId)
+        this.actividades.push(...nuevas)
+      } catch {
+        console.error('[actividades] Error al cargar seccion')
+      }
+    },
+
+    async agregarActividad(seccionId, datos) {
+      const res = await actividadService.crear(seccionId, datos)
+      this.actividades.push(res.data)
+      return res.data.id
+    },
+
+    async actualizarActividad(id, datos) {
+      const res = await actividadService.actualizar(id, datos)
       const idx = this.actividades.findIndex((a) => a.id === id)
-      if (idx !== -1) Object.assign(this.actividades[idx], datos)
+      if (idx !== -1) Object.assign(this.actividades[idx], datos, res?.data || {})
     },
 
-    eliminarActividad(id) {
+    async eliminarActividad(id) {
+      await actividadService.eliminar(id)
       const idx = this.actividades.findIndex((a) => a.id === id)
       if (idx !== -1) this.actividades.splice(idx, 1)
     },
 
-    reordenarActividades(seccionId, ids) {
+    async reordenarActividades(seccionId, ids) {
+      await actividadService.reordenar(seccionId, ids)
       ids.forEach((id, idx) => {
         const act = this.actividades.find((a) => a.id === id && a.seccion_id === seccionId)
         if (act) act.orden = idx + 1
       })
     },
 
-    // ========== ENTREGAS ==========
-    crearEntrega(estudianteId, actividadId, contenido) {
-      const id = Math.max(0, ...this.entregas.map((e) => e.id)) + 1
-      this.entregas.push({
-        id,
-        actividad_id: actividadId,
-        estudiante_id: estudianteId,
-        contenido,
-        fecha_entrega: new Date().toISOString(),
-        estado: 'entregado',
-      })
-      return id
+    // ========== ENTREGAS (API real — Fase C) ==========
+    async cargarEntregas(filtros = {}) {
+      try {
+        const res = await entregaService.listar(filtros)
+        this.entregas = res.data || []
+      } catch {
+        // ignorar
+      }
     },
 
-    // ========== FOROS ==========
-    getHilosForo(actividadId) {
-      if (!this.hilosForo[actividadId]) {
-        // Inicializar con mock data si existe en la actividad
-        const act = this.actividades.find((a) => a.id === actividadId)
-        if (act && act.config?.hilos) {
-          this.hilosForo[actividadId] = [...act.config.hilos]
-        } else {
-          this.hilosForo[actividadId] = []
-        }
+    async cargarMisEntregas() {
+      try {
+        const res = await entregaService.misEntregas()
+        this.entregas = res.data || []
+      } catch {
+        // ignorar
+      }
+    },
+
+    async crearEntrega(estudianteId, actividadId, contenido) {
+      const contenidoObj = typeof contenido === 'string'
+        ? { texto: contenido, archivos: [] }
+        : contenido
+      const res = await entregaService.crear(actividadId, contenidoObj)
+      this.entregas.push(res.data)
+      return res.data.id
+    },
+
+    getEntrega(estudianteId, actividadId) {
+      return this.entregas.find(
+        (e) => e.estudiante_id === estudianteId && e.actividad_id === actividadId
+      )
+    },
+
+    // ========== FOROS (API real) ==========
+    async cargarHilosForo(actividadId) {
+      try {
+        const res = await foroService.listarHilos(actividadId)
+        this.hilosForo[actividadId] = res.data || []
+      } catch {
+        console.error('[foro] Error al cargar hilos')
+        this.hilosForo[actividadId] = []
       }
       return this.hilosForo[actividadId]
     },
 
-    crearHiloForo(actividadId, hilo) {
-      if (!this.hilosForo[actividadId]) this.hilosForo[actividadId] = []
-      this.hilosForo[actividadId].unshift({
-        id: Date.now(),
-        ...hilo,
-        fecha: new Date().toISOString(),
-        respuestas: [],
-      })
+    getHilosForo(actividadId) {
+      return this.hilosForo[actividadId] || []
     },
 
-    crearRespuestaForo(actividadId, hiloId, respuesta) {
-      const hilos = this.hilosForo[actividadId] || []
-      const hilo = hilos.find((h) => h.id === hiloId)
+    async crearHiloForo(actividadId, hilo) {
+      const res = await foroService.crearHilo(actividadId, hilo)
+      if (!this.hilosForo[actividadId]) this.hilosForo[actividadId] = []
+      this.hilosForo[actividadId].unshift(res.data)
+      return res.data
+    },
+
+    async crearRespuestaForo(actividadId, hiloId, respuesta) {
+      const res = await foroService.crearRespuesta(hiloId, respuesta)
+      const hilo = (this.hilosForo[actividadId] || []).find((h) => h.id === hiloId)
       if (hilo) {
         if (!hilo.respuestas) hilo.respuestas = []
-        hilo.respuestas.push({
-          id: Date.now(),
-          ...respuesta,
-          fecha: new Date().toISOString(),
-        })
+        hilo.respuestas.push(res.data)
+      }
+      return res.data
+    },
+
+    // ========== ENCUESTAS (API real) ==========
+    async cargarMiRespuestaEncuesta(actividadId) {
+      try {
+        const res = await encuestaService.miRespuesta(actividadId)
+        return res.data
+      } catch {
+        return { respondida: false }
       }
     },
 
-    // ========== ENCUESTAS ==========
-    guardarRespuestaEncuesta(estudianteId, actividadId, respuestas) {
+    async guardarRespuestaEncuesta(estudianteId, actividadId, respuestas) {
+      const res = await encuestaService.responder(actividadId, respuestas)
       const key = `${estudianteId}-${actividadId}`
-      this.respuestasEncuestas[key] = {
-        respuestas,
-        fecha: new Date().toISOString(),
-      }
+      this.respuestasEncuestas[key] = { respuestas, fecha: res.data?.fecha }
       if (!this.progresoEstudiante[estudianteId]) this.progresoEstudiante[estudianteId] = {}
       this.progresoEstudiante[estudianteId][actividadId] = 'completado'
+      return res.data
     },
 
     tieneRespuestaEncuesta(estudianteId, actividadId) {
@@ -249,40 +233,24 @@ export const useActividadesStore = defineStore('actividades', {
       return this.respuestasEncuestas[key] || null
     },
 
-    // ========== CUESTIONARIOS ==========
-    guardarResultadoCuestionario(estudianteId, actividadId, nota, respuestas) {
-      const entregaExistente = this.entregas.find((e) => e.estudiante_id === estudianteId && e.actividad_id === actividadId)
-      const payload = {
-        contenido: JSON.stringify({ respuestas }),
-        nota,
-        fecha_entrega: new Date().toISOString(),
-        estado: 'calificado',
+    // ========== CUESTIONARIOS (API real) ==========
+    async cargarIntentosCuestionario(actividadId) {
+      try {
+        const res = await cuestionarioService.intentos(actividadId)
+        return res.data
+      } catch {
+        return { intentos: [], intentos_realizados: 0, intentos_maximos: 1, mejor_nota: null }
       }
-      let id = entregaExistente?.id
-      if (entregaExistente) {
-        Object.assign(entregaExistente, payload)
-      } else {
-        id = Math.max(0, ...this.entregas.map((e) => e.id)) + 1
-        this.entregas.push({
-          id,
-          actividad_id: actividadId,
-          estudiante_id: estudianteId,
-          ...payload,
-        })
-      }
-      // Actualizar progreso
+    },
+
+    async guardarResultadoCuestionario(estudianteId, actividadId, respuestas) {
+      const res = await cuestionarioService.intentar(actividadId, respuestas)
       if (!this.progresoEstudiante[estudianteId]) this.progresoEstudiante[estudianteId] = {}
       this.progresoEstudiante[estudianteId][actividadId] = 'completado'
-      return id
+      return res.data
     },
 
-    getIntentosCuestionario(estudianteId, actividadId) {
-      return this.entregas.filter(
-        (e) => e.estudiante_id === estudianteId && e.actividad_id === actividadId
-      ).length
-    },
-
-    // ========== LECCIONES ==========
+    // ========== LECCIONES (mock local hasta Fase C) ==========
     marcarLeccionCompletada(estudianteId, actividadId) {
       if (!this.progresoEstudiante[estudianteId]) this.progresoEstudiante[estudianteId] = {}
       this.progresoEstudiante[estudianteId][actividadId] = 'completado'

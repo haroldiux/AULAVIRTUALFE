@@ -10,19 +10,15 @@
 import { onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/auth'
-import { useNotificacionesStore } from 'src/stores/notificaciones'
 
 const $q = useQuasar()
 const auth = useAuthStore()
-const notifStore = useNotificacionesStore()
 
 const darkSaved = localStorage.getItem('lms_dark_mode') === 'true'
 $q.dark.set(darkSaved)
 
 onMounted(() => {
   auth.inicializar()
-  notifStore.inicializar()
-  notifStore.generarIniciales()
 })
 </script>
 

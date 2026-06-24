@@ -707,6 +707,257 @@ Response 200: { "data": { "id": "sisa", "estado": "online" } }
 
 ---
 
+## 14. Calendario Academico
+
+### GET /calendario
+Eventos del calendario filtrados por rango de fechas y opcionalmente por curso.
+
+```
+Query: ?desde=2026-06-01&hasta=2026-06-30&curso_id=1
+
+Response 200:
+{
+  "data": [
+    { "id": 1, "titulo": "Entrega Tarea 1", "tipo": "entrega", "fecha_inicio": "2026-06-15T23:59:00", "fecha_fin": null, "todo_el_dia": false, "curso_id": 1, "actividad_id": 5 }
+  ]
+}
+```
+
+### POST /calendario/eventos
+Crear evento académico.
+
+```
+Request:
+{
+  "curso_id": 1,
+  "actividad_id": null,
+  "titulo": "Reunion de grupo",
+  "descripcion": "...",
+  "tipo": "evento_institucional",
+  "fecha_inicio": "2026-06-20T10:00:00",
+  "fecha_fin": "2026-06-20T11:00:00",
+  "todo_el_dia": false
+}
+
+Response 201: { "data": { "id": 10, ... } }
+```
+
+### PUT /calendario/eventos/{id}
+Actualizar evento.
+
+### DELETE /calendario/eventos/{id}
+Eliminar evento.
+
+---
+
+## 15. Mensajeria Interna
+
+### GET /mensajes/conversaciones
+Lista de conversaciones del usuario autenticado.
+
+```
+Response 200:
+{
+  "data": [
+    { "id": 1, "asunto": "Duda Tarea 1", "ultimo_mensaje": "...", "no_leidos": 2, "participantes": [{ "id": 100, "nombre": "Ana Vargas" }] }
+  ]
+}
+```
+
+### POST /mensajes/conversaciones
+Crear conversacion.
+
+```
+Request:
+{
+  "curso_id": 1,
+  "asunto": "Consulta sobre la leccion",
+  "participantes": [100, 101]
+}
+
+Response 201: { "data": { "id": 2, ... } }
+```
+
+### GET /mensajes/conversaciones/{id}
+Mensajes de una conversacion paginados.
+
+```
+Query: ?pagina=1&por_pagina=20
+
+Response 200:
+{
+  "data": [
+    { "id": 1, "remitente_id": 100, "contenido": "...", "adjuntos": [], "leido": true, "created_at": "..." }
+  ],
+  "meta": { "pagina": 1, "total": 15 }
+}
+```
+
+### POST /mensajes/conversaciones/{id}/mensajes
+Enviar mensaje.
+
+```
+Request:
+{
+  "contenido": "...",
+  "adjuntos": [{ "nombre": "...", "url": "..." }]
+}
+
+Response 201: { "data": { "id": 5, ... } }
+```
+
+### PUT /mensajes/{id}/leido
+Marcar mensaje como leido.
+
+---
+
+## 16. Gestion de Usuarios y Matriculas (Admin)
+
+### GET /admin/usuarios
+Lista de usuarios con filtros.
+
+```
+Query: ?rol=estudiante&q=Ana&pagina=1
+
+Response 200:
+{
+  "data": [{ "id": 100, "nombre": "Ana Vargas", "email": "...", "rol": "estudiante", "activo": true }],
+  "meta": { "pagina": 1, "total": 120 }
+}
+```
+
+### POST /admin/usuarios
+Crear usuario local (admin o respaldo).
+
+```
+Request:
+{
+  "nombre": "...",
+  "email": "...",
+  "rol": "docente",
+  "password": "..."
+}
+
+Response 201: { "data": { "id": 200, ... } }
+```
+
+### POST /admin/usuarios/importar-csv
+Importar usuarios masivamente desde CSV.
+
+```
+Content-Type: multipart/form-data
+Request: archivo CSV con columnas [nombre, email, rol, carrera_id]
+
+Response 200:
+{
+  "data": { "creados": 45, "actualizados": 3, "errores": [] }
+}
+```
+
+### PUT /admin/usuarios/{id}
+Actualizar usuario.
+
+### DELETE /admin/usuarios/{id}
+Desactivar usuario.
+
+### GET /cursos/{cursoId}/estudiantes
+Estudiantes matriculados en un curso.
+
+```
+Response 200:
+{
+  "data": [
+    { "id": 100, "nombre": "Ana Vargas", "estado": "activo", "fecha_matricula": "..." }
+  ]
+}
+```
+
+### POST /cursos/{cursoId}/matricular
+Matricular un estudiante.
+
+```
+Request: { "estudiante_id": 100 }
+Response 201: { "data": { "matricula_id": 1, ... } }
+```
+
+### POST /cursos/{cursoId}/desmatricular
+Desmatricular un estudiante.
+
+```
+Request: { "estudiante_id": 100 }
+Response 200: { "message": "Estudiante desmatriculado" }
+```
+
+### POST /cursos/{cursoId}/matricular-masivo
+Matricular varios estudiantes a la vez.
+
+```
+Request: { "estudiantes_ids": [100, 101, 102] }
+Response 200: { "data": { "matriculados": 3, "errores": [] } }
+```
+
+---
+
+## 17. Banco Docente
+
+### GET /banco-docente/plantillas
+Plantillas del docente autenticado o publicas.
+
+```
+Query: ?categoria=actividad&tipo=tarea&publicas=true
+
+Response 200:
+{
+  "data": [
+    { "id": 1, "categoria": "actividad", "tipo": "tarea", "nombre": "Tarea base", "uso_count": 5 }
+  ]
+}
+```
+
+### POST /banco-docente/plantillas
+Guardar plantilla.
+
+```
+Request:
+{
+  "categoria": "actividad",
+  "tipo": "tarea",
+  "nombre": "...",
+  "descripcion": "...",
+  "datos": { ... },
+  "publica": false
+}
+
+Response 201: { "data": { "id": 4, ... } }
+```
+
+### PUT /banco-docente/plantillas/{id}
+Actualizar plantilla.
+
+### DELETE /banco-docente/plantillas/{id}
+Eliminar plantilla.
+
+### POST /banco-docente/plantillas/{id}/usar
+Copiar plantilla a una seccion destino.
+
+```
+Request:
+{
+  "curso_id": 1,
+  "seccion_id": 2
+}
+
+Response 201:
+{
+  "data": {
+    "actividad_id": 40,
+    "mensaje": "Plantilla copiada al curso"
+  }
+}
+```
+
+---
+
 ## Autenticacion
 
 Todos los endpoints requieren el header:

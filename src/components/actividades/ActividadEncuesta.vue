@@ -6,7 +6,7 @@
 
     <q-separator class="q-my-md" />
 
-    <template v-if="!enviada">
+    <q-form v-if="!enviada" ref="encuestaForm" @submit.prevent="enviar" greedy>
       <q-card v-for="(pregunta, i) in preguntas" :key="i" flat bordered class="q-mb-md">
         <q-card-section>
           <div class="text-subtitle2 text-weight-medium q-mb-sm">
@@ -45,9 +45,9 @@
       </q-card>
 
       <div class="text-center q-mt-lg">
-        <q-btn color="primary" icon="send" label="Enviar Encuesta" @click="enviar" />
+        <q-btn type="submit" color="primary" icon="send" label="Enviar Encuesta" />
       </div>
-    </template>
+    </q-form>
 
     <template v-else>
       <div class="text-center q-pa-lg">
@@ -82,7 +82,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useActividadesStore } from 'src/stores/actividades.js'
 import { useAuthStore } from 'src/stores/auth.js'
@@ -95,42 +95,55 @@ const actividadesStore = useActividadesStore()
 const authStore = useAuthStore()
 
 const respuestas = ref({})
+const encuestaForm = ref(null)
+const enviada = ref(false)
 
 const preguntas = computed(() => props.actividad.config?.preguntas || [])
 
-const enviada = computed(() => {
-  if (!authStore.usuario) return false
-  return actividadesStore.tieneRespuestaEncuesta(authStore.usuario.id, props.actividad.id)
+onMounted(async () => {
+  if (authStore.usuario) {
+    const data = await actividadesStore.cargarMiRespuestaEncuesta(props.actividad.id)
+    if (data?.respondida) {
+      enviada.value = true
+      respuestas.value = data.respuestas || {}
+    }
+  }
 })
 
-const resultadosMock = {
-  0: [14, 10, 8, 5, 3],
-  1: [18, 12, 6, 4],
+function conteoResultado() {
+  return 0
 }
 
-function conteoResultado(preguntaIndex, opcionIndex) {
-  return resultadosMock[preguntaIndex]?.[opcionIndex] || 0
+function totalResultado() {
+  return 0
 }
 
-function totalResultado(preguntaIndex) {
-  return (resultadosMock[preguntaIndex] || []).reduce((sum, valor) => sum + valor, 0)
+function ratioResultado() {
+  return 0
 }
 
-function ratioResultado(preguntaIndex, opcionIndex) {
-  const total = totalResultado(preguntaIndex)
-  return total > 0 ? conteoResultado(preguntaIndex, opcionIndex) / total : 0
-}
-
-function enviar() {
+async function enviar() {
+  const obligatorias = preguntas.value.filter((p) => p.obligatorio !== false)
+  const faltantes = obligatorias.some((_, i) => respuestas.value[i] === undefined || respuestas.value[i] === '')
+  if (faltantes) {
+    $q.notify({ message: 'Responde todas las preguntas obligatorias antes de enviar.', color: 'negative', icon: 'warning' })
+    return
+  }
   if (!authStore.usuario) {
     $q.notify({ message: 'Debes iniciar sesion para enviar la encuesta', color: 'negative', icon: 'warning' })
     return
   }
-  actividadesStore.guardarRespuestaEncuesta(authStore.usuario.id, props.actividad.id, { ...respuestas.value })
-  $q.notify({ message: 'Encuesta enviada! Gracias por participar.', color: 'positive', icon: 'check_circle', timeout: 3000 })
+  try {
+    await actividadesStore.guardarRespuestaEncuesta(authStore.usuario.id, props.actividad.id, { ...respuestas.value })
+    enviada.value = true
+    $q.notify({ message: 'Encuesta enviada! Gracias por participar.', color: 'positive', icon: 'check_circle', timeout: 3000 })
+  } catch (err) {
+    $q.notify({ message: err?.message || 'Error al enviar encuesta', color: 'negative', timeout: 3000 })
+  }
 }
 
 watch(() => props.actividad.id, () => {
   respuestas.value = {}
+  enviada.value = false
 })
 </script>

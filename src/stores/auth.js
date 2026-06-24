@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { usuarios as mockUsuarios } from 'src/mock/index.js'
+import { authService } from 'src/services/authService.js'
 
 const ROL_REDIRECT = {
   docente: '/docente/cursos',
@@ -7,6 +7,9 @@ const ROL_REDIRECT = {
   director: '/director/dashboard',
   admin: '/admin/gestion',
 }
+
+const TOKEN_KEY = 'auth_token'
+const USUARIO_KEY = 'auth_usuario'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -28,37 +31,53 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    inicializar() {
-      const stored = localStorage.getItem('auth_usuario')
-      if (stored) {
+    async inicializar() {
+      const token = localStorage.getItem(TOKEN_KEY)
+      const stored = localStorage.getItem(USUARIO_KEY)
+      if (token && stored) {
         try {
           this.usuario = JSON.parse(stored)
-          this.token = 'mock-token-ss0-' + this.usuario.id
+          this.token = token
         } catch {
-          this.usuario = null
-          this.token = null
+          this.limpiarSesion()
         }
       }
       this.initialized = true
     },
 
-    login(usuarioId) {
-      const user = mockUsuarios.find((u) => u.id === usuarioId)
-      if (!user) return false
-      this.usuario = { ...user }
-      this.token = 'mock-token-ss0-' + user.id
-      localStorage.setItem('auth_usuario', JSON.stringify(this.usuario))
-      return true
+    async login(email, password) {
+      const { data } = await authService.loginLocal(email, password)
+      this.setSesion(data)
+      return data
     },
 
-    logout() {
+    async loginSso(sisaToken) {
+      const { data } = await authService.loginSso(sisaToken)
+      this.setSesion(data)
+      return data
+    },
+
+    setSesion(data) {
+      this.usuario = data.usuario
+      this.token = data.token
+      localStorage.setItem(TOKEN_KEY, this.token)
+      localStorage.setItem(USUARIO_KEY, JSON.stringify(this.usuario))
+    },
+
+    async logout() {
+      try {
+        if (this.token) await authService.logout()
+      } catch {
+        // ignorar error de red al cerrar sesion
+      }
+      this.limpiarSesion()
+    },
+
+    limpiarSesion() {
       this.usuario = null
       this.token = null
-      localStorage.removeItem('auth_usuario')
-    },
-
-    getMockUsuarios() {
-      return mockUsuarios
+      localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(USUARIO_KEY)
     },
   },
 })
