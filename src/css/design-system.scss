@@ -388,22 +388,58 @@ body.body--dark .ta-skeleton-shimmer {
 
 .av-dashboard-hero__actions .q-btn {
   letter-spacing: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
 }
 
 .av-dashboard-hero__actions .q-btn--outline {
   color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.42) !important;
-  background: rgba(255, 255, 255, 0.10) !important;
-  backdrop-filter: blur(10px);
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(4px);
+}
+
+.av-dashboard-hero__actions .q-btn--outline .q-icon {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.av-dashboard-hero__actions .q-btn--outline:hover {
+  background: rgba(255, 255, 255, 0.20) !important;
+  border-color: rgba(255, 255, 255, 0.70) !important;
+  transform: translateY(-2px) !important;
 }
 
 .av-dashboard-hero__actions .q-btn--flat {
   color: rgba(255, 255, 255, 0.94) !important;
 }
 
-.av-dashboard-hero__actions .q-btn--unelevated {
-  box-shadow: 0 10px 24px rgba(16, 24, 40, 0.16);
+.av-dashboard-hero__actions .q-btn--flat:hover {
+  background: rgba(255, 255, 255, 0.10) !important;
+  transform: translateY(-2px) !important;
 }
+
+.av-dashboard-hero__actions .bg-primary,
+.av-dashboard-hero__actions .q-btn--unelevated:not(.bg-negative),
+.av-dashboard-hero__actions .q-btn:not(.q-btn--outline):not(.q-btn--flat):not(.bg-negative) {
+  background: #ffffff !important;
+  color: var(--brand-unitepc-purple, #6B3FA0) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.av-dashboard-hero__actions .bg-primary .q-icon,
+.av-dashboard-hero__actions .q-btn--unelevated:not(.bg-negative) .q-icon,
+.av-dashboard-hero__actions .q-btn:not(.q-btn--outline):not(.q-btn--flat):not(.bg-negative) .q-icon {
+  color: var(--brand-unitepc-purple, #6B3FA0) !important;
+}
+
+.av-dashboard-hero__actions .bg-primary:hover,
+.av-dashboard-hero__actions .q-btn--unelevated:not(.bg-negative):hover,
+.av-dashboard-hero__actions .q-btn:not(.q-btn--outline):not(.q-btn--flat):not(.bg-negative):hover {
+  background: rgba(255, 255, 255, 0.92) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22) !important;
+}
+
 
 /* ========== IN-APP TUTORIAL ========== */
 .app-tour {
@@ -497,6 +533,23 @@ body.body--dark .ta-skeleton-shimmer {
     transform: none !important;
   }
 }
+
+/* ========== AYUDA INTERACTIVA (LUPA) ========== */
+.ayuda-inspector-active,
+.ayuda-inspector-active * {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath fill='%2300f2fe' stroke='%230b0f19' stroke-width='2' d='M13 3C7.477 3 3 7.477 3 13s4.477 10 10 10c2.25 0 4.316-.746 5.992-2l7.586 7.586c.78.78 2.048.78 2.828 0 .78-.78.78-2.048 0-2.828l-7.586-7.586C20.254 17.316 21 15.25 21 13c0-5.523-4.477-10-10-10zm0 2c4.43 0 8 3.57 8 8s-3.57 8-8 8-8-3.57-8-8 3.57-8 8-8zm-2 3v3H8v2h3v3h2v-3h3v-2h-3V8h-2z'/%3E%3C/svg%3E") 10 10, auto !important;
+}
+
+.ayuda-highlight {
+  position: relative !important;
+  box-shadow: 
+    0 0 0 4px rgba(13, 148, 136, 0.4), 
+    0 0 20px rgba(13, 148, 136, 0.6) !important;
+  outline: 2px solid var(--brand-unitepc-turquoise) !important;
+  transition: box-shadow 0.15s ease, outline 0.15s ease;
+  z-index: 99999 !important;
+}
+
 
 .body--dark .av-list-item:hover {
   background: rgba(255, 255, 255, 0.05);

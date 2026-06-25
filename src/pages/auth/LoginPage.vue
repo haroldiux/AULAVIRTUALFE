@@ -136,7 +136,7 @@ async function loginFallback() {
   try {
     await auth.login(email.trim(), password)
     $q.notify({ message: `Bienvenido, ${auth.userName}`, color: 'positive', timeout: 1500 })
-    router.push(auth.redirectPath)
+    await router.push(auth.redirectPath)
   } catch (err) {
     $q.notify({ message: err?.message || 'Credenciales incorrectas', color: 'negative', timeout: 3000 })
   } finally {
@@ -150,7 +150,7 @@ async function loginSSO() {
   try {
     await auth.loginSso(SSO_TOKENS[0].token)
     $q.notify({ message: `Bienvenido, ${auth.userName}`, color: 'positive', timeout: 1500 })
-    router.push(auth.redirectPath)
+    await router.push(auth.redirectPath)
   } catch (err) {
     $q.notify({ message: err?.message || 'No se pudo iniciar sesion via SSO', color: 'negative', timeout: 3000 })
   } finally {

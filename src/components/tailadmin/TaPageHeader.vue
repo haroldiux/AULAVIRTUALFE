@@ -12,8 +12,9 @@
       <div>
         <div class="ta-page-header__eyebrow">Aula Virtual UNITEPC</div>
         <div class="ta-page-header__title">{{ title }}</div>
+        <div v-if="subtitle" class="ta-page-header__subtitle q-mt-xs">{{ subtitle }}</div>
       </div>
-      <div v-if="$slots.actions" class="flex items-center q-gutter-sm">
+      <div v-if="$slots.actions" class="ta-page-header__actions flex items-center q-gutter-sm">
         <slot name="actions" />
       </div>
     </div>
@@ -23,6 +24,7 @@
 <script setup>
 defineProps({
   title: { type: String, required: true },
+  subtitle: { type: String, default: '' },
   breadcrumbs: { type: Array, default: () => [] },
 })
 </script>
@@ -69,6 +71,57 @@ defineProps({
   font-size: 1.55rem;
   font-weight: 850;
   line-height: 1.15;
+}
+
+.ta-page-header__subtitle {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Overrides for action buttons inside the header actions slot */
+.ta-page-header__actions :deep(.q-btn) {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
+}
+
+/* Outline buttons (e.g., CSV import, course templates, observation download) */
+.ta-page-header__actions :deep(.q-btn--outline) {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(4px);
+}
+
+.ta-page-header__actions :deep(.q-btn--outline .q-icon) {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.ta-page-header__actions :deep(.q-btn--outline:hover) {
+  background: rgba(255, 255, 255, 0.20) !important;
+  border-color: rgba(255, 255, 255, 0.70) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Primary solid buttons (e.g., Save changes, Create course) */
+.ta-page-header__actions :deep(.bg-primary),
+.ta-page-header__actions :deep(.q-btn:not(.q-btn--outline):not(.q-btn--flat)) {
+  background: #ffffff !important;
+  color: var(--brand-unitepc-purple, #6B3FA0) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.ta-page-header__actions :deep(.bg-primary .q-icon),
+.ta-page-header__actions :deep(.q-btn:not(.q-btn--outline):not(.q-btn--flat) .q-icon) {
+  color: var(--brand-unitepc-purple, #6B3FA0) !important;
+}
+
+.ta-page-header__actions :deep(.bg-primary:hover),
+.ta-page-header__actions :deep(.q-btn:not(.q-btn--outline):not(.q-btn--flat):hover) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22) !important;
 }
 
 @media (max-width: 599px) {

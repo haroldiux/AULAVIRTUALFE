@@ -47,19 +47,76 @@
             <strong>{{ modelo.accion_label }}</strong>
             <div class="text-caption">{{ modelo.accion_tooltip }} · Se completa mediante {{ labelRegla(modelo.regla_completado) }}.</div>
           </q-banner>
-
           <div class="row q-col-gutter-md">
-            <div class="col-12 col-md-6">
+            <div class="col-12 col-md-4">
               <q-input v-model="form.fecha" label="Fecha limite" outlined type="datetime-local" />
             </div>
-            <div class="col-12 col-md-3">
-              <q-toggle v-model="form.calificable" label="Calificable" />
+            <div class="col-12 col-md-2 flex items-center">
+              <q-toggle v-model="form.calificable" label="Calificable" left-label />
             </div>
             <div class="col-12 col-md-3">
               <q-input v-model.number="form.puntos" label="Puntos" outlined type="number" min="0" :disable="!form.calificable" />
             </div>
+            <div class="col-12 col-md-3">
+              <q-input v-model.number="form.peso" label="Peso" outlined type="number" step="0.1" min="0" :disable="!form.calificable" />
+            </div>
           </div>
 
+          <div class="row q-col-gutter-md q-mt-xs">
+            <div class="col-12 col-md-6">
+              <q-select
+                v-model="form.tipoActividad"
+                :options="[{label: 'Teórica', value: 'teorica'}, {label: 'Práctica', value: 'practica'}]"
+                label="Tipo de Actividad"
+                outlined
+                emit-value
+                map-options
+              />
+            </div>
+            <div v-if="form.calificable" class="col-12 col-md-6">
+              <q-select
+                v-model="form.grupoCalificacion"
+                :options="[
+                  {label: 'Formativa Teórica', value: 'formativa_teorica'},
+                  {label: 'Formativa Práctica', value: 'formativa_practica'},
+                  {label: 'Examen Parcial', value: 'examen_parcial'},
+                  {label: 'Examen Final', value: 'examen_final'}
+                ]"
+                label="Grupo de Calificación"
+                outlined
+                emit-value
+                map-options
+              />
+            </div>
+          </div>
+
+          <q-expansion-item
+            icon="help_outline"
+            label="Ver guía de calificación (Peso, Tipos y Grupos)"
+            header-class="text-primary text-weight-medium bg-blue-1 rounded-borders q-mt-md dense-help-header"
+            dense
+            class="q-mt-sm overflow-hidden rounded-borders"
+            style="border: 1px dashed var(--q-primary);"
+          >
+            <q-card class="bg-blue-1 text-caption text-blue-10 q-pa-sm">
+              <div class="q-mb-xs"><strong>¿Qué es el Peso?</strong></div>
+              <div class="q-pl-sm q-mb-sm">El peso es un multiplicador (por defecto 1.0) para calcular la importancia de la actividad dentro de su grupo. Por ejemplo, una tarea con peso <strong>2.0</strong> incide el doble en la nota promedio de ese grupo que una de peso <strong>1.0</strong>.</div>
+              
+              <div class="q-mb-xs"><strong>Tipos de Actividad:</strong></div>
+              <div class="q-pl-sm q-mb-sm">
+                • <strong>Teórica:</strong> Centrada en la conceptualización, foros teóricos o cuestionarios de conocimiento.<br>
+                • <strong>Práctica:</strong> Centrada en talleres, tareas de desarrollo, proyectos o laboratorios.
+              </div>
+              
+              <div class="q-mb-xs"><strong>Grupos de Calificación (Sistema UNITEPC):</strong></div>
+              <div class="q-pl-sm">
+                • <strong>Formativa Teórica:</strong> Tareas y evaluaciones conceptuales.<br>
+                • <strong>Formativa Práctica:</strong> Prácticas de campo, laboratorios y proyectos.<br>
+                • <strong>Examen Parcial:</strong> Evaluación intermedia parcial.<br>
+                • <strong>Examen Final:</strong> Examen integrador final.
+              </div>
+            </q-card>
+          </q-expansion-item>
           <q-input v-model="form.instrucciones" label="Instrucciones para el estudiante" outlined type="textarea" rows="3" class="q-mt-md" />
 
           <div class="row q-col-gutter-md q-mt-xs">
@@ -165,10 +222,13 @@ function nuevoForm() {
     fecha: '',
     calificable: true,
     puntos: 100,
+    peso: 1.0,
     intentos: 1,
     participaciones: 1,
     bancoPreguntasId: null,
     rubricaId: null,
+    tipoActividad: 'teorica',
+    grupoCalificacion: 'formativa_teorica',
   }
 }
 
@@ -179,17 +239,20 @@ const opcionesSeccion = computed(() => cursoSeleccionado.value?.secciones?.map((
 const seccionSeleccionada = computed(() => cursoSeleccionado.value?.secciones?.find((seccion) => seccion.id === form.value.seccionId))
 const tipoActivo = computed(() => tipos.find((tipo) => tipo.value === form.value.tipo) || tipos[0])
 const modelo = computed(() => getActivityModel({ tipo: form.value.tipo, tiene_nota: form.value.calificable, nota_maxima: form.value.puntos, config: {} }))
-const opcionesPreguntas = computed(() => herramientas.plantillas.filter((item) => item.categoria === 'preguntas').map((item) => ({ label: item.nombre, value: item.id })))
+const opcionesPreguntas = computed(() => herramientas.plantillas.filter((item) => ['preguntas', 'preguntas_sisa'].includes(item.categoria)).map((item) => ({ label: item.nombre, value: item.id })))
 const opcionesRubricas = computed(() => herramientas.plantillas.filter((item) => item.categoria === 'rubrica').map((item) => ({ label: item.nombre, value: item.id })))
 
 watch(() => form.value.tipo, (tipo) => {
   form.value.calificable = !['encuesta', 'leccion'].includes(tipo)
   form.value.puntos = form.value.calificable ? 100 : 0
+  form.value.peso = form.value.calificable ? 1.0 : 0.0
+  form.value.tipoActividad = ['tarea', 'h5p', 'foro'].includes(tipo) ? 'practica' : 'teorica'
+  form.value.grupoCalificacion = form.value.tipoActividad === 'practica' ? 'formativa_practica' : 'formativa_teorica'
   form.value.bancoPreguntasId = null
   form.value.rubricaId = null
 })
 
-function crearActividad() {
+async function crearActividad() {
   if (!form.value.seccionId || !form.value.titulo.trim()) return
   const config = {
     instrucciones: form.value.instrucciones,
@@ -209,15 +272,16 @@ function crearActividad() {
     demo_content_path: form.value.tipo === 'h5p' ? '/h5p/contents/demo-1' : undefined,
   }
   const orden = actividadesStore.actividades.filter((actividad) => actividad.seccion_id === form.value.seccionId).length + 1
-  const actividadId = actividadesStore.agregarActividad({
-    seccion_id: form.value.seccionId,
+  const actividadId = await actividadesStore.agregarActividad(form.value.seccionId, {
     tipo: form.value.tipo,
     titulo: form.value.titulo.trim(),
     descripcion: form.value.objetivo.trim(),
     orden,
     tiene_nota: form.value.calificable,
     nota_maxima: form.value.calificable ? form.value.puntos : 0,
-    peso: form.value.calificable ? 1 : 0,
+    peso: form.value.calificable ? form.value.peso : 0,
+    tipo_actividad: form.value.tipoActividad,
+    grupo_calificacion: form.value.calificable ? form.value.grupoCalificacion : null,
     config,
   })
   herramientas.registrarCreacionGuiada({ actividadId, cursoId: form.value.cursoId, tipo: form.value.tipo })

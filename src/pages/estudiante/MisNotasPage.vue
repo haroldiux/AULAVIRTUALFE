@@ -48,43 +48,61 @@
 
       <q-separator class="av-card-separator" />
 
-      <div class="overflow-x-auto">
-        <q-markup-table flat class="av-notes-table" data-tour="student-notes-table">
-          <thead>
-            <tr class="text-left av-notes-table__head">
-              <th style="width: 40%">Actividad</th>
-              <th style="width: 15%">Tipo</th>
-              <th style="width: 10%" class="text-right">Nota</th>
-              <th style="width: 10%" class="text-right">Max</th>
-              <th style="width: 15%">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="nota in getNotasCurso(curso.id)" :key="nota.actividad" class="nota-row">
-              <td>
-                <div class="text-body2 av-text-primary">{{ nota.actividad }}</div>
-                <div v-if="nota.retroalimentacion" class="text-caption av-text-muted">
-                  <q-icon name="chat" size="xs" /> {{ nota.retroalimentacion }}
-                </div>
-              </td>
-              <td>
-                <q-badge :color="colorTipo(nota.tipo)" text-color="white" class="av-badge">
-                  {{ labelTipo(nota.tipo) }}
-                </q-badge>
-              </td>
-              <td class="text-right">
-                <span class="text-body2 text-weight-medium av-text-primary">{{ nota.nota }}</span>
-              </td>
-              <td class="text-right av-text-secondary">{{ nota.nota_maxima }}</td>
-              <td>
-                <div class="row items-center q-gutter-xs">
-                  <q-icon :name="nota.porcentaje >= 60 ? 'check_circle' : 'error'" :color="nota.porcentaje >= 60 ? 'positive' : 'negative'" size="xs" />
-                  <span class="text-caption av-text-secondary">{{ nota.porcentaje >= 60 ? 'Aprobado' : 'Reprobado' }}</span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </q-markup-table>
+      <div v-for="grupo in gruposInfo" :key="grupo.key" class="q-px-md q-pb-md">
+        <div class="row items-center q-mb-sm q-mt-md justify-between">
+          <div class="row items-center q-gutter-sm">
+            <q-icon :name="grupo.icon" :color="grupo.color" size="18px" />
+            <span class="text-subtitle2 text-weight-bold av-text-primary">{{ grupo.label }}</span>
+          </div>
+          <q-chip :color="grupo.color" text-color="white" size="sm" dense class="text-weight-bold px-2">
+            Promedio: {{ promedioGrupoCurso(curso.id, grupo.key) }}%
+          </q-chip>
+        </div>
+
+        <div class="overflow-x-auto border-grouped">
+          <q-markup-table flat class="av-notes-table" data-tour="student-notes-table">
+            <thead>
+              <tr class="text-left av-notes-table__head">
+                <th style="width: 45%">Actividad</th>
+                <th style="width: 15%">Tipo</th>
+                <th style="width: 15%" class="text-right">Nota</th>
+                <th style="width: 10%" class="text-right">Max</th>
+                <th style="width: 15%">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="nota in getNotasGrupo(curso.id, grupo.key)" :key="nota.actividad" class="nota-row">
+                <td>
+                  <div class="text-body2 av-text-primary">{{ nota.actividad_titulo || nota.actividad }}</div>
+                  <div v-if="nota.retroalimentacion" class="text-caption av-text-muted">
+                    <q-icon name="chat" size="xs" /> {{ nota.retroalimentacion }}
+                  </div>
+                </td>
+                <td>
+                  <q-badge :color="colorTipo(nota.tipo)" text-color="white" class="av-badge">
+                    {{ labelTipo(nota.tipo) }}
+                  </q-badge>
+                </td>
+                <td class="text-right">
+                  <span class="text-body2 text-weight-medium av-text-primary">{{ nota.nota !== null ? nota.nota : '—' }}</span>
+                </td>
+                <td class="text-right av-text-secondary">{{ nota.nota_maxima }}</td>
+                <td>
+                  <div v-if="nota.nota !== null && nota.nota !== undefined" class="row items-center q-gutter-xs">
+                    <q-icon :name="nota.porcentaje >= 61 || (nota.porcentaje === null && (nota.nota / nota.nota_maxima) >= 0.6) ? 'check_circle' : 'error'" :color="nota.porcentaje >= 61 || (nota.porcentaje === null && (nota.nota / nota.nota_maxima) >= 0.6) ? 'positive' : 'negative'" size="xs" />
+                    <span class="text-caption av-text-secondary">{{ (nota.porcentaje >= 61 || (nota.nota / nota.nota_maxima) >= 0.6) ? 'Aprobado' : 'Reprobado' }}</span>
+                  </div>
+                  <div v-else class="text-caption av-text-muted italic">Pendiente</div>
+                </td>
+              </tr>
+              <tr v-if="getNotasGrupo(curso.id, grupo.key).length === 0">
+                <td colspan="5" class="text-center text-caption av-text-muted q-py-md">
+                  No hay actividades calificadas en esta categoría.
+                </td>
+              </tr>
+            </tbody>
+          </q-markup-table>
+        </div>
       </div>
 
       <q-card-section class="av-distribution" data-tour="student-notes-distribution">
@@ -168,20 +186,66 @@ function promedioCurso(cursoId) {
   return curso?.promedio || 0
 }
 
+const gruposInfo = [
+  { key: 'formativa_teorica', label: 'Formativas Teóricas', color: 'purple', icon: 'auto_stories' },
+  { key: 'formativa_practica', label: 'Formativas Prácticas', color: 'teal', icon: 'science' },
+  { key: 'examen_parcial', label: 'Examen Parcial', color: 'orange-9', icon: 'assignment_turned_in' },
+  { key: 'examen_final', label: 'Examen Final', color: 'red-9', icon: 'emoji_events' },
+]
+
+function getGrupoCalificacion(nota) {
+  if (nota.grupo_calificacion) {
+    return nota.grupo_calificacion
+  }
+  const tipo = nota.tipo || nota.tipo_actividad
+  if (tipo === 'cuestionario') {
+    return 'formativa_teorica'
+  }
+  return 'formativa_practica'
+}
+
+function getNotasGrupo(cursoId, grupoKey) {
+  return getNotasCurso(cursoId).filter((nota) => getGrupoCalificacion(nota) === grupoKey)
+}
+
+function promedioGrupoCurso(cursoId, grupoKey) {
+  const notas = getNotasGrupo(cursoId, grupoKey)
+  const notasValidas = notas.filter((n) => n.nota !== null && n.nota !== undefined)
+  if (!notasValidas.length) return 0
+  const sum = notasValidas.reduce((s, n) => {
+    const pct = n.porcentaje !== null && n.porcentaje !== undefined
+      ? n.porcentaje
+      : (n.nota_maxima > 0 ? (n.nota / n.nota_maxima) * 100 : 0)
+    return s + pct
+  }, 0)
+  return Math.round(sum / notasValidas.length)
+}
+
 function distribucionCurso(cursoId) {
   const notas = getNotasCurso(cursoId).filter((n) => n.nota_maxima > 0)
-  const aprobadasP = notas.filter((n) => (n.porcentaje || 0) >= 60).length
-  const reprobadas = notas.filter((n) => (n.porcentaje || 0) < 60).length
+  const aprobadasP = notas.filter((n) => {
+    const pct = n.porcentaje !== null && n.porcentaje !== undefined
+      ? n.porcentaje
+      : (n.nota_maxima > 0 ? (n.nota / n.nota_maxima) * 100 : 0)
+    return pct >= 61
+  }).length
+  const reprobadas = notas.filter((n) => {
+    if (n.nota === null || n.nota === undefined) return false
+    const pct = n.porcentaje !== null && n.porcentaje !== undefined
+      ? n.porcentaje
+      : (n.nota_maxima > 0 ? (n.nota / n.nota_maxima) * 100 : 0)
+    return pct < 61
+  }).length
   return [
     { label: 'Aprobadas', cantidad: aprobadasP, colorClass: 'text-green' },
     { label: 'Reprobadas', cantidad: reprobadas, colorClass: 'text-red' },
-    { label: 'Total', cantidad: notas.length, colorClass: 'text-primary' },
+    { label: 'Total', cantidad: notas.filter(n => n.nota !== null && n.nota !== undefined).length, colorClass: 'text-primary' },
   ]
 }
 
 function colorNota(porcentaje) {
   if (porcentaje >= 80) return 'text-positive'
-  if (porcentaje >= 60) return 'text-primary'
+  if (porcentaje >= 61) return 'text-primary'
   if (porcentaje >= 40) return 'text-secondary'
   return 'text-negative'
 }
@@ -267,5 +331,10 @@ onMounted(async () => {
 }
 .body--dark .av-distribution__item {
   background: rgba(255, 255, 255, 0.03);
+}
+.border-grouped {
+  border: 1px solid var(--ta-border-card);
+  border-radius: 8px;
+  overflow: hidden;
 }
 </style>

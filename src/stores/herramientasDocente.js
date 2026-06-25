@@ -110,6 +110,41 @@ const plantillasIniciales = [
     },
   },
   {
+    id: 101,
+    categoria: 'preguntas_sisa',
+    tipo: 'cuestionario',
+    nombre: '[SISA] Banco de Programacion Avanzada (UML & POO)',
+    descripcion: 'Banco de preguntas sincronizado desde SISA para la asignatura de Programacion.',
+    uso: 0,
+    datos: {
+      totalPreguntas: 5,
+      preguntas: [
+        { id: 101, tipo: 'opcion_multiple', enunciado: '¿Qué patrón se enfoca en crear una única instancia de una clase?', opciones: [{ texto: 'Prototype', es_correcta: false }, { texto: 'Singleton', es_correcta: true }, { texto: 'Builder', es_correcta: false }, { texto: 'Factory', es_correcta: false }], puntaje: 20 },
+        { id: 102, tipo: 'verdadero_falso', enunciado: 'El patrón Observer permite notificar cambios a múltiples suscriptores automáticamente.', opciones: [{ texto: 'Verdadero', es_correcta: true }, { texto: 'Falso', es_correcta: false }], puntaje: 20 },
+        { id: 103, tipo: 'opcion_multiple', enunciado: '¿Cuál es la función del patrón Decorator?', opciones: [{ texto: 'Añadir responsabilidades a objetos dinámicamente', es_correcta: true }, { texto: 'Definir una familia de algoritmos', es_correcta: false }, { texto: 'Proporcionar una interfaz unificada', es_correcta: false }], puntaje: 20 },
+        { id: 104, tipo: 'verdadero_falso', enunciado: 'El patrón Strategy permite alternar algoritmos en tiempo de ejecución.', opciones: [{ texto: 'Verdadero', es_correcta: true }, { texto: 'Falso', es_correcta: false }], puntaje: 20 },
+        { id: 105, tipo: 'respuesta_corta', enunciado: 'Escribe el nombre del patrón estructural que actúa como un adaptador de interfaces incompatibles.', opciones: [], puntaje: 20 }
+      ]
+    }
+  },
+  {
+    id: 102,
+    categoria: 'preguntas_sisa',
+    tipo: 'cuestionario',
+    nombre: '[SISA] Banco de Base de Datos II (Transacciones & Optimización)',
+    descripcion: 'Banco de preguntas sincronizado desde SISA para la asignatura de Base de Datos.',
+    uso: 0,
+    datos: {
+      totalPreguntas: 4,
+      preguntas: [
+        { id: 201, tipo: 'opcion_multiple', enunciado: '¿Qué propiedad de las transacciones ACID asegura que los datos sean guardados permanentemente?', opciones: [{ texto: 'Atomicity', es_correcta: false }, { texto: 'Consistency', es_correcta: false }, { texto: 'Isolation', es_correcta: false }, { texto: 'Durability', es_correcta: true }], puntaje: 25 },
+        { id: 202, tipo: 'verdadero_falso', enunciado: 'Un índice agrupado (clustered index) ordena físicamente las filas de la tabla en el disco.', opciones: [{ texto: 'Verdadero', es_correcta: true }, { texto: 'Falso', es_correcta: false }], puntaje: 25 },
+        { id: 203, tipo: 'opcion_multiple', enunciado: '¿Cuál de los siguientes niveles de aislamiento evita lecturas sucias (dirty reads) pero permite lecturas no repetibles?', opciones: [{ texto: 'Read Uncommitted', es_correcta: false }, { texto: 'Read Committed', es_correcta: true }, { texto: 'Repeatable Read', es_correcta: false }, { texto: 'Serializable', es_correcta: false }], puntaje: 25 },
+        { id: 204, tipo: 'verdadero_falso', enunciado: 'Un Trigger de tipo INSTEAD OF reemplaza la ejecución de la sentencia DML correspondiente.', opciones: [{ texto: 'Verdadero', es_correcta: true }, { texto: 'Falso', es_correcta: false }], puntaje: 25 }
+      ]
+    }
+  },
+  {
     id: 5,
     categoria: 'rubrica',
     tipo: 'rubrica',

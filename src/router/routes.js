@@ -171,6 +171,11 @@ const routes = [
         component: () => import('pages/admin/UsuariosPage.vue'),
         meta: { title: 'Gestion de Usuarios' },
       },
+      {
+        path: 'plantillas',
+        component: () => import('pages/admin/PlantillasCursosPage.vue'),
+        meta: { title: 'Plantillas de Cursos' },
+      },
     ],
   },
   {
@@ -187,15 +192,8 @@ const routes = [
   },
   {
     path: '/dev-access',
-    component: () => import('layouts/MainLayout.vue'),
-    meta: { public: true },
-    children: [
-      {
-        path: '',
-        component: () => import('pages/auth/DevAccessPage.vue'),
-        meta: { title: 'Acceso de Desarrollo' },
-      },
-    ],
+    component: () => import('pages/auth/DevAccessPage.vue'),
+    meta: { public: true, title: 'Acceso de Desarrollo' },
   },
   {
     path: '/:catchAll(.*)*',

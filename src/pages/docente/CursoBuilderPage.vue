@@ -26,7 +26,7 @@
                   <q-item-section avatar><q-icon name="bookmark" color="orange" /></q-item-section>
                   <q-item-section>Guardar como Plantilla</q-item-section>
                 </q-item>
-                <q-item clickable v-close-popup @click="dialogoPlantillas = true">
+                <q-item clickable v-close-popup @click="abrirDialogoPlantillas">
                   <q-item-section avatar><q-icon name="folder_open" color="teal" /></q-item-section>
                   <q-item-section>Cargar Plantilla</q-item-section>
                 </q-item>
@@ -270,9 +270,7 @@
           <TaButton variant="ghost" label="Cancelar" v-close-popup />
         </q-card-actions>
       </q-card>
-    </q-dialog>
-
-    <q-dialog v-model="dialogoActividad" persistent>
+    </q-dialog>    <q-dialog v-model="dialogoActividad" persistent>
       <q-card class="dialog-card">
         <q-card-section>
           <div class="text-h6">{{ actividadEditando ? 'Editar ' + labelTipo(formActividad.tipo) : 'Nueva ' + labelTipo(formActividad.tipo) }}</div>
@@ -285,21 +283,80 @@
           </q-banner>
           <q-input v-model="formActividad.titulo" label="Titulo de la actividad" outlined class="q-mb-sm" />
           <q-input v-model="formActividad.descripcion" label="Descripcion" outlined type="textarea" rows="2" class="q-mb-sm" />
+          
           <div class="row q-col-gutter-sm q-mb-sm">
-            <div class="col">
+            <div class="col-6">
+              <q-select
+                v-model="formActividad.tipo_actividad"
+                :options="[{label: 'Teórica', value: 'teorica'}, {label: 'Práctica', value: 'practica'}]"
+                label="Tipo de Actividad"
+                outlined
+                dense
+                emit-value
+                map-options
+              />
+            </div>
+            <div class="col-6 flex items-center justify-end">
               <q-toggle v-model="formActividad.tiene_nota" label="Calificable" left-label />
             </div>
           </div>
+          
           <template v-if="formActividad.tiene_nota">
-            <div class="row q-col-gutter-sm">
+            <div class="row q-col-gutter-sm q-mb-sm">
               <div class="col-6">
-                <q-input v-model.number="formActividad.nota_maxima" label="Nota Maxima" outlined type="number" />
+                <q-input v-model.number="formActividad.nota_maxima" label="Nota Maxima" outlined dense type="number" />
               </div>
               <div class="col-6">
-                <q-input v-model.number="formActividad.peso" label="Peso" outlined type="number" step="0.1" />
+                <q-input v-model.number="formActividad.peso" label="Peso" outlined dense type="number" step="0.1" />
               </div>
             </div>
+            <div class="row q-col-gutter-sm q-mb-md">
+              <div class="col-12">
+                <q-select
+                  v-model="formActividad.grupo_calificacion"
+                  :options="[
+                    {label: 'Formativa Teórica', value: 'formativa_teorica'},
+                    {label: 'Formativa Práctica', value: 'formativa_practica'},
+                    {label: 'Examen Parcial', value: 'examen_parcial'},
+                    {label: 'Examen Final', value: 'examen_final'}
+                  ]"
+                  label="Grupo de Calificación"
+                  outlined
+                  dense
+                  emit-value
+                  map-options
+                />
+              </div>
+            </div>
+            <q-expansion-item
+              icon="help_outline"
+              label="Ver guía de calificación (Peso, Tipos y Grupos)"
+              header-class="text-primary text-weight-medium bg-blue-1 rounded-borders q-mb-sm dense-help-header"
+              dense
+              class="q-mb-md overflow-hidden rounded-borders"
+              style="border: 1px dashed var(--q-primary);"
+            >
+              <q-card class="bg-blue-1 text-caption text-blue-10 q-pa-sm">
+                <div class="q-mb-xs"><strong>¿Qué es el Peso?</strong></div>
+                <div class="q-pl-sm q-mb-sm">El peso es un multiplicador (por defecto 1.0) para calcular la importancia de la actividad dentro de su grupo. Por ejemplo, una tarea con peso <strong>2.0</strong> incide el doble en la nota promedio de ese grupo que una de peso <strong>1.0</strong>.</div>
+                
+                <div class="q-mb-xs"><strong>Tipos de Actividad:</strong></div>
+                <div class="q-pl-sm q-mb-sm">
+                  • <strong>Teórica:</strong> Centrada en la conceptualización, foros teóricos o cuestionarios de conocimiento.<br>
+                  • <strong>Práctica:</strong> Centrada en talleres, tareas de desarrollo, proyectos o laboratorios.
+                </div>
+                
+                <div class="q-mb-xs"><strong>Grupos de Calificación (Sistema UNITEPC):</strong></div>
+                <div class="q-pl-sm">
+                  • <strong>Formativa Teórica:</strong> Tareas y evaluaciones conceptuales.<br>
+                  • <strong>Formativa Práctica:</strong> Prácticas de campo, laboratorios y proyectos.<br>
+                  • <strong>Examen Parcial:</strong> Evaluación intermedia parcial.<br>
+                  • <strong>Examen Final:</strong> Examen integrador final.
+                </div>
+              </q-card>
+            </q-expansion-item>
           </template>
+
           <template v-if="formActividad.tipo === 'tarea'">
             <q-separator class="q-my-md" />
             <div class="text-subtitle2 q-mb-sm">Configuracion de Tarea</div>
@@ -307,21 +364,78 @@
               <div class="col-6"><q-input v-model="formActividad.config.fecha_entrega" label="Fecha de entrega" outlined type="datetime-local" /></div>
               <div class="col-6"><q-input v-model="formActividad.config.fecha_limite" label="Fecha limite" outlined type="datetime-local" /></div>
             </div>
-            <div class="row q-col-gutter-sm">
-              <div class="col-8"><q-input v-model="formActividad.config.archivos_permitidos" label="Archivos permitidos (ej: pdf,docx)" outlined /></div>
-              <div class="col-4"><q-input v-model.number="formActividad.config.tamano_max_mb" label="Tamano max (MB)" outlined type="number" /></div>
+            
+            <div class="q-mb-sm">
+              <div class="text-caption text-weight-bold av-text-secondary q-mb-xs">Formatos de archivo permitidos:</div>
+              <div class="row q-col-gutter-xs q-pa-sm rounded-borders bg-grey-2" style="max-height: 120px; overflow-y: auto;">
+                <div v-for="ext in extensionesDisponibles" :key="ext.val" class="col-6 col-sm-4">
+                  <q-checkbox
+                    v-model="archivosSeleccionados"
+                    :val="ext.val"
+                    :label="ext.label"
+                    dense
+                    class="text-caption"
+                  />
+                </div>
+              </div>
+              <div class="row q-col-gutter-sm q-mt-xs">
+                <div class="col-8">
+                  <q-input
+                    v-model="formActividad.config.archivos_permitidos"
+                    label="Formatos permitidos (separados por coma)"
+                    outlined
+                    dense
+                    hint="Ej: pdf,docx,xlsx"
+                  />
+                </div>
+                <div class="col-4">
+                  <q-input v-model.number="formActividad.config.tamano_max_mb" label="Tamano max (MB)" outlined dense type="number" />
+                </div>
+              </div>
             </div>
+
             <q-input v-model="formActividad.config.instrucciones" label="Instrucciones" outlined type="textarea" rows="3" class="q-mt-sm" />
           </template>
+
           <template v-if="formActividad.tipo === 'cuestionario'">
             <q-separator class="q-my-md" />
             <div class="text-subtitle2 q-mb-sm">Configuracion de Cuestionario</div>
-            <div class="row q-col-gutter-sm">
-              <div class="col-4"><q-input v-model.number="formActividad.config.tiempo_limite_minutos" label="Tiempo limite (min)" outlined type="number" /></div>
-              <div class="col-4"><q-input v-model.number="formActividad.config.intentos_maximos" label="Intentos maximos" outlined type="number" /></div>
-              <div class="col-4 flex flex-center"><q-toggle v-model="formActividad.config.aleatorio" label="Aleatorio" /></div>
+            <div class="row q-col-gutter-sm q-mb-md">
+              <div class="col-4"><q-input v-model.number="formActividad.config.tiempo_limite_minutos" label="Tiempo limite (min)" outlined dense type="number" /></div>
+              <div class="col-4"><q-input v-model.number="formActividad.config.intentos_maximos" label="Intentos maximos" outlined dense type="number" /></div>
+              <div class="col-4 flex flex-center"><q-toggle v-model="formActividad.config.aleatorio" label="Aleatorio" dense /></div>
+            </div>
+
+            <!-- Editor de Preguntas de Cuestionario -->
+            <div class="q-mt-md">
+              <div class="row items-center justify-between q-mb-sm">
+                <div class="text-subtitle2 text-primary">Preguntas del Cuestionario ({{ formActividad.config.preguntas?.length || 0 }})</div>
+                <div class="row q-gutter-xs">
+                  <q-btn size="sm" color="purple" icon="cloud_download" label="Importar SISA" no-caps @click="abrirSisaPreguntas" />
+                  <q-btn size="sm" color="primary" icon="add" label="Añadir Manual" no-caps @click="agregarPreguntaManual" />
+                </div>
+              </div>
+              
+              <q-list bordered separator rounded class="bg-grey-1" style="max-height: 200px; overflow-y: auto; border-radius: 8px;">
+                <q-item v-for="(p, idx) in formActividad.config.preguntas || []" :key="idx" class="q-py-sm">
+                  <q-item-section avatar style="min-width: 32px;">
+                    <q-chip size="sm" color="purple" text-color="white" class="q-ma-none">{{ idx + 1 }}</q-chip>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="text-body2 text-weight-medium line-clamp-1">{{ p.enunciado }}</q-item-label>
+                    <q-item-label caption>{{ labelTipoPregunta(p.tipo) }} · {{ p.puntaje || 0 }} pts</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn flat round dense size="sm" color="negative" icon="delete" @click="eliminarPregunta(idx)" />
+                  </q-item-section>
+                </q-item>
+                <q-item v-if="!(formActividad.config.preguntas?.length)" class="text-center text-grey-6 q-pa-md">
+                  <q-item-section>No hay preguntas añadidas a este cuestionario.</q-item-section>
+                </q-item>
+              </q-list>
             </div>
           </template>
+
           <template v-if="formActividad.tipo === 'foro'">
             <q-separator class="q-my-md" />
             <div class="text-subtitle2 q-mb-sm">Configuracion de Foro</div>
@@ -333,6 +447,7 @@
               <q-toggle v-model="formActividad.config.anonimo" label="Anonimo" />
             </div>
           </template>
+
           <template v-if="formActividad.tipo === 'encuesta'">
             <q-separator class="q-my-md" />
             <div class="text-subtitle2 q-mb-sm">Configuracion de Encuesta</div>
@@ -341,11 +456,13 @@
               <div class="col-6 flex flex-center"><q-toggle v-model="formActividad.config.anonima" label="Anonima" /></div>
             </div>
           </template>
+
           <template v-if="formActividad.tipo === 'leccion'">
             <q-separator class="q-my-md" />
             <div class="text-subtitle2 q-mb-sm">Configuracion de Leccion</div>
             <q-input v-model="formActividad.config.contenido_html" label="Contenido HTML" outlined type="textarea" rows="4" />
           </template>
+
           <template v-if="formActividad.tipo === 'h5p'">
             <q-separator class="q-my-md" />
             <div class="text-subtitle2 q-mb-sm">Configuracion de Contenido H5P</div>
@@ -374,12 +491,66 @@
           </template>
         </q-card-section>
         <q-card-actions align="right">
-          <TaButton variant="ghost" label="Cancelar" v-close-popup />
-          <TaButton variant="primary" :label="actividadEditando ? 'Guardar' : 'Agregar'" @click="guardarActividad" />
+          <q-btn flat label="Cancelar" color="grey" v-close-popup />
+          <q-btn label="Guardar" color="primary" @click="guardarActividad" />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
+    <!-- Diálogo para Importar Preguntas desde Banco SISA -->
+    <q-dialog v-model="dialogoSisaPreguntas" persistent>
+      <q-card style="width: 550px; max-width: 90vw; border-radius: 16px;">
+        <q-bar class="bg-primary text-white">
+          <div>Banco de Preguntas SISA</div>
+          <q-space />
+          <q-btn dense flat icon="close" v-close-popup />
+        </q-bar>
+        
+        <q-card-section class="q-pb-none">
+          <div class="text-caption text-grey-7 q-mb-md">
+            Selecciona el banco de preguntas centralizado de la asignatura para alimentarlo en este cuestionario.
+          </div>
+          <q-select
+            v-model="asignaturaSisaPreguntas"
+            :options="[
+              {label: 'SIS-401 — Programación Avanzada (UML & POO)', value: 'SIS-401'},
+              {label: 'SIS-305 — Base de Datos II (Transacciones & Optimización)', value: 'SIS-305'},
+              {label: 'SIS-210 — Ingeniería de Software (Testing & Calidad)', value: 'SIS-210'}
+            ]"
+            label="Seleccionar Banco de Asignatura SISA"
+            outlined
+            emit-value
+            map-options
+            @update:model-value="cargarPreguntasSisa"
+          />
+        </q-card-section>
+
+        <q-card-section v-if="cargandoPreguntasSisa" class="text-center q-pa-xl">
+          <q-spinner color="primary" size="3em" />
+          <div class="text-caption text-grey-7 q-mt-md">Obteniendo banco de preguntas desde SISA API...</div>
+        </q-card-section>
+
+        <q-card-section v-else-if="preguntasSisaDisponibles.length > 0">
+          <div class="text-subtitle2 q-mb-sm text-primary">Preguntas Disponibles ({{ preguntasSisaDisponibles.length }})</div>
+          <q-list bordered separator style="max-height: 250px; overflow-y: auto; border-radius: 8px;">
+            <q-item v-for="p in preguntasSisaDisponibles" :key="p.id" tag="label" v-ripple>
+              <q-item-section avatar>
+                <q-checkbox v-model="preguntasSisaSeleccionadas" :val="p.id" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-body2 line-clamp-2">{{ p.enunciado }}</q-item-label>
+                <q-item-label caption>{{ labelTipoPregunta(p.tipo) }} · {{ p.puntaje }} pts</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Cancelar" color="grey" v-close-popup />
+          <q-btn color="primary" label="Importar Seleccionadas" :disable="preguntasSisaSeleccionadas.length === 0" @click="confirmarImportarSisaPreguntas" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
     <q-dialog v-model="menuSisa" maximized>
       <q-card class="sisa-wizard">
         <q-bar class="bg-primary text-white">
@@ -445,39 +616,92 @@
 
     <!-- Dialogo Cargar Plantilla -->
     <q-dialog v-model="dialogoPlantillas">
-      <q-card class="dialog-card">
-        <q-card-section>
-          <div class="text-h6">Cargar Plantilla</div>
-          <p class="text-grey-7 q-mb-none">Selecciona una plantilla para aplicar su estructura al curso actual.</p>
+      <q-card class="dialog-card" style="width: 550px; max-width: 90vw;">
+        <q-card-section class="q-pb-none">
+          <div class="text-h6 text-weight-bold">Cargar Estructura / Plantilla</div>
+          <p class="text-grey-7 q-mb-sm">Selecciona un formato predefinido para estructurar las secciones y actividades sugeridas.</p>
+          
+          <q-tabs v-model="tabPlantillas" class="text-primary" align="justify" narrow-indicator>
+            <q-tab name="institucionales" label="Institucionales" icon="school" />
+            <q-tab name="mis_plantillas" label="Mis Plantillas" icon="bookmark" />
+          </q-tabs>
         </q-card-section>
-        <q-card-section>
-          <q-list bordered separator>
-            <q-item v-for="(plantilla, i) in plantillas" :key="i" clickable v-ripple v-close-popup @click="cargarPlantilla(plantilla)">
-              <q-item-section avatar>
-                <q-icon name="bookmark" color="orange" />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label class="text-weight-medium">{{ plantilla.nombre }}</q-item-label>
-                <q-item-label caption>
-                  {{ plantilla.descripcion }}
-                  <q-badge color="grey-4" text-color="grey-7" dense class="q-ml-sm">
-                    {{ plantilla.secciones }} secciones
-                  </q-badge>
-                </q-item-label>
-              </q-item-section>
-              <q-item-section side top>
-                <q-btn flat round dense size="sm" icon="delete" color="negative" aria-label="Eliminar plantilla" @click.stop="eliminarPlantilla(i)" />
-              </q-item-section>
-            </q-item>
-          </q-list>
-          <AppEmptyState
-            v-if="plantillas.length === 0"
-            icon="bookmark_border"
-            title="Sin plantillas"
-            message="Usa 'Guardar como Plantilla' para crear una."
-          />
-        </q-card-section>
-        <q-card-actions align="right">
+
+        <q-separator />
+
+        <q-tab-panels v-model="tabPlantillas" animated class="bg-transparent">
+          <!-- Pestaña Plantillas Institucionales -->
+          <q-tab-panel name="institucionales" class="q-pa-none">
+            <q-card-section>
+              <div v-if="cargandoInstitucionales" class="flex flex-center q-pa-lg">
+                <q-spinner-dots size="40px" color="primary" />
+                <div class="q-ml-sm text-grey-6 text-caption">Obteniendo plantillas de la institución...</div>
+              </div>
+
+              <template v-else>
+                <q-list bordered separator v-if="plantillasInstitucionales.length > 0">
+                  <q-item v-for="p in plantillasInstitucionales" :key="p.id" clickable v-ripple v-close-popup @click="cargarPlantilla(p)">
+                    <q-item-section avatar>
+                      <q-icon name="auto_stories" color="primary" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="text-weight-medium text-subtitle2">{{ p.nombre }}</q-item-label>
+                      <q-item-label caption lines="2">{{ p.descripcion }}</q-item-label>
+                      <q-item-label caption class="q-mt-xs">
+                        <q-badge color="purple-1" text-color="primary" class="q-px-sm">
+                          {{ p.datos?.length || 0 }} secciones
+                        </q-badge>
+                        <span class="q-ml-xs text-grey-5">Usado {{ p.uso_count || 0 }} veces</span>
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+
+                <AppEmptyState
+                  v-else
+                  icon="school"
+                  title="Sin plantillas institucionales"
+                  message="El administrador no ha publicado plantillas de estructura de materias."
+                />
+              </template>
+            </q-card-section>
+          </q-tab-panel>
+
+          <!-- Pestaña Mis Plantillas Locales -->
+          <q-tab-panel name="mis_plantillas" class="q-pa-none">
+            <q-card-section>
+              <q-list bordered separator v-if="plantillas.length > 0">
+                <q-item v-for="(plantilla, i) in plantillas" :key="i" clickable v-ripple v-close-popup @click="cargarPlantilla(plantilla)">
+                  <q-item-section avatar>
+                    <q-icon name="bookmark" color="orange" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="text-weight-medium text-subtitle2">{{ plantilla.nombre }}</q-item-label>
+                    <q-item-label caption lines="2">{{ plantilla.descripcion }}</q-item-label>
+                    <q-item-label caption class="q-mt-xs">
+                      <q-badge color="grey-3" text-color="grey-8">
+                        {{ plantilla.secciones || 0 }} secciones
+                      </q-badge>
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section side top>
+                    <q-btn flat round dense size="sm" icon="delete" color="negative" aria-label="Eliminar plantilla" @click.stop="eliminarPlantilla(i)" />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+
+              <AppEmptyState
+                v-else
+                icon="bookmark_border"
+                title="Sin plantillas locales"
+                message="Usa 'Guardar como Plantilla' en el menú de arriba para crear una propia."
+              />
+            </q-card-section>
+          </q-tab-panel>
+        </q-tab-panels>
+
+        <q-separator />
+        <q-card-actions align="right" class="q-py-md q-px-md">
           <TaButton variant="ghost" label="Cerrar" v-close-popup />
         </q-card-actions>
       </q-card>
@@ -830,6 +1054,23 @@ const actividadEditando = ref(null)
 const formActividad = ref(initFormActividad())
 const modeloFormActividad = computed(() => getActivityModel(formActividad.value))
 
+const extensionesDisponibles = [
+  { label: 'PDF (.pdf)', val: 'pdf' },
+  { label: 'Word (.docx)', val: 'docx' },
+  { label: 'Excel (.xlsx)', val: 'xlsx' },
+  { label: 'PowerPoint (.pptx)', val: 'pptx' },
+  { label: 'Imágenes (.png)', val: 'png' },
+  { label: 'Imágenes (.jpg)', val: 'jpg' },
+  { label: 'ZIP (.zip)', val: 'zip' },
+  { label: 'RAR (.rar)', val: 'rar' },
+]
+const archivosSeleccionados = ref([])
+watch(archivosSeleccionados, (newVal) => {
+  if (formActividad.value && formActividad.value.config) {
+    formActividad.value.config.archivos_permitidos = newVal.join(',')
+  }
+}, { deep: true })
+
 // Banco Docente variables and methods
 const dialogoGuardarPlantillaActividad = ref(false)
 const plantillaActividadForm = ref({ nombre: '', descripcion: '', publica: true })
@@ -949,6 +1190,8 @@ function initFormActividad() {
     tiene_nota: true,
     nota_maxima: 100,
     peso: 1.0,
+    tipo_actividad: 'teorica',
+    grupo_calificacion: 'formativa_teorica',
     config: {
       fecha_entrega: '', fecha_limite: '',
       archivos_permitidos: 'pdf,docx', tamano_max_mb: 10, instrucciones: '',
@@ -962,12 +1205,16 @@ function initFormActividad() {
       seguimiento_requerido: true,
       modo_interaccion: 'entrega',
       regla_completado: 'entrega_enviada',
+      preguntas: [],
     },
   }
 }
 
 function abrirFormularioActividad(tipo) {
   formActividad.value = { ...initFormActividad(), tipo }
+  formActividad.value.tipo_actividad = ['tarea', 'h5p', 'foro'].includes(tipo) ? 'practica' : 'teorica'
+  formActividad.value.grupo_calificacion = formActividad.value.tipo_actividad === 'practica' ? 'formativa_practica' : 'formativa_teorica'
+  archivosSeleccionados.value = ['pdf', 'docx']
   actividadEditando.value = null
   dialogoActividad.value = true
 }
@@ -976,8 +1223,13 @@ function editarActividad(act) {
   formActividad.value = {
     titulo: act.titulo, descripcion: act.descripcion, tipo: act.tipo,
     tiene_nota: act.tiene_nota, nota_maxima: act.nota_maxima, peso: act.peso,
+    tipo_actividad: act.tipo_actividad || (['tarea', 'h5p', 'foro'].includes(act.tipo) ? 'practica' : 'teorica'),
+    grupo_calificacion: act.grupo_calificacion || (['tarea', 'h5p', 'foro'].includes(act.tipo) ? 'formativa_practica' : 'formativa_teorica'),
     config: { ...initFormActividad().config, ...act.config },
   }
+  archivosSeleccionados.value = formActividad.value.config.archivos_permitidos
+    ? formActividad.value.config.archivos_permitidos.split(',').map(s => s.trim()).filter(Boolean)
+    : []
   actividadEditando.value = act
   seccionActivaParaAgregar.value = act.seccion_id
   dialogoActividad.value = true
@@ -1015,6 +1267,128 @@ async function onH5pFileChange(file) {
   }
 }
 
+// SISA banco de preguntas variables
+const dialogoSisaPreguntas = ref(false)
+const asignaturaSisaPreguntas = ref(null)
+const preguntasSisaDisponibles = ref([])
+const preguntasSisaSeleccionadas = ref([])
+const cargandoPreguntasSisa = ref(false)
+
+function abrirSisaPreguntas() {
+  dialogoSisaPreguntas.value = true
+  preguntasSisaSeleccionadas.value = []
+  preguntasSisaDisponibles.value = []
+  
+  const codigo = curso.value?.codigo
+  if (codigo) {
+    asignaturaSisaPreguntas.value = codigo
+    cargarPreguntasSisa(codigo)
+  } else {
+    asignaturaSisaPreguntas.value = null
+  }
+}
+
+async function cargarPreguntasSisa(codigo) {
+  if (!codigo) return
+  cargandoPreguntasSisa.value = true
+  try {
+    const res = await integracionService.bancoPreguntasSisa(codigo)
+    preguntasSisaDisponibles.value = res.data?.data || res.data || []
+  } catch (err) {
+    console.error('[CursoBuilder] Error al cargar preguntas SISA:', err)
+    $q.notify({ message: 'Error al conectar con el Banco de Preguntas SISA', color: 'negative' })
+    preguntasSisaDisponibles.value = []
+  } finally {
+    cargandoPreguntasSisa.value = false
+  }
+}
+
+function confirmarImportarSisaPreguntas() {
+  const elegidas = preguntasSisaDisponibles.value.filter((p) => preguntasSisaSeleccionadas.value.includes(p.id))
+  if (!formActividad.value.config.preguntas) {
+    formActividad.value.config.preguntas = []
+  }
+  elegidas.forEach((p) => {
+    const nuevaP = {
+      id: Date.now() + Math.random(),
+      tipo: p.tipo,
+      enunciado: p.enunciado,
+      opciones: JSON.parse(JSON.stringify(p.opciones || [])),
+      puntaje: p.puntaje || 10
+    }
+    formActividad.value.config.preguntas.push(nuevaP)
+  })
+  dialogoSisaPreguntas.value = false
+  $q.notify({ message: `Importadas ${elegidas.length} preguntas desde SISA`, color: 'positive', timeout: 2000 })
+}
+
+function agregarPreguntaManual() {
+  if (!formActividad.value.config.preguntas) {
+    formActividad.value.config.preguntas = []
+  }
+  $q.dialog({
+    title: 'Añadir Pregunta Manual',
+    message: 'Ingresa el enunciado de la pregunta:',
+    prompt: {
+      model: '',
+      type: 'text'
+    },
+    cancel: true,
+    persistent: true
+  }).onOk((enunciado) => {
+    if (!enunciado.trim()) return
+    
+    $q.dialog({
+      title: 'Tipo de Pregunta',
+      message: 'Selecciona el formato de la pregunta:',
+      options: {
+        type: 'radio',
+        model: 'opcion_multiple',
+        items: [
+          { label: 'Opción Múltiple', value: 'opcion_multiple' },
+          { label: 'Verdadero o Falso', value: 'verdadero_falso' },
+          { label: 'Respuesta Corta', value: 'respuesta_corta' }
+        ]
+      },
+      cancel: true,
+      persistent: true
+    }).onOk((tipo) => {
+      let opciones = []
+      if (tipo === 'opcion_multiple') {
+        opciones = [
+          { texto: 'Opción A (Correcta)', es_correcta: true },
+          { texto: 'Opción B', es_correcta: false },
+          { texto: 'Opción C', es_correcta: false }
+        ]
+      } else if (tipo === 'verdadero_falso') {
+        opciones = [
+          { texto: 'Verdadero', es_correcta: true },
+          { texto: 'Falso', es_correcta: false }
+        ]
+      }
+      
+      const nuevaP = {
+        id: Date.now() + Math.random(),
+        tipo,
+        enunciado: enunciado.trim(),
+        opciones,
+        puntaje: 10
+      }
+      formActividad.value.config.preguntas.push(nuevaP)
+      $q.notify({ message: 'Pregunta agregada', color: 'positive', timeout: 1500 })
+    })
+  })
+}
+
+function eliminarPregunta(index) {
+  formActividad.value.config.preguntas.splice(index, 1)
+}
+
+function labelTipoPregunta(t) {
+  const m = { opcion_multiple: 'Opción Múltiple', verdadero_falso: 'Verdadero/Falso', respuesta_corta: 'Respuesta Corta' }
+  return m[t] ?? t
+}
+
 async function guardarActividad() {
   if (!formActividad.value.titulo.trim()) return
   const esActividad = ['leccion', 'tarea', 'foro', 'cuestionario', 'encuesta', 'h5p'].includes(formActividad.value.tipo)
@@ -1025,6 +1399,10 @@ async function guardarActividad() {
     modo_interaccion: modelo.modo_interaccion,
     regla_completado: modelo.regla_completado,
     seguimiento_requerido: true,
+  }
+  
+  if (!formActividad.value.tiene_nota) {
+    formActividad.value.grupo_calificacion = null
   }
 
   if (actividadEditando.value) {
@@ -1216,6 +1594,23 @@ function onDeleteCanvasBloque(seccionId, idx) {
 // Plantillas
 const dialogoPlantillas = ref(false)
 const PLANTILLAS_KEY = 'lms_plantillas_curso'
+const tabPlantillas = ref('institucionales')
+const plantillasInstitucionales = ref([])
+const cargandoInstitucionales = ref(false)
+
+async function abrirDialogoPlantillas() {
+  dialogoPlantillas.value = true
+  tabPlantillas.value = 'institucionales'
+  cargandoInstitucionales.value = true
+  try {
+    const res = await bancoDocenteService.listar({ categoria: 'curso' })
+    plantillasInstitucionales.value = res.data?.data || res.data || []
+  } catch (err) {
+    console.error('[Builder] Error al cargar plantillas institucionales:', err)
+  } finally {
+    cargandoInstitucionales.value = false
+  }
+}
 
 const plantillaEjemplo = {
   nombre: 'Curso Universitario Estandar',
@@ -1281,31 +1676,58 @@ function guardarPlantilla() {
 
 async function cargarPlantilla(plantilla) {
   if (!curso.value) return
-  // Limpiar secciones existentes
-  const seccionesActuales = [...curso.value.secciones]
-  for (const s of seccionesActuales) {
-    await cursosStore.eliminarSeccion(curso.value.id, s.id)
-  }
+  
+  $q.loading.show({ message: 'Aplicando estructura de plantilla...' })
+  
+  try {
+    // Limpiar secciones existentes
+    const seccionesActuales = [...curso.value.secciones]
+    for (const s of seccionesActuales) {
+      await cursosStore.eliminarSeccion(curso.value.id, s.id)
+    }
 
-  // Crear nuevas secciones desde la plantilla
-  for (const secData of plantilla.data) {
-    await cursosStore.agregarSeccion(curso.value.id, {
-      titulo: secData.titulo,
-      descripcion: secData.descripcion,
-    })
-    const nuevaSeccion = curso.value.secciones[curso.value.secciones.length - 1]
-    if (nuevaSeccion && secData.actividades) {
-      for (const actData of secData.actividades) {
-        await actividadesStore.agregarActividad(nuevaSeccion.id, {
-          orden: actividadesStore.actividades.filter((a) => a.seccion_id === nuevaSeccion.id).length + 1,
-          ...actData,
-          config: { ...actData.config },
-        })
+    const seccionesData = plantilla.datos || plantilla.data || []
+
+    // Crear nuevas secciones desde la plantilla
+    for (const secData of seccionesData) {
+      await cursosStore.agregarSeccion(curso.value.id, {
+        titulo: secData.titulo,
+        descripcion: secData.descripcion || '',
+      })
+      const nuevaSeccion = curso.value.secciones[curso.value.secciones.length - 1]
+      if (nuevaSeccion && secData.actividades) {
+        for (const actData of secData.actividades) {
+          await actividadesStore.agregarActividad(nuevaSeccion.id, {
+            orden: actividadesStore.actividades.filter((a) => a.seccion_id === nuevaSeccion.id).length + 1,
+            tipo: actData.tipo,
+            titulo: actData.titulo,
+            descripcion: actData.descripcion || '',
+            tiene_nota: !!actData.tiene_nota,
+            nota_maxima: actData.nota_maxima || 0,
+            peso: actData.peso || 0,
+            config: actData.config ? { ...actData.config } : {},
+          })
+        }
       }
     }
+
+    // Registrar el uso en el backend si viene de la DB (tiene id)
+    if (plantilla.id) {
+      try {
+        await bancoDocenteService.usar(plantilla.id)
+      } catch (err) {
+        console.error('Error al registrar uso de plantilla:', err)
+      }
+    }
+
+    recargarActividades()
+    $q.notify({ message: `Plantilla "${plantilla.nombre}" cargada!`, color: 'positive', timeout: 3000, icon: 'check_circle' })
+  } catch (err) {
+    console.error('Error al cargar plantilla:', err)
+    $q.notify({ message: 'Error al aplicar la plantilla de curso', color: 'negative' })
+  } finally {
+    $q.loading.hide()
   }
-  recargarActividades()
-  $q.notify({ message: `Plantilla "${plantilla.nombre}" cargada!`, color: 'positive', timeout: 3000, icon: 'check_circle' })
 }
 
 function eliminarPlantilla(idx) {

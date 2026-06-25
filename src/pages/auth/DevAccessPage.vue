@@ -1,5 +1,6 @@
 <template>
   <q-layout>
+    <TaLoadingScreen :visible="cargando" message="Iniciando sesion..." />
     <q-page-container>
       <q-page class="relative flex flex-center min-h-screen dev-bg">
         <!-- Fondo -->
@@ -79,6 +80,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/auth'
+import TaLoadingScreen from 'src/components/tailadmin/TaLoadingScreen.vue'
 
 const router = useRouter()
 const $q = useQuasar()
@@ -123,7 +125,7 @@ async function doLogin(user) {
   try {
     await auth.login(user.email, DEV_PASSWORD)
     $q.notify({ message: `Bienvenido, ${auth.userName}`, color: 'positive', timeout: 1500 })
-    router.push(auth.redirectPath)
+    await router.push(auth.redirectPath)
   } catch (err) {
     $q.notify({ message: err?.message || 'No se pudo iniciar sesion', color: 'negative', timeout: 3000 })
   } finally {

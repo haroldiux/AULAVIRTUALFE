@@ -20,4 +20,8 @@ export const integracionService = {
   async sincronizarNotas(cursoId) {
     return api.post(`/cursos/${cursoId}/sincronizar-notas`)
   },
+
+  async bancoPreguntasSisa(asignaturaCodigo) {
+    return api.get('/sisa/banco-preguntas', { params: { asignatura_codigo: asignaturaCodigo } })
+  },
 }

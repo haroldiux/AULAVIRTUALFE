@@ -182,9 +182,14 @@ const cursosStore = useCursosStore()
 const fechaHoy = new Date().toLocaleDateString('es-BO', { day: 'numeric', month: 'long', year: 'numeric' })
 const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 700 })
 
-const totalCursos = computed(() => cursosStore.cursos.length)
+const totalCursos = computed(() => (cursosStore.cursos || []).length)
 const totalUsuarios = ref(0)
 const usuarios = ref([])
+const logs = ref([
+  { id: 1, mensaje: 'Sincronización manual de asignaturas SISA', fecha: 'Hoy, 10:30 AM', color: 'positive', icon: 'sync' },
+  { id: 2, mensaje: 'Conexión verificada con la API de Estudiantes', fecha: 'Ayer, 04:15 PM', color: 'info', icon: 'check_circle' },
+  { id: 3, mensaje: 'Sincronización de notas a SISA completada', fecha: 'Ayer, 09:00 AM', color: 'positive', icon: 'done_all' }
+])
 const datosIntegraciones = ref({ integraciones: [], politica_aprobacion: { minimo: 60 }, sisa_stub: true })
 
 const chartDataUsuarios = computed(() => {
@@ -225,7 +230,8 @@ const chartOptionsDoughnut = computed(() => ({
 
 const chartDataCursos = computed(() => {
   const estados = { publicado: 0, borrador: 0, archivado: 0 }
-  cursosStore.cursos.forEach((c) => {
+  const lista = cursosStore.cursos || []
+  lista.forEach((c) => {
     if (c.estado === 'publicado') estados.publicado++
     else if (c.estado === 'borrador') estados.borrador++
     else estados.archivado++
@@ -278,6 +284,11 @@ async function notifySync() {
 function labelRol(r) {
   const m = { docente: 'Docente', estudiante: 'Estudiante', director: 'Director', admin: 'Admin' }
   return m[r] ?? r
+}
+
+function colorRol(r) {
+  const m = { docente: 'purple', estudiante: 'teal', director: 'orange', admin: 'negative' }
+  return m[r] ?? 'grey'
 }
 
 onMounted(async () => {

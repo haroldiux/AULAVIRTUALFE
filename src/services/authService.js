@@ -13,7 +13,12 @@ export const authService = {
     return api.get('/auth/me')
   },
 
-  async logout() {
+  async logout(token = null) {
+    if (token) {
+      return api.post('/auth/logout', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    }
     return api.post('/auth/logout')
   },
 }

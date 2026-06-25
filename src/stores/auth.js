@@ -65,12 +65,11 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logout() {
-      try {
-        if (this.token) await authService.logout()
-      } catch {
-        // ignorar error de red al cerrar sesion
-      }
+      const token = this.token
       this.limpiarSesion()
+      if (token) {
+        authService.logout(token).catch(() => {})
+      }
     },
 
     limpiarSesion() {

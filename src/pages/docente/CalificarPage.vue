@@ -40,6 +40,19 @@
           </div>
         </div>
 
+        <!-- Resumen de Promedios por Categoría (KPIs) -->
+        <div class="row q-col-gutter-sm q-mb-md">
+          <div class="col-6 col-sm-3" v-for="grupo in gruposInfo" :key="grupo.key">
+            <div class="av-kpi-card" :class="`av-kpi-card--${grupo.key.replace('formativa_', '').replace('examen_', '')}`">
+              <div class="av-kpi-card__title row items-center justify-center q-gutter-xs">
+                <q-icon :name="grupo.icon" size="14px" />
+                <span>Prom. {{ grupo.label }}</span>
+              </div>
+              <div class="av-kpi-card__value q-mt-xs">{{ promedioPorGrupo[grupo.key] }}%</div>
+            </div>
+          </div>
+        </div>
+
         <div class="table-scroll" data-tour="teacher-grades-table">
           <table class="calificaciones-tabla">
             <thead>
@@ -47,11 +60,17 @@
                 <th class="sticky-col">Estudiante</th>
                 <th v-for="act in actividadesCurso" :key="act.id" class="act-header">
                   <div class="text-caption text-weight-medium">{{ act.titulo }}</div>
-                  <div class="text-caption text-grey-6">
+                  <div class="text-caption text-grey-6 q-gutter-xs">
                     <q-badge :color="colorTipo(act.tipo)" text-color="white" dense>
                       {{ labelTipo(act.tipo) }}
                     </q-badge>
-                    <span v-if="act.tiene_nota"> {{ act.nota_maxima }}pts</span>
+                    <q-badge :color="colorGrupo(getGrupoCalificacion(act))" text-color="white" dense>
+                      {{ labelGrupo(getGrupoCalificacion(act)) }}
+                    </q-badge>
+                    <div class="q-mt-xs" v-if="act.tiene_nota">
+                      <span class="text-weight-bold">{{ act.nota_maxima }} pts</span>
+                      <span class="text-grey-6 text-caption"> ({{ act.peso }}x)</span>
+                    </div>
                   </div>
                 </th>
                 <th class="text-right">Promedio</th>
@@ -458,6 +477,71 @@ function labelTipo(t) { const m = { leccion: 'Lec', tarea: 'Tar', foro: 'For', c
 function colorTipo(t) { const m = { leccion: 'indigo', tarea: 'orange', foro: 'teal', cuestionario: 'purple', encuesta: 'green', h5p: 'pink' }; return m[t] ?? 'grey' }
 function colorNota(p) { if (p >= 80) return 'text-green'; if (p >= 60) return 'text-primary'; if (p >= 40) return 'text-orange'; return 'text-negative' }
 
+const gruposInfo = [
+  { key: 'formativa_teorica', label: 'Formativas Teóricas', color: 'purple', icon: 'auto_stories' },
+  { key: 'formativa_practica', label: 'Formativas Prácticas', color: 'teal', icon: 'science' },
+  { key: 'examen_parcial', label: 'Examen Parcial', color: 'orange-9', icon: 'assignment_turned_in' },
+  { key: 'examen_final', label: 'Examen Final', color: 'red-9', icon: 'emoji_events' },
+]
+
+function getGrupoCalificacion(act) {
+  if (act.grupo_calificacion) {
+    return act.grupo_calificacion
+  }
+  if (act.tipo === 'cuestionario') {
+    return 'formativa_teorica'
+  }
+  return 'formativa_practica'
+}
+
+function labelGrupo(grupo) {
+  const map = {
+    formativa_teorica: 'Teórica',
+    formativa_practica: 'Práctica',
+    examen_parcial: 'Parcial',
+    examen_final: 'Final',
+  }
+  return map[grupo] || 'Sin Grupo'
+}
+
+function colorGrupo(grupo) {
+  const map = {
+    formativa_teorica: 'purple',
+    formativa_practica: 'teal',
+    examen_parcial: 'orange-9',
+    examen_final: 'red-9',
+  }
+  return map[grupo] || 'grey'
+}
+
+const promedioPorGrupo = computed(() => {
+  const grupos = {
+    formativa_teorica: { suma: 0, count: 0 },
+    formativa_practica: { suma: 0, count: 0 },
+    examen_parcial: { suma: 0, count: 0 },
+    examen_final: { suma: 0, count: 0 },
+  }
+
+  estudiantes.value.forEach((est) => {
+    actividadesCurso.value.forEach((act) => {
+      const nota = getNota(est.id, act.id)
+      if (nota) {
+        const grupo = getGrupoCalificacion(act)
+        if (grupos[grupo]) {
+          grupos[grupo].suma += nota.porcentaje
+          grupos[grupo].count++
+        }
+      }
+    })
+  })
+
+  const results = {}
+  for (const k in grupos) {
+    results[k] = grupos[k].count > 0 ? Math.round(grupos[k].suma / grupos[k].count) : 0
+  }
+  return results
+})
+
 watch(cursoSeleccionado, (newId) => {
   cargarLibro(newId)
 })
@@ -611,4 +695,26 @@ thead .sticky-col {
   text-align: center;
   white-space: normal;
 }
+
+.av-kpi-card {
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+  background: var(--ta-bg-card);
+  border: 1px solid var(--ta-border-table);
+}
+.av-kpi-card__title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ta-text-secondary);
+}
+.av-kpi-card__value {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.av-kpi-card--teorica .av-kpi-card__value { color: #8e24aa; }
+.av-kpi-card--practica .av-kpi-card__value { color: #0d9488; }
+.av-kpi-card--parcial .av-kpi-card__value { color: #f59e0b; }
+.av-kpi-card--final .av-kpi-card__value { color: #ef4444; }
 </style>

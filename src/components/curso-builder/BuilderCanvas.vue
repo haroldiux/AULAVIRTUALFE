@@ -1,17 +1,33 @@
 <template>
-  <div class="builder-canvas">
+  <div
+    class="builder-canvas"
+    data-help="Este es el lienzo de diseño (canvas). Aquí puedes organizar las secciones y bloques del curso arrastrándolos y ordenándolos visualmente."
+    data-help-title="Lienzo de Diseño (Canvas)"
+  >
     <div v-if="!secciones.length" class="text-center q-pa-xl">
       <q-icon name="dashboard_customize" size="64px" color="grey-4" />
       <p class="text-grey-6 q-mt-md">Arrastra bloques desde la paleta al lienzo para empezar a construir tu curso.</p>
       <p class="text-caption text-grey-5">Tambien puedes agregar secciones con el boton superior.</p>
     </div>
 
-    <div v-for="seccion in secciones" :key="seccion.id" class="canvas-seccion q-mb-md">
+    <div
+      v-for="seccion in secciones"
+      :key="seccion.id"
+      class="canvas-seccion q-mb-md"
+      data-help="Esta tarjeta representa una sección o unidad de tu curso. Agrupa todas las actividades y recursos de aprendizaje de ese módulo."
+      data-help-title="Sección Académica"
+    >
       <div
         class="row items-center q-pa-sm rounded-borders"
         :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-2'"
       >
-        <q-icon name="drag_indicator" class="drag-handle q-mr-sm text-grey-5 cursor-grab" size="sm" />
+        <q-icon
+          name="drag_indicator"
+          class="drag-handle q-mr-sm text-grey-5 cursor-grab"
+          size="sm"
+          data-help="Tirador de arrastre. Haz clic sostenido sobre este icono para mover la sección completa arriba o abajo en la estructura."
+          data-help-title="Tirador de Arrastre de Sección"
+        />
         <q-icon name="folder" color="primary" size="sm" class="q-mr-sm" />
         <div class="col">
           <div class="text-subtitle2 text-weight-medium">{{ seccion.titulo }}</div>
@@ -33,17 +49,27 @@
         class="canvas-drop-zone q-pa-sm"
         :class="$q.dark.isActive ? 'canvas-drop-zone--dark' : 'canvas-drop-zone--light'"
         @change="(e) => $emit('bloque-change', seccion.id, e)"
+        data-help="Zona de soltar. Arrastra bloques de actividades o contenido aquí para asociarlos a esta sección."
+        data-help-title="Zona de Colocación de Bloques"
       >
         <template #item="{ element: bloque, index: bIdx }">
           <div
             class="canvas-bloque q-mb-sm"
             :class="{ 'bloque-nuevo': bloque.esNuevo, 'canvas-bloque--dark': $q.dark.isActive, 'canvas-bloque--light': !$q.dark.isActive }"
+            data-help="Bloque Académico. Representa un contenido (lectura, video) o una actividad (tarea, foro, quiz). Haz clic en el botón Editar (lápiz) para configurar su contenido, fechas de entrega o nota máxima."
+            data-help-title="Bloque del Curso"
           >
             <div
               class="row items-center q-px-sm q-py-xs bloque-header"
               :class="$q.dark.isActive ? 'bloque-header--dark' : 'bloque-header--light'"
             >
-              <q-icon name="drag_indicator" class="bloque-drag text-grey-4 cursor-grab" size="xs" />
+              <q-icon
+                name="drag_indicator"
+                class="bloque-drag text-grey-4 cursor-grab"
+                size="xs"
+                data-help="Tirador de bloque. Arrastra desde aquí para cambiar la posición del bloque o moverlo a otra sección."
+                data-help-title="Arrastre de Bloque"
+              />
               <q-icon :name="iconBloque(bloque)" :color="colorBloque(bloque)" size="xs" class="q-mr-sm" />
               <span class="text-caption text-weight-medium">{{ labelBloque(bloque) }}</span>
               <q-space />

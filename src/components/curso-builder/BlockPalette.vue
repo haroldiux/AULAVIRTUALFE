@@ -1,5 +1,12 @@
 <template>
-  <q-card flat bordered class="block-palette" :class="$q.dark.isActive ? 'block-palette--dark' : 'block-palette--light'">
+  <q-card
+    flat
+    bordered
+    class="block-palette"
+    :class="$q.dark.isActive ? 'block-palette--dark' : 'block-palette--light'"
+    data-help="La Paleta de Bloques contiene todas las actividades y recursos que puedes arrastrar al lienzo central (canvas). Puedes agregar Lecciones, Tareas, Foros, Quizzes y contenido interactivo H5P."
+    data-help-title="Paleta de Bloques"
+  >
     <q-card-section :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-2'">
       <div class="text-subtitle2 text-weight-medium">Paleta de Bloques</div>
       <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Arrastra bloques al lienzo</div>
@@ -28,6 +35,8 @@
               bordered
               class="bloque-card cursor-grab"
               :class="$q.dark.isActive ? 'bloque-card--dark' : 'bloque-card--light'"
+              data-help="Este es un bloque de plantilla. Arrástralo y suéltalo dentro de cualquier sección en el lienzo central para agregarlo a tu curso."
+              data-help-title="Bloque de Actividad / Recurso"
             >
               <q-card-section class="q-pa-sm text-center">
                 <q-icon :name="bloque.icon" :color="bloque.color" size="sm" />

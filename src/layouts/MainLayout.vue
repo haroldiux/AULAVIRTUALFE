@@ -79,7 +79,8 @@
           <q-tooltip>Notificaciones</q-tooltip>
         </q-btn>
 
-        <q-btn
+        <!-- Tutoriales y Ayuda con Dropdown -->
+        <q-btn-dropdown
           flat
           dense
           no-caps
@@ -88,22 +89,62 @@
           color="white"
           class="q-mr-sm gt-xs"
           data-tour="tutorial-button"
-          @click="startTutorial"
         >
-          <q-tooltip>Iniciar guia de uso</q-tooltip>
-        </q-btn>
-        <q-btn
+          <q-list style="min-width: 280px" class="q-py-xs">
+            <q-item clickable v-close-popup v-ripple @click="startTutorial">
+              <q-item-section avatar style="min-width: 0; padding-right: 8px;">
+                <q-icon name="explore" color="primary" size="sm" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-bold text-sm">Guía Paso a Paso</q-item-label>
+                <q-item-label caption class="text-xs">Explora las secciones de esta pantalla de forma guiada.</q-item-label>
+              </q-item-section>
+            </q-item>
+
+            <q-item clickable v-close-popup v-ripple @click="startHelpInspector">
+              <q-item-section avatar style="min-width: 0; padding-right: 8px;">
+                <q-icon name="search" color="teal" size="sm" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-bold text-sm">Lupa de Ayuda</q-item-label>
+                <q-item-label caption class="text-xs">Haz clic en cualquier elemento resaltado para ver su explicación.</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
+
+        <q-btn-dropdown
           flat
           round
           dense
+          no-icon-label
           icon="tips_and_updates"
           color="white"
           class="q-mr-sm lt-sm"
           data-tour="tutorial-button"
-          @click="startTutorial"
         >
-          <q-tooltip>Iniciar guia de uso</q-tooltip>
-        </q-btn>
+          <q-list style="min-width: 280px" class="q-py-xs">
+            <q-item clickable v-close-popup v-ripple @click="startTutorial">
+              <q-item-section avatar style="min-width: 0; padding-right: 8px;">
+                <q-icon name="explore" color="primary" size="sm" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-bold text-sm">Guía Paso a Paso</q-item-label>
+                <q-item-label caption class="text-xs">Explora las secciones de esta pantalla de forma guiada.</q-item-label>
+              </q-item-section>
+            </q-item>
+
+            <q-item clickable v-close-popup v-ripple @click="startHelpInspector">
+              <q-item-section avatar style="min-width: 0; padding-right: 8px;">
+                <q-icon name="search" color="teal" size="sm" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-bold text-sm">Lupa de Ayuda</q-item-label>
+                <q-item-label caption class="text-xs">Haz clic en cualquier elemento resaltado para ver su explicación.</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
 
         <q-btn-dropdown
           flat
@@ -329,6 +370,7 @@
     </q-drawer>
 
     <AppTutorialGuide v-model="tutorialOpen" />
+    <AppHelpInspector v-model="inspectorOpen" />
   </q-layout>
 </template>
 
@@ -341,6 +383,7 @@ import { useCursosStore } from 'src/stores/cursos'
 import { useActividadesStore } from 'src/stores/actividades'
 import { useNotificacionesStore } from 'src/stores/notificaciones'
 import AppTutorialGuide from 'src/components/tutorial/AppTutorialGuide.vue'
+import AppHelpInspector from 'src/components/tutorial/AppHelpInspector.vue'
 import anime from 'animejs'
 
 const $q = useQuasar()
@@ -353,11 +396,17 @@ const notifStore = useNotificacionesStore()
 const leftDrawerOpen = ref(false)
 const notifPanel = ref(false)
 const tutorialOpen = ref(false)
+const inspectorOpen = ref(false)
 
-onMounted(async () => {
-  await cursosStore.cargarCursos()
-  actividadesStore.cargarDesdeCursos(cursosStore.cursos)
-  notifStore.inicializar()
+onMounted(() => {
+  cursosStore.cargarCursos().then(() => {
+    actividadesStore.cargarDesdeCursos(cursosStore.cursos)
+  }).catch((err) => {
+    console.error('Error al cargar cursos:', err)
+  })
+  notifStore.inicializar().catch((err) => {
+    console.error('Error al inicializar notificaciones:', err)
+  })
 })
 
 const menuItems = computed(() => {
@@ -389,6 +438,7 @@ const menuItems = computed(() => {
     admin: [
       { label: 'Gestión', icon: 'settings', path: '/admin/gestion' },
       { label: 'Usuarios', icon: 'people', path: '/admin/usuarios' },
+      { label: 'Plantillas de Cursos', icon: 'auto_stories', path: '/admin/plantillas' },
       { label: 'Configuración', icon: 'tune', path: '/admin/configuracion' },
       { label: 'Calendario', icon: 'event', path: '/calendario' },
       { label: 'Mensajes', icon: 'mail', path: '/mensajes' },
@@ -450,6 +500,10 @@ function startTutorial() {
   tutorialOpen.value = true
 }
 
+function startHelpInspector() {
+  inspectorOpen.value = true
+}
+
 function toggleDark() {
   $q.dark.toggle()
   localStorage.setItem('lms_dark_mode', String($q.dark.isActive))
@@ -461,8 +515,8 @@ function confirmarLogout() {
     message: 'Estas seguro de que deseas cerrar sesion?',
     cancel: true,
     persistent: false,
-  }).onOk(async () => {
-    await auth.logout()
+  }).onOk(() => {
+    auth.logout()
     router.push('/login')
   })
 }
