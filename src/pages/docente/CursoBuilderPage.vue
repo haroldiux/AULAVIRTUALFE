@@ -496,7 +496,7 @@
             </q-expansion-item>
 
             <!-- Configuración de Rúbrica / Lista de Cotejo -->
-            <div v-if="['tarea', 'foro'].includes(formActividad.tipo)" class="q-mb-md">
+            <div v-if="['tarea', 'foro', 'rubrica'].includes(formActividad.tipo)" class="q-mb-md">
               <q-separator class="q-my-sm" />
               <div class="row items-center justify-between q-py-xs">
                 <div class="text-subtitle2 text-grey-8">Método de Evaluación</div>
@@ -524,9 +524,9 @@
             </div>
           </template>
 
-          <template v-if="formActividad.tipo === 'tarea'">
+          <template v-if="['tarea', 'rubrica'].includes(formActividad.tipo)">
             <q-separator class="q-my-md" />
-            <div class="text-subtitle2 q-mb-sm">Configuracion de Tarea</div>
+            <div class="text-subtitle2 q-mb-sm">Configuracion de {{ formActividad.tipo === 'rubrica' ? 'Rúbrica / Proyecto' : 'Tarea' }}</div>
             <div class="row q-col-gutter-sm q-mb-sm">
               <div class="col-6"><q-input v-model="formActividad.config.fecha_entrega" label="Fecha de entrega" outlined type="datetime-local" /></div>
               <div class="col-6"><q-input v-model="formActividad.config.fecha_limite" label="Fecha limite" outlined type="datetime-local" /></div>
@@ -1252,7 +1252,7 @@ const listasActividades = shallowReactive({})
 function inicializarListas() {
   if (!curso.value) return
   const secciones = curso.value.secciones || []
-  const esActividad = (b) => ['leccion', 'tarea', 'foro', 'cuestionario', 'encuesta', 'h5p'].includes(b.tipo)
+  const esActividad = (b) => ['leccion', 'tarea', 'foro', 'cuestionario', 'encuesta', 'h5p', 'rubrica'].includes(b.tipo)
 
   secciones.forEach((s) => {
     const desdeStore = actividadesStore.actividades
@@ -1410,6 +1410,7 @@ const tiposActividad = [
   { valor: 'cuestionario', label: 'Cuestionario', icon: 'quiz', color: 'purple', descripcion: 'Evaluacion con preguntas de opcion multiple' },
   { valor: 'encuesta', label: 'Encuesta', icon: 'poll', color: 'green', descripcion: 'Recoleccion de opinion de estudiantes' },
   { valor: 'h5p', label: 'Contenido H5P', icon: 'extension', color: 'pink', descripcion: 'Contenido interactivo H5P (quiz, video, drag & drop, etc.)' },
+  { valor: 'rubrica', label: 'Rúbrica / Proyecto', icon: 'fact_check', color: 'teal', descripcion: 'Proyecto práctico evaluado mediante rúbrica o lista de cotejo' },
   { valor: 'texto', label: 'Texto HTML', icon: 'text_fields', color: 'grey-8', descripcion: 'Bloque de texto enriquecido' },
   { valor: 'imagen', label: 'Imagen', icon: 'image', color: 'blue-grey', descripcion: 'Imagen o grafico' },
   { valor: 'video', label: 'Video', icon: 'smart_display', color: 'red', descripcion: 'Video de YouTube o Vimeo' },
@@ -1829,7 +1830,7 @@ function initFormActividad() {
 
 function abrirFormularioActividad(tipo) {
   formActividad.value = { ...initFormActividad(), tipo }
-  formActividad.value.tipo_actividad = ['tarea', 'h5p', 'foro'].includes(tipo) ? 'practica' : 'teorica'
+  formActividad.value.tipo_actividad = ['tarea', 'h5p', 'foro', 'rubrica'].includes(tipo) ? 'practica' : 'teorica'
   formActividad.value.grupo_calificacion = formActividad.value.tipo_actividad === 'practica' ? 'formativa_practica' : 'formativa_teorica'
   formActividad.value.parcial = 1
   archivosSeleccionados.value = ['pdf', 'docx']
@@ -1841,8 +1842,8 @@ function editarActividad(act) {
   formActividad.value = {
     titulo: act.titulo, descripcion: act.descripcion, tipo: act.tipo,
     tiene_nota: act.tiene_nota, nota_maxima: act.nota_maxima, peso: act.peso,
-    tipo_actividad: act.tipo_actividad || (['tarea', 'h5p', 'foro'].includes(act.tipo) ? 'practica' : 'teorica'),
-    grupo_calificacion: act.grupo_calificacion || (['tarea', 'h5p', 'foro'].includes(act.tipo) ? 'formativa_practica' : 'formativa_teorica'),
+    tipo_actividad: act.tipo_actividad || (['tarea', 'h5p', 'foro', 'rubrica'].includes(act.tipo) ? 'practica' : 'teorica'),
+    grupo_calificacion: act.grupo_calificacion || (['tarea', 'h5p', 'foro', 'rubrica'].includes(act.tipo) ? 'formativa_practica' : 'formativa_teorica'),
     parcial: act.parcial || 1,
     config: { ...initFormActividad().config, ...act.config },
   }
@@ -2013,7 +2014,7 @@ function labelTipoPregunta(t) {
 
 async function guardarActividad() {
   if (!formActividad.value.titulo.trim()) return
-  const esActividad = ['leccion', 'tarea', 'foro', 'cuestionario', 'encuesta', 'h5p'].includes(formActividad.value.tipo)
+  const esActividad = ['leccion', 'tarea', 'foro', 'cuestionario', 'encuesta', 'h5p', 'rubrica'].includes(formActividad.value.tipo)
   const sid = seccionActivaParaAgregar.value
   const modelo = getActivityModel(formActividad.value)
   formActividad.value.config = {
@@ -2257,17 +2258,17 @@ async function sisaGenerar() {
 }
 
 function labelTipo(tipo) {
-  const m = { leccion: 'Leccion', tarea: 'Tarea', foro: 'Foro', cuestionario: 'Cuestionario', encuesta: 'Encuesta', h5p: 'Contenido H5P', texto: 'Texto', imagen: 'Imagen', video: 'Video', archivo: 'Archivo', separador: 'Separador' }
+  const m = { leccion: 'Leccion', tarea: 'Tarea', foro: 'Foro', cuestionario: 'Cuestionario', encuesta: 'Encuesta', h5p: 'Contenido H5P', texto: 'Texto', imagen: 'Imagen', video: 'Video', archivo: 'Archivo', separador: 'Separador', rubrica: 'Rúbrica / Proyecto' }
   return m[tipo] ?? tipo
 }
 
 function iconoTipo(tipo) {
-  const m = { leccion: 'article', tarea: 'assignment', foro: 'forum', cuestionario: 'quiz', encuesta: 'poll', h5p: 'extension' }
+  const m = { leccion: 'article', tarea: 'assignment', foro: 'forum', cuestionario: 'quiz', encuesta: 'poll', h5p: 'extension', rubrica: 'fact_check' }
   return m[tipo] ?? 'help'
 }
 
 function colorTipo(tipo) {
-  const m = { leccion: 'indigo', tarea: 'orange', foro: 'teal', cuestionario: 'purple', encuesta: 'green', h5p: 'pink' }
+  const m = { leccion: 'indigo', tarea: 'orange', foro: 'teal', cuestionario: 'purple', encuesta: 'green', h5p: 'pink', rubrica: 'teal' }
   return m[tipo] ?? 'grey'
 }
 

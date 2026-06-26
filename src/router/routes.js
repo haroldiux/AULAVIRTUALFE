@@ -1,3 +1,35 @@
+const isDev = process.env.DEV
+
+// Eager load in dev to bypass Docker/WSL2 compile latency, lazy load in prod
+const devPages = isDev ? import.meta.glob('../pages/**/*.vue', { eager: true }) : null
+const devLayouts = isDev ? import.meta.glob('../layouts/**/*.vue', { eager: true }) : null
+
+function page(path) {
+  if (isDev) {
+    const key = `../pages/${path}.vue`
+    const component = devPages[key]
+    if (!component) {
+      console.error(`Page not found: ${key}`)
+      return null
+    }
+    return component.default || component
+  }
+  return () => import(`../pages/${path}.vue`)
+}
+
+function layout(path) {
+  if (isDev) {
+    const key = `../layouts/${path}.vue`
+    const component = devLayouts[key]
+    if (!component) {
+      console.error(`Layout not found: ${key}`)
+      return null
+    }
+    return component.default || component
+  }
+  return () => import(`../layouts/${path}.vue`)
+}
+
 const routes = [
   {
     path: '/',
@@ -20,28 +52,28 @@ const routes = [
   },
   {
     path: '/login',
-    component: () => import('pages/auth/LoginPage.vue'),
+    component: page('auth/LoginPage'),
     meta: { public: true, title: 'Iniciar Sesion' },
   },
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue'),
+    component: layout('MainLayout'),
     children: [
       {
         path: 'calendario',
-        component: () => import('pages/shared/CalendarioPage.vue'),
+        component: page('shared/CalendarioPage'),
         meta: { title: 'Calendario' },
       },
       {
         path: 'mensajes',
-        component: () => import('pages/shared/MensajeriaPage.vue'),
+        component: page('shared/MensajeriaPage'),
         meta: { title: 'Mensajes' },
       },
     ],
   },
   {
     path: '/docente',
-    component: () => import('layouts/MainLayout.vue'),
+    component: layout('MainLayout'),
     meta: { roles: ['docente'] },
     children: [
       {
@@ -50,39 +82,39 @@ const routes = [
       },
       {
         path: 'cursos',
-        component: () => import('pages/docente/MisCursosPage.vue'),
+        component: page('docente/MisCursosPage'),
         meta: { title: 'Mis Cursos' },
       },
       {
         path: 'curso/:id/builder',
-        component: () => import('pages/docente/CursoBuilderPage.vue'),
+        component: page('docente/CursoBuilderPage'),
         meta: { title: 'Builder de Curso' },
       },
       {
         path: 'curso/:id/preview',
-        component: () => import('pages/docente/CursoPreviewPage.vue'),
+        component: page('docente/CursoPreviewPage'),
         meta: { title: 'Previsualizar Curso' },
       },
       {
         path: 'dashboard',
-        component: () => import('pages/docente/DashboardDocentePage.vue'),
+        component: page('docente/DashboardDocentePage'),
         meta: { title: 'Dashboard Docente' },
       },
       {
         path: 'calificar',
-        component: () => import('pages/docente/CalificarPage.vue'),
+        component: page('docente/CalificarPage'),
         meta: { title: 'Libro de Calificaciones' },
       },
       {
         path: 'herramientas',
-        component: () => import('pages/docente/HerramientasDocentePage.vue'),
+        component: page('docente/HerramientasDocentePage'),
         meta: { title: 'Centro Inteligente Docente' },
       },
     ],
   },
   {
     path: '/estudiante',
-    component: () => import('layouts/MainLayout.vue'),
+    component: layout('MainLayout'),
     meta: { roles: ['estudiante'] },
     children: [
       {
@@ -91,34 +123,34 @@ const routes = [
       },
       {
         path: 'dashboard',
-        component: () => import('pages/estudiante/DashboardEstudiantePage.vue'),
+        component: page('estudiante/DashboardEstudiantePage'),
         meta: { title: 'Dashboard Estudiante' },
       },
       {
         path: 'cursos',
-        component: () => import('pages/estudiante/MisCursosPage.vue'),
+        component: page('estudiante/MisCursosPage'),
         meta: { title: 'Mis Cursos' },
       },
       {
         path: 'curso/:id',
-        component: () => import('pages/estudiante/VerCursoPage.vue'),
+        component: page('estudiante/VerCursoPage'),
         meta: { title: 'Ver Curso' },
       },
       {
         path: 'notas',
-        component: () => import('pages/estudiante/MisNotasPage.vue'),
+        component: page('estudiante/MisNotasPage'),
         meta: { title: 'Mis Notas' },
       },
       {
         path: 'centro',
-        component: () => import('pages/estudiante/CentroEstudiantePage.vue'),
+        component: page('estudiante/CentroEstudiantePage'),
         meta: { title: 'Centro de Pendientes' },
       },
     ],
   },
   {
     path: '/director',
-    component: () => import('layouts/MainLayout.vue'),
+    component: layout('MainLayout'),
     meta: { roles: ['director'] },
     children: [
       {
@@ -127,29 +159,29 @@ const routes = [
       },
       {
         path: 'dashboard',
-        component: () => import('pages/director/DashboardDirectorPage.vue'),
+        component: page('director/DashboardDirectorPage'),
         meta: { title: 'Dashboard Director' },
       },
       {
         path: 'seguimiento',
-        component: () => import('pages/director/SeguimientoCursoPage.vue'),
+        component: page('director/SeguimientoCursoPage'),
         meta: { title: 'Seguimiento' },
       },
       {
         path: 'reportes',
-        component: () => import('pages/director/ReportesPage.vue'),
+        component: page('director/ReportesPage'),
         meta: { title: 'Reportes' },
       },
       {
         path: 'observatorio',
-        component: () => import('pages/director/ObservatorioAcademicoPage.vue'),
+        component: page('director/ObservatorioAcademicoPage'),
         meta: { title: 'Observatorio Academico' },
       },
     ],
   },
   {
     path: '/admin',
-    component: () => import('layouts/MainLayout.vue'),
+    component: layout('MainLayout'),
     meta: { roles: ['admin'] },
     children: [
       {
@@ -158,46 +190,46 @@ const routes = [
       },
       {
         path: 'gestion',
-        component: () => import('pages/admin/AdminPage.vue'),
+        component: page('admin/AdminPage'),
         meta: { title: 'Gestion' },
       },
       {
         path: 'configuracion',
-        component: () => import('pages/admin/ConfiguracionSistemaPage.vue'),
+        component: page('admin/ConfiguracionSistemaPage'),
         meta: { title: 'Configuracion' },
       },
       {
         path: 'usuarios',
-        component: () => import('pages/admin/UsuariosPage.vue'),
+        component: page('admin/UsuariosPage'),
         meta: { title: 'Gestion de Usuarios' },
       },
       {
         path: 'plantillas',
-        component: () => import('pages/admin/PlantillasCursosPage.vue'),
+        component: page('admin/PlantillasCursosPage'),
         meta: { title: 'Plantillas de Cursos' },
       },
     ],
   },
   {
     path: '/test-loading',
-    component: () => import('layouts/MainLayout.vue'),
+    component: layout('MainLayout'),
     meta: { public: true },
     children: [
       {
         path: '',
-        component: () => import('pages/TestLoadingPage.vue'),
+        component: page('TestLoadingPage'),
         meta: { title: 'Laboratorio de Animaciones' },
       },
     ],
   },
   {
     path: '/dev-access',
-    component: () => import('pages/auth/DevAccessPage.vue'),
+    component: page('auth/DevAccessPage'),
     meta: { public: true, title: 'Acceso de Desarrollo' },
   },
   {
     path: '/:catchAll(.*)*',
-    component: () => import('pages/ErrorNotFound.vue'),
+    component: page('ErrorNotFound'),
     meta: { title: 'Pagina no encontrada' },
   },
 ]

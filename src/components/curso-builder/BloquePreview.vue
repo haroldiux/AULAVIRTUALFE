@@ -33,6 +33,18 @@
     </div>
   </template>
 
+  <!-- Rubrica -->
+  <template v-else-if="bloque.tipo === 'rubrica'">
+    <div class="text-body2 text-weight-medium q-mt-xs">{{ bloque.titulo || 'Nuevo Proyecto con Rúbrica' }}</div>
+    <div
+      class="bloque-preview-mini q-pa-xs q-mt-xs rounded-borders text-caption"
+      :class="dark ? 'bg-teal-10 text-teal-2' : 'bg-teal-1'"
+    >
+      <q-icon name="fact_check" size="xs" /> Evaluación por Rúbrica
+      <span v-if="bloque.tiene_nota !== false"> · {{ bloque.nota_maxima || 100 }} pts</span>
+    </div>
+  </template>
+
   <!-- Foro -->
   <template v-else-if="bloque.tipo === 'foro'">
     <div class="text-body2 text-weight-medium q-mt-xs">{{ bloque.titulo || 'Nuevo Foro' }}</div>

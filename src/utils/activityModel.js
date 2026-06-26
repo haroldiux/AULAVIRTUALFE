@@ -1,4 +1,14 @@
 export const ACTIVITY_INTERACTION = {
+  rubrica: {
+    modo_interaccion: 'entrega',
+    regla_completado: 'entrega_enviada',
+    requiere_entrega: true,
+    accion_label: 'Subir Proyecto/Evidencia',
+    accion_icon: 'fact_check',
+    accion_tooltip: 'Subir archivo o informe del proyecto',
+    estado_realizado: 'entregada',
+    grupo: 'Proyectos/Rúbricas',
+  },
   tarea: {
     modo_interaccion: 'entrega',
     regla_completado: 'entrega_enviada',
@@ -163,7 +173,7 @@ export function getStudentActivityState({
     return isOverdue(fechaLimite) ? 'vencida' : 'pendiente'
   }
 
-  if (actividad.tipo === 'tarea') {
+  if (actividad.tipo === 'tarea' || actividad.tipo === 'rubrica') {
     if (entrega?.estado === 'calificado') return 'calificada'
     if (isDoneState(entrega?.estado)) return 'entregada'
     return isOverdue(fechaLimite) ? 'vencida' : 'pendiente'

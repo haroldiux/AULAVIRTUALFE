@@ -137,6 +137,7 @@ const categorias = [
       { id: 'blk-quiz', tipo: 'cuestionario', label: 'Quiz', desc: 'Evaluacion', icon: 'quiz', color: 'purple', descargableDefault: false, configDefault: { tiempo_limite_minutos: 20, intentos_maximos: 1, aleatorio: false, preguntas: [] } },
       { id: 'blk-encuesta', tipo: 'encuesta', label: 'Encuesta', desc: 'Opinion', icon: 'poll', color: 'green', descargableDefault: false, configDefault: { anonima: false, fecha_cierre: '', preguntas: [] } },
       { id: 'blk-h5p', tipo: 'h5p', label: 'H5P', desc: 'Contenido interactivo', icon: 'extension', color: 'pink', descargableDefault: false, configDefault: { h5p_file: null, h5p_metadata: { title: '', mainLibrary: '', version: '' }, h5p_calificable: true, demo_content_path: '/h5p/contents/demo-1' } },
+      { id: 'blk-rubrica', tipo: 'rubrica', label: 'Rúbrica', desc: 'Evaluación por Rúbrica/Cotejo', icon: 'fact_check', color: 'teal', descargableDefault: false, configDefault: { fecha_entrega: '', fecha_limite: '', archivos_permitidos: 'pdf,docx,zip', tamano_max_mb: 20, instrucciones: '', rubrica: { metodo_evaluacion: 'rubrica_ampliada', criterios: [], niveles: [] } } },
     ],
   },
   {

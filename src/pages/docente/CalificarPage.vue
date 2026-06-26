@@ -510,8 +510,8 @@ function limpiarContexto() {
   router.replace({ path: '/docente/calificar', query: { curso: cursoSeleccionado.value } })
 }
 
-function labelTipo(t) { const m = { leccion: 'Lec', tarea: 'Tar', foro: 'For', cuestionario: 'Quiz', encuesta: 'Enc', h5p: 'H5P' }; return m[t] ?? t }
-function colorTipo(t) { const m = { leccion: 'indigo', tarea: 'orange', foro: 'teal', cuestionario: 'purple', encuesta: 'green', h5p: 'pink' }; return m[t] ?? 'grey' }
+function labelTipo(t) { const m = { leccion: 'Lec', tarea: 'Tar', foro: 'For', cuestionario: 'Quiz', encuesta: 'Enc', h5p: 'H5P', rubrica: 'Rub' }; return m[t] ?? t }
+function colorTipo(t) { const m = { leccion: 'indigo', tarea: 'orange', foro: 'teal', cuestionario: 'purple', encuesta: 'green', h5p: 'pink', rubrica: 'teal' }; return m[t] ?? 'grey' }
 function colorNota(p) { if (p >= 80) return 'text-green'; if (p >= 60) return 'text-primary'; if (p >= 40) return 'text-orange'; return 'text-negative' }
 
 const gruposInfo = [

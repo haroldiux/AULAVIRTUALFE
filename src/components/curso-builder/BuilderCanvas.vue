@@ -174,6 +174,32 @@
                   <q-icon name="event" size="xs" /> {{ bloque.config?.fecha_entrega ? formatFecha(bloque.config.fecha_entrega) : 'Sin fecha' }}
                   <span v-if="bloque.tiene_nota !== false"> · {{ bloque.nota_maxima || 100 }} pts</span>
                 </div>
+               </template>
+
+              <template v-else-if="bloque.tipo === 'rubrica'">
+                <!-- Inline title for rubrica -->
+                <input
+                  v-if="editing?.type === 'bloque' && editing.seccionId === seccion.id && editing.bIdx === bIdx"
+                  :ref="(el) => { if (el) inputRef = el }"
+                  v-model="inlineTitle"
+                  class="inline-title-input text-body2 text-weight-medium q-mt-xs"
+                  @keydown.enter.prevent="commitEdit"
+                  @keydown.escape.prevent="cancelEdit"
+                  @blur="cancelEdit"
+                />
+                <div
+                  v-else
+                  class="text-body2 text-weight-medium q-mt-xs bloque-title-editable"
+                  @dblclick.stop="startEditBloque(seccion.id, bloque, bIdx)"
+                  title="Doble clic para editar el título"
+                >{{ bloque.titulo || 'Nuevo Proyecto con Rúbrica' }}</div>
+                <div
+                  class="bloque-preview-mini q-pa-xs q-mt-xs rounded-borders text-caption"
+                  :class="$q.dark.isActive ? 'bg-teal-10 text-teal-2' : 'bg-teal-1'"
+                >
+                  <q-icon name="fact_check" size="xs" /> Evaluación por Rúbrica / Lista de Cotejo
+                  <span v-if="bloque.tiene_nota !== false"> · {{ bloque.nota_maxima || 100 }} pts</span>
+                </div>
               </template>
 
               <template v-else-if="bloque.tipo === 'foro'">

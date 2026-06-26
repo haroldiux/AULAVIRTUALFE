@@ -249,6 +249,7 @@ const mapaComponentes = {
   cuestionario: markRaw(ActividadCuestionario),
   encuesta: markRaw(ActividadEncuesta),
   h5p: markRaw(ActividadH5P),
+  rubrica: markRaw(ActividadTarea),
 }
 
 const componenteActividad = computed(() => {
@@ -315,17 +316,17 @@ function labelEstado(estado) {
 }
 
 function labelTipo(tipo) {
-  const m = { leccion: 'Leccion', tarea: 'Tarea', foro: 'Foro', cuestionario: 'Cuestionario', encuesta: 'Encuesta', h5p: 'Contenido H5P' }
+  const m = { leccion: 'Leccion', tarea: 'Tarea', foro: 'Foro', cuestionario: 'Cuestionario', encuesta: 'Encuesta', h5p: 'Contenido H5P', rubrica: 'Rúbrica / Proyecto' }
   return m[tipo] ?? tipo
 }
 
 function iconoTipo(tipo) {
-  const m = { leccion: 'article', tarea: 'assignment', foro: 'forum', cuestionario: 'quiz', encuesta: 'poll', h5p: 'extension' }
+  const m = { leccion: 'article', tarea: 'assignment', foro: 'forum', cuestionario: 'quiz', encuesta: 'poll', h5p: 'extension', rubrica: 'fact_check' }
   return m[tipo] ?? 'help'
 }
 
 function colorTipo(tipo) {
-  const m = { leccion: 'indigo', tarea: 'orange', foro: 'teal', cuestionario: 'purple', encuesta: 'green', h5p: 'pink' }
+  const m = { leccion: 'indigo', tarea: 'orange', foro: 'teal', cuestionario: 'purple', encuesta: 'green', h5p: 'pink', rubrica: 'teal' }
   return m[tipo] ?? 'grey'
 }
 
