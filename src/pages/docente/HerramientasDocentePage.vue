@@ -35,13 +35,34 @@
         no-caps
         data-tour="teacher-tools-tabs"
       >
-        <q-tab name="alertas" icon="warning_amber" label="Alertas" />
-        <q-tab name="estudio" icon="add_task" label="Crear actividad" />
-        <q-tab name="asistente" icon="auto_fix_high" label="Asistente" />
-        <q-tab name="agenda" icon="event_note" label="Agenda" />
-        <q-tab name="automatizaciones" icon="auto_mode" label="Automatizaciones" />
-        <q-tab name="banco" icon="inventory_2" label="Banco Docente" />
-        <q-tab name="analitica" icon="monitoring" label="Analitica" />
+        <q-tab name="alertas" icon="warning_amber" label="Alertas"
+               data-help="El módulo de Alertas Académicas analiza el comportamiento de los estudiantes mediante inteligencia predictiva. Identifica de forma proactiva a estudiantes en riesgo de abandono o reprobación basándose en su falta de participación, promedio bajo de notas y fechas de entrega vencidas."
+               data-help-title="Herramienta: Alertas y Seguimiento"
+               data-help-tip="Usa el botón de chat a la derecha de cada estudiante para enviarle una comunicación directa." />
+        <q-tab name="estudio" icon="add_task" label="Crear actividad"
+               data-help="El Asistente Guiado te permite estructurar actividades y subactividades paso a paso (Wizard SISA) de acuerdo a las categorías académicas obligatorias de la UNITEPC (Evaluación Parcial, Formativas Teóricas y Prácticas, o Examen Final)."
+               data-help-title="Herramienta: Creador de Actividades"
+               data-help-tip="Completa cada paso del asistente para previsualizar exactamente cómo lo verá el estudiante." />
+        <q-tab name="asistente" icon="auto_fix_high" label="Asistente"
+               data-help="El Asistente Inteligente de Creación por IA te ayuda a generar y estructurar temas, objetivos de aprendizaje y unidades temáticas completas basadas en tus intenciones pedagógicas."
+               data-help-title="Herramienta: Asistente de IA"
+               data-help-tip="Ingresa el tema y el objetivo para sugerir una estructura de aprendizaje completa y compatible con SISA." />
+        <q-tab name="agenda" icon="event_note" label="Agenda"
+               data-help="La Agenda Académica unifica todas las fechas límite y entregas previstas en tus asignaturas. Te permite reprogramar fechas de vencimiento de forma masiva o individual y ver el volumen de tareas programadas."
+               data-help-title="Herramienta: Agenda Académica"
+               data-help-tip="Presiona el botón de calendario en un ítem para reprogramar su fecha de entrega directamente." />
+        <q-tab name="automatizaciones" icon="auto_mode" label="Automatizaciones"
+               data-help="El motor de Automatización Docente te permite configurar reglas automatizadas de seguimiento académico (como enviar alertas de inactividad, recursos de refuerzo por rendimiento o recordatorios de entregas vencidas) para ahorrar tiempo administrativo."
+               data-help-title="Herramienta: Automatización Docente"
+               data-help-tip="Puedes activar o desactivar cada regla usando el interruptor (switch) de la tarjeta." />
+        <q-tab name="banco" icon="inventory_2" label="Banco Docente"
+               data-help="El Banco de Recursos es un repositorio institucional donde puedes guardar, organizar y reutilizar estructuras de cursos completos, rúbricas de evaluación, cuestionarios y tareas entre tus materias o gestiones académicas."
+               data-help-title="Herramienta: Banco Docente"
+               data-help-tip="Presiona el botón de copiar plantilla para clonar un recurso en cualquiera de tus secciones vigentes." />
+        <q-tab name="analitica" icon="monitoring" label="Analitica"
+               data-help="El Panel de Analíticas recopila y muestra gráficas avanzadas sobre la composición de actividades en tus cursos y la distribución de las calificaciones de tus estudiantes agrupados por rangos de notas."
+               data-help-title="Herramienta: Analítica Docente"
+               data-help-tip="Úsalo para verificar la salud académica general y detectar materias con altos índices de reprobación." />
       </q-tabs>
       <q-separator />
 
@@ -59,7 +80,11 @@
           </div>
 
           <div class="risk-list">
-            <article v-for="alerta in alertasFiltradas" :key="alerta.id" class="risk-row">
+            <article v-for="alerta in alertasFiltradas" :key="alerta.id" class="risk-row"
+                     data-help="Registro de estudiante en situación de riesgo. Muestra los factores de riesgo detectados (ej. inactividad, bajas notas, entregas pendientes), su promedio acumulado y los botones de acción rápida."
+                     data-help-title="Estudiante bajo Alerta"
+                     data-help-tip="Puedes enviar un mensaje directo al estudiante usando el icono del chat."
+            >
               <div class="risk-row__signal" :class="`risk-row__signal--${alerta.severidad}`"></div>
               <q-avatar size="46px"><img :src="alerta.estudiante.avatar" /></q-avatar>
               <div class="risk-row__identity">
@@ -122,8 +147,12 @@
               <q-form @submit.prevent="generarEstructura" greedy>
                 <q-select v-model="asistente.cursoId" :options="opcionesCurso" label="Curso" outlined emit-value map-options class="q-mb-md" :rules="[val => !!val || 'Selecciona un curso']" />
                 <q-select v-model="asistente.tipo" :options="opcionesAsistente" label="Tipo de herramienta" outlined emit-value map-options class="q-mb-md" :rules="[val => !!val || 'Selecciona un tipo de herramienta']" />
-                <q-input v-model="asistente.tema" label="Tema o unidad" outlined class="q-mb-md" :rules="[val => !!val?.trim() || 'Escribe el tema o unidad']" />
-                <q-input v-model="asistente.objetivo" label="Objetivo de aprendizaje" outlined type="textarea" rows="3" :rules="[val => !!val?.trim() || 'Escribe el objetivo de aprendizaje']" />
+                <q-input v-model="asistente.tema" label="Tema o unidad" outlined class="q-mb-md" :rules="[val => !!val?.trim() || 'Escribe el tema o unidad']"
+                          data-help="El nombre del tema, unidad de aprendizaje o módulo que deseas estructurar pedagógicamente."
+                          data-help-title="Tema / Unidad" />
+                <q-input v-model="asistente.objetivo" label="Objetivo de aprendizaje" outlined type="textarea" rows="3" :rules="[val => !!val?.trim() || 'Escribe el objetivo de aprendizaje']"
+                          data-help="Define qué competencias o saberes esperas que desarrolle el estudiante. La IA usará este objetivo para redactar las instrucciones y rúbricas correspondientes."
+                          data-help-title="Objetivo de Aprendizaje" />
                 <div class="row q-gutter-sm q-mt-md">
                   <q-chip dense color="primary" text-color="white">Plantilla editable</q-chip>
                   <q-chip dense color="teal" text-color="white">Compatible SISA</q-chip>
@@ -136,7 +165,10 @@
             </TaCard>
 
             <div class="assistant-tools">
-              <div v-for="tool in suite.herramientasContenido" :key="tool.id" class="assistant-tool" :class="{ 'assistant-tool--active': asistente.tipo === tool.id }" @click="asistente.tipo = tool.id">
+              <div v-for="tool in suite.herramientasContenido" :key="tool.id" class="assistant-tool" :class="{ 'assistant-tool--active': asistente.tipo === tool.id }" @click="asistente.tipo = tool.id"
+                   data-help="Herramienta de contenido sugerida. El Asistente de IA creará actividades adaptadas a este formato educativo."
+                   data-help-title="Tipo de Contenido Generado"
+              >
                 <q-avatar :color="tool.color" text-color="white" :icon="tool.icon" size="46px" />
                 <div>
                   <div class="text-weight-bold">{{ tool.nombre }}</div>
@@ -241,10 +273,16 @@
               />
             </div>
             <div v-for="regla in herramientas.reglas" :key="regla.id" class="col-12 col-md-6 col-xl-4">
-              <div class="automation-card">
+              <div class="automation-card"
+                   data-help="Esta tarjeta representa una regla de automatización configurada. Monitorea continuamente las condiciones de los estudiantes en tus materias y ejecuta acciones inmediatas cuando se cumplen."
+                   data-help-title="Tarjeta de Regla de Automatización"
+                   data-help-tip="Usa el botón 'Vista previa' para ver qué alumnos calificarían actualmente para esta regla."
+              >
                 <div class="row items-start justify-between no-wrap">
                   <q-avatar color="primary" text-color="white" icon="auto_mode" size="46px" />
-                  <q-toggle :model-value="regla.activa" color="teal" @update:model-value="herramientas.toggleRegla(regla.id)" />
+                  <q-toggle :model-value="regla.activa" color="teal" @update:model-value="herramientas.toggleRegla(regla.id)"
+                             data-help="Interruptor de Estado. Activa o desactiva la ejecución periódica de esta regla de seguimiento."
+                             data-help-title="Activar/Desactivar Regla" />
                 </div>
                 <div class="text-subtitle1 text-weight-bold q-mt-md">{{ regla.nombre }}</div>
                 <div class="text-body2 text-grey q-mt-xs automation-description">{{ regla.descripcion }}</div>
@@ -252,8 +290,13 @@
                 <div class="automation-meta"><q-icon name="notifications_active" /> {{ regla.canal }}</div>
                 <div class="automation-meta"><q-icon name="history" /> {{ regla.ultimaEjecucion ? formatoFechaHora(regla.ultimaEjecucion) : 'Nunca ejecutada' }}</div>
                 <div class="row q-gutter-sm q-mt-md">
-                  <TaButton variant="outline" icon="visibility" label="Vista previa" @click="previsualizarRegla(regla)" />
-                  <q-btn flat round icon="play_arrow" color="teal" aria-label="Ejecutar ahora" :disable="!regla.activa" @click="ejecutarRegla(regla)">
+                  <TaButton variant="outline" icon="visibility" label="Vista previa" @click="previsualizarRegla(regla)"
+                            data-help="Muestra un listado en tiempo real con los nombres de los estudiantes y cursos que cumplen las condiciones de esta regla en este momento."
+                            data-help-title="Previsualización de Destinatarios" />
+                  <q-btn flat round icon="play_arrow" color="teal" aria-label="Ejecutar ahora" :disable="!regla.activa" @click="ejecutarRegla(regla)"
+                         data-help="Fuerza la ejecución inmediata de la regla, enviando las notificaciones y correos correspondientes a los alumnos detectados en este instante."
+                         data-help-title="Ejecución Forzada de Regla"
+                  >
                     <q-tooltip>Ejecutar ahora</q-tooltip>
                   </q-btn>
                 </div>
@@ -289,7 +332,10 @@
               />
             </div>
             <div v-for="plantilla in plantillasFiltradas" :key="plantilla.id" class="col-12 col-md-6">
-              <div class="template-row">
+              <div class="template-row"
+                   data-help="Plantilla del banco docente. Representa una estructura de curso, examen o lección precargada lista para ser copiada a tus materias vigentes."
+                   data-help-title="Plantilla de Banco"
+              >
                 <q-avatar :color="colorTipo(plantilla.tipo)" text-color="white" :icon="iconoTipo(plantilla.tipo)" size="50px" />
                 <div class="template-row__body">
                   <div class="row items-start justify-between no-wrap q-gutter-md">
@@ -319,12 +365,18 @@
 
           <div class="row q-col-gutter-lg">
             <div class="col-12 col-lg-7">
-              <DashboardChartCard title="Distribucion de rendimiento" subtitle="Estudiantes agrupados por promedio" icon="bar_chart" height="300px">
+              <DashboardChartCard title="Distribucion de rendimiento" subtitle="Estudiantes agrupados por promedio" icon="bar_chart" height="300px"
+                                  data-help="Muestra cuántos estudiantes se encuentran en diferentes rangos de calificaciones (Aprobación excelente, regular, baja o reprobación)."
+                                  data-help-title="Distribución de Rendimiento"
+              >
                 <BarChart :data="chartRendimiento" :options="barOptions" />
               </DashboardChartCard>
             </div>
             <div class="col-12 col-lg-5">
-              <DashboardChartCard title="Tipos de actividad" subtitle="Composicion de tus cursos" icon="donut_large" height="300px">
+              <DashboardChartCard title="Tipos de actividad" subtitle="Composicion de tus cursos" icon="donut_large" height="300px"
+                                  data-help="Analiza la distribución porcentual de los tipos de actividades creadas en tus materias (Lecciones teóricas frente a Tareas prácticas o Quizzes)."
+                                  data-help-title="Composición de Actividades"
+              >
                 <DoughnutChart :data="chartTipos" :options="doughnutOptions" />
               </DashboardChartCard>
             </div>

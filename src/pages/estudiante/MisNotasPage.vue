@@ -48,6 +48,25 @@
 
       <q-separator class="av-card-separator" />
 
+      <q-card-section class="q-py-none bg-grey-1 dark-bg-grey-9" style="border-bottom: 1px solid var(--ta-border-card)">
+        <q-tabs
+          v-model="cursoFiltros[curso.id]"
+          dense
+          class="text-grey"
+          active-color="primary"
+          indicator-color="primary"
+          align="left"
+          narrow-indicator
+        >
+          <q-tab name="todos" label="Todo el semestre" />
+          <q-tab name="1" label="1er Parcial" />
+          <q-tab name="2" label="2do Parcial" />
+          <q-tab name="3" label="Examen Final" />
+        </q-tabs>
+      </q-card-section>
+
+      <q-separator class="av-card-separator" />
+
       <div v-for="grupo in gruposInfo" :key="grupo.key" class="q-px-md q-pb-md">
         <div class="row items-center q-mb-sm q-mt-md justify-between">
           <div class="row items-center q-gutter-sm">
@@ -146,6 +165,7 @@ import TaKpiCard from 'src/components/tailadmin/TaKpiCard.vue'
 const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 600 })
 
 const datosNotas = ref({ cursos: [], promedio_general: null })
+const cursoFiltros = ref({})
 
 const misCursos = computed(() => datosNotas.value.cursos || [])
 
@@ -153,6 +173,13 @@ async function cargarNotas() {
   try {
     const res = await calificacionService.misNotas()
     datosNotas.value = res.data || { cursos: [], promedio_general: null }
+    if (datosNotas.value.cursos) {
+      datosNotas.value.cursos.forEach((c) => {
+        if (cursoFiltros.value[c.curso_id] === undefined) {
+          cursoFiltros.value[c.curso_id] = 'todos'
+        }
+      })
+    }
   } catch {
     datosNotas.value = { cursos: [], promedio_general: null }
   }
@@ -161,7 +188,13 @@ async function cargarNotas() {
 function getNotasCurso(cursoId) {
   const curso = misCursos.value.find((c) => c.curso_id === cursoId)
   if (!curso) return []
-  return curso.notas || []
+  const notas = curso.notas || []
+  const filtro = cursoFiltros.value[cursoId] || 'todos'
+  if (filtro === 'todos') return notas
+  return notas.filter((n) => {
+    const p = n.parcial ? Number(n.parcial) : 1
+    return p === Number(filtro)
+  })
 }
 
 const kpis = computed(() => [
@@ -182,8 +215,16 @@ const materiasAprobadas = computed(() => {
 })
 
 function promedioCurso(cursoId) {
-  const curso = misCursos.value.find((c) => c.curso_id === cursoId)
-  return curso?.promedio || 0
+  const notas = getNotasCurso(cursoId)
+  const notasValidas = notas.filter((n) => n.nota !== null && n.nota !== undefined)
+  if (!notasValidas.length) return 0
+  const sum = notasValidas.reduce((s, n) => {
+    const pct = n.porcentaje !== null && n.porcentaje !== undefined
+      ? n.porcentaje
+      : (n.nota_maxima > 0 ? (n.nota / n.nota_maxima) * 100 : 0)
+    return s + pct
+  }, 0)
+  return Math.round(sum / notasValidas.length)
 }
 
 const gruposInfo = [

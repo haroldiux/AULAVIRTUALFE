@@ -23,9 +23,25 @@
 
     <TaCard>
       <q-card-section>
-        <div class="row items-center q-mb-md" data-tour="teacher-grades-summary">
-          <div class="col">
-            <q-select v-model="cursoSeleccionado" :options="cursosDocente" label="Curso" outlined dense style="max-width: 350px" map-options emit-value />
+        <div class="row items-center q-mb-md q-col-gutter-md" data-tour="teacher-grades-summary">
+          <div class="col-12 col-sm-4">
+            <q-select v-model="cursoSeleccionado" :options="cursosDocente" label="Curso" outlined dense map-options emit-value />
+          </div>
+          <div class="col-12 col-sm-3">
+            <q-select
+              v-model="parcialFiltro"
+              :options="[
+                { label: 'Todos los Parciales', value: 'todos' },
+                { label: 'Primer Parcial', value: 1 },
+                { label: 'Segundo Parcial', value: 2 },
+                { label: 'Examen Final / 3er P.', value: 3 }
+              ]"
+              label="Filtrar por Parcial"
+              outlined
+              dense
+              map-options
+              emit-value
+            />
           </div>
           <div class="col-auto">
             <q-badge color="positive" text-color="white" class="q-pa-sm q-px-md q-mr-sm">
@@ -231,6 +247,7 @@ const auth = useAuthStore()
 const { isLoading: cargando, stop: finalizarCarga } = useLoadingState({ minDuration: 600 })
 
 const cursoSeleccionado = ref(Number(route.query.curso) || 1)
+const parcialFiltro = ref('todos')
 const contextoSeguimiento = computed(() => Boolean(route.query.estudiante || route.query.actividad))
 
 const cursosDocente = computed(() =>
@@ -253,7 +270,11 @@ async function cargarLibro(cursoId) {
 }
 
 const curso = computed(() => cursosStore.getCursoById(cursoSeleccionado.value))
-const actividadesCurso = computed(() => libro.value.actividades || [])
+const actividadesCurso = computed(() => {
+  const lista = libro.value.actividades || []
+  if (parcialFiltro.value === 'todos') return lista
+  return lista.filter((a) => (a.parcial ? Number(a.parcial) : 1) === Number(parcialFiltro.value))
+})
 const estudiantes = computed(() => libro.value.estudiantes || [])
 
 function getNota(estudianteId, actividadId) {
@@ -281,10 +302,26 @@ function estaEntregado(estudianteId, actividadId) {
 
 function promedioEstudiante(estudianteId) {
   const est = estudiantes.value.find((e) => e.id === estudianteId)
-  return est?.promedio || 0
+  if (!est) return 0
+  
+  const actIds = actividadesCurso.value.map(a => a.id)
+  let sum = 0
+  let count = 0
+  actIds.forEach((id) => {
+    const nota = getNota(estudianteId, id)
+    if (nota) {
+      sum += nota.porcentaje
+      count++
+    }
+  })
+  return count > 0 ? Math.round(sum / count) : 0
 }
 
-const promedioGeneral = computed(() => libro.value.promedio_general || 0)
+const promedioGeneral = computed(() => {
+  const proms = estudiantes.value.map(e => promedioEstudiante(e.id)).filter(Boolean)
+  if (!proms.length) return 0
+  return Math.round(proms.reduce((s, p) => s + p, 0) / proms.length)
+})
 const pendientesCalificar = computed(() => libro.value.pendientes_calificar || 0)
 
 const entregasRealizadas = computed(() => {
@@ -448,7 +485,7 @@ async function sincronizar() {
   if (!cursoSeleccionado.value) return
   sincronizandoNotas.value = true
   try {
-    const res = await integracionService.sincronizarNotas(cursoSeleccionado.value)
+    const res = await integracionService.sincronizarNotas(cursoSeleccionado.value, { parcial: parcialFiltro.value })
     const data = res.data?.data || res.data
     $q.notify({
       message: `Sincronización de notas completada: ${data.notas_enviadas} notas enviadas al Sistema de Notas Centralizado.`,

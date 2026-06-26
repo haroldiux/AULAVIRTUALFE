@@ -16,10 +16,29 @@ export default [
     total_estudiantes: 15,
     total_actividades: 15,
     secciones: [
-      { id: 1, titulo: 'Unidad I - Patrones de Diseno', descripcion: 'Fundamentos de patrones creacionales, estructurales y de comportamiento.', orden: 1, visible: true },
-      { id: 2, titulo: 'Unidad II - Arquitectura en Capas', descripcion: 'Diseno de aplicaciones N-capas con separacion de responsabilidades.', orden: 2, visible: true },
-      { id: 3, titulo: 'Unidad III - Desarrollo Web Fullstack', descripcion: 'Integracion frontend-backend con APIs RESTful y GraphQL.', orden: 3, visible: true },
-      { id: 4, titulo: 'Unidad IV - Proyecto Final', descripcion: 'Desarrollo de un sistema completo aplicando todos los conceptos del curso.', orden: 4, visible: true },
+      {
+        id: 1, titulo: 'Unidad I - Patrones de Diseno', descripcion: 'Fundamentos de patrones creacionales, estructurales y de comportamiento.', orden: 1, visible: true,
+        bloques: [
+          { id: 101, titulo: 'Tema 1.1 — Patrones Creacionales', orden: 1 },
+          { id: 102, titulo: 'Tema 1.2 — Patrones Estructurales', orden: 2 },
+          { id: 103, titulo: 'Tema 1.3 — Patrones de Comportamiento', orden: 3 },
+        ],
+      },
+      {
+        id: 2, titulo: 'Unidad II - Arquitectura en Capas', descripcion: 'Diseno de aplicaciones N-capas con separacion de responsabilidades.', orden: 2, visible: true,
+        bloques: [
+          { id: 201, titulo: 'Tema 2.1 — Capa de Presentacion', orden: 1 },
+          { id: 202, titulo: 'Tema 2.2 — Capa de Negocio', orden: 2 },
+        ],
+      },
+      {
+        id: 3, titulo: 'Unidad III - Desarrollo Web Fullstack', descripcion: 'Integracion frontend-backend con APIs RESTful y GraphQL.', orden: 3, visible: true,
+        bloques: [],
+      },
+      {
+        id: 4, titulo: 'Unidad IV - Proyecto Final', descripcion: 'Desarrollo de un sistema completo aplicando todos los conceptos del curso.', orden: 4, visible: true,
+        bloques: [],
+      },
     ],
   },
   {
@@ -39,9 +58,9 @@ export default [
     total_estudiantes: 14,
     total_actividades: 10,
     secciones: [
-      { id: 5, titulo: 'Unidad I - Optimizacion de Consultas', descripcion: 'Indices, planes de ejecucion, estadisticas y tuning de SQL.', orden: 1, visible: true },
-      { id: 6, titulo: 'Unidad II - Procedimientos Almacenados', descripcion: 'PL/SQL, funciones, triggers, cursores y manejo de errores.', orden: 2, visible: true },
-      { id: 7, titulo: 'Unidad III - Administracion', descripcion: 'Backups, seguridad, permisos, roles y monitoreo de rendimiento.', orden: 3, visible: true },
+      { id: 5, titulo: 'Unidad I - Optimizacion de Consultas', descripcion: 'Indices, planes de ejecucion, estadisticas y tuning de SQL.', orden: 1, visible: true, bloques: [] },
+      { id: 6, titulo: 'Unidad II - Procedimientos Almacenados', descripcion: 'PL/SQL, funciones, triggers, cursores y manejo de errores.', orden: 2, visible: true, bloques: [] },
+      { id: 7, titulo: 'Unidad III - Administracion', descripcion: 'Backups, seguridad, permisos, roles y monitoreo de rendimiento.', orden: 3, visible: true, bloques: [] },
     ],
   },
   {
@@ -61,9 +80,10 @@ export default [
     total_estudiantes: 8,
     total_actividades: 8,
     secciones: [
-      { id: 8, titulo: 'Unidad I - Fundamentos del Marketing Digital', descripcion: 'Conceptos, evolucion y panorama actual del marketing en entornos digitales.', orden: 1, visible: true },
-      { id: 9, titulo: 'Unidad II - SEO y SEM', descripcion: 'Posicionamiento organico y patrocinado en buscadores.', orden: 2, visible: true },
-      { id: 10, titulo: 'Unidad III - Redes Sociales y Contenido', descripcion: 'Estrategias de contenido para plataformas sociales.', orden: 3, visible: true },
+      { id: 8, titulo: 'Unidad I - Fundamentos del Marketing Digital', descripcion: 'Conceptos, evolucion y panorama actual del marketing en entornos digitales.', orden: 1, visible: true, bloques: [] },
+      { id: 9, titulo: 'Unidad II - SEO y SEM', descripcion: 'Posicionamiento organico y patrocinado en buscadores.', orden: 2, visible: true, bloques: [] },
+      { id: 10, titulo: 'Unidad III - Redes Sociales y Contenido', descripcion: 'Estrategias de contenido para plataformas sociales.', orden: 3, visible: true, bloques: [] },
     ],
   },
 ]
+

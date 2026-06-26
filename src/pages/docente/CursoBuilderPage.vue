@@ -64,7 +64,7 @@
                   outline
                   rounded
                 />
-                <TaButton variant="primary" icon="add" label="Agregar Seccion" @click="abrirDialogoSeccion()" />
+                <TaButton variant="primary" icon="add" label="Agregar Unidad" @click="abrirDialogoSeccion()" />
               </div>
             </q-card-section>
 
@@ -86,87 +86,209 @@
                         <q-icon name="folder" color="primary" size="sm" class="q-mr-sm" />
                         <div class="col">
                           <div class="text-subtitle2 text-weight-medium">{{ seccion.titulo }}</div>
-                          <div class="text-caption text-grey-6">{{ seccion.descripcion }}</div>
                         </div>
+
                         <div class="col-auto row q-gutter-xs">
                           <q-badge class="section-count" text-color="white">
-                            {{ getActividadesCount(seccion.id) }} actividades
+                            {{ (seccion.bloques || []).length }} temas · {{ getActividadesCount(seccion.id) }} actividades
                           </q-badge>
-                          <q-btn flat round dense size="sm" icon="edit" color="grey-7" aria-label="Editar seccion" @click.stop="abrirDialogoSeccion(seccion)">
-                            <q-tooltip>Editar seccion</q-tooltip>
+                          <!-- Importar temas desde SISA para esta unidad -->
+                          <q-btn flat round dense size="sm" icon="cloud_download" color="blue-7" aria-label="Importar temas desde SISA" @click.stop="abrirImportarTemasSeccion(seccion)">
+                            <q-tooltip>Importar temas desde SISA para esta unidad</q-tooltip>
                           </q-btn>
-                          <q-btn flat round dense size="sm" icon="delete" color="negative" aria-label="Eliminar seccion" @click.stop="eliminarSeccion(seccion.id)">
-                            <q-tooltip>Eliminar seccion</q-tooltip>
+                          <!-- Replicar estructura de unidad -->
+                          <q-btn flat round dense size="sm" icon="content_copy" color="teal" aria-label="Replicar estructura" @click.stop="abrirReplicarSeccion(seccion)">
+                            <q-tooltip>Replicar estructura en otras unidades</q-tooltip>
+                          </q-btn>
+                          <q-btn flat round dense size="sm" icon="edit" color="grey-7" aria-label="Editar unidad" @click.stop="abrirDialogoSeccion(seccion)">
+                            <q-tooltip>Editar unidad</q-tooltip>
+                          </q-btn>
+                          <q-btn flat round dense size="sm" icon="delete" color="negative" aria-label="Eliminar unidad" @click.stop="eliminarSeccion(seccion.id)">
+                            <q-tooltip>Eliminar unidad</q-tooltip>
                           </q-btn>
                         </div>
+
                       </div>
                     </q-card-section>
 
                     <q-separator />
 
-                    <q-card-section class="q-pa-none">
+                    <!-- Bloques de tema dentro de la sección -->
+                    <q-card-section class="q-pa-sm q-pt-xs">
                       <draggable
-                        :list="getListaActividades(seccion.id)"
-                        handle=".act-drag-handle"
+                        :list="seccion.bloques || []"
+                        handle=".bloque-drag-handle"
                         item-key="id"
                         animation="200"
-                        ghost-class="ghost-card"
-                        group="actividades"
-                        @change="(evt) => onActividadChange(seccion.id, evt)"
-                        :move="onActividadMove"
+                        ghost-class="ghost-bloque"
+                        @change="(evt) => onBloquesChange(seccion.id, evt)"
                       >
-                        <template #item="{ element: act }">
-                          <q-item clickable v-ripple class="actividad-item" @click="editarActividad(act)">
-                            <q-item-section avatar>
-                              <q-icon name="drag_indicator" class="act-drag-handle text-grey-4" size="xs" />
-                            </q-item-section>
-                            <q-item-section avatar>
-                              <q-icon :name="iconoTipo(act.tipo)" :color="colorTipo(act.tipo)" size="sm" />
-                            </q-item-section>
-                            <q-item-section>
-                              <q-item-label class="text-body2">{{ act.titulo }}</q-item-label>
-                              <q-item-label caption>
-                                <q-badge :color="colorTipo(act.tipo)" text-color="white" dense class="q-mr-xs">
-                                  {{ labelTipo(act.tipo) }}
+                        <template #item="{ element: bloque }">
+                          <div class="bloque-tema q-mb-xs">
+                            <!-- Cabecera del bloque -->
+                            <div class="bloque-header row items-center q-px-sm q-py-xs">
+                              <q-icon name="drag_indicator" class="bloque-drag-handle q-mr-xs text-grey-4" size="xs" />
+                              <q-icon name="topic" color="secondary" size="xs" class="q-mr-xs" />
+                              <div class="col text-body2 text-weight-medium bloque-titulo">{{ bloque.titulo }}</div>
+                              <div class="col-auto row q-gutter-xs items-center">
+                                <q-badge color="grey-4" text-color="grey-8" dense class="q-px-xs text-caption">
+                                  {{ getActividadesPorBloque(seccion.id, bloque.id).length }}
                                 </q-badge>
-                                <template v-if="act.tiene_nota">{{ act.nota_maxima }} pts · Peso: {{ act.peso }}x</template>
-                                <template v-else>Sin calificacion</template>
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side>
-                              <q-btn flat round dense size="sm" icon="more_vert" aria-label="Opciones de actividad">
-                                <q-menu>
-                                  <q-list dense>
-                                    <q-item clickable v-close-popup @click.stop="editarActividad(act)">
-                                      <q-item-section avatar><q-icon name="edit" /></q-item-section>
-                                      <q-item-section>Editar</q-item-section>
-                                    </q-item>
-                                    <q-item clickable v-close-popup>
-                                      <q-item-section avatar><q-icon name="content_copy" /></q-item-section>
-                                      <q-item-section>Duplicar</q-item-section>
-                                    </q-item>
-                                    <q-item clickable v-close-popup @click.stop="guardarComoPlantilla(act)">
-                                      <q-item-section avatar><q-icon name="archive" color="primary" /></q-item-section>
-                                      <q-item-section class="text-primary">Guardar como Plantilla</q-item-section>
-                                    </q-item>
-                                    <q-separator />
-                                    <q-item clickable v-close-popup @click.stop="eliminarActividad(act.id)">
-                                      <q-item-section avatar><q-icon name="delete" color="negative" /></q-item-section>
-                                      <q-item-section class="text-negative">Eliminar</q-item-section>
-                                    </q-item>
-                                  </q-list>
-                                </q-menu>
-                              </q-btn>
-                            </q-item-section>
-                          </q-item>
+                                <!-- Replicar bloque individual -->
+                                <q-btn flat round dense size="xs" icon="content_copy" color="teal" @click.stop="abrirReplicarBloque(seccion, bloque)">
+                                  <q-tooltip>Replicar en otras unidades</q-tooltip>
+                                </q-btn>
+                                <q-btn flat round dense size="xs" icon="edit" color="grey-7" @click.stop="abrirDialogoBloque(seccion, bloque)">
+                                  <q-tooltip>Editar tema</q-tooltip>
+                                </q-btn>
+                                <q-btn flat round dense size="xs" icon="delete" color="negative" @click.stop="eliminarBloque(seccion.id, bloque.id)">
+                                  <q-tooltip>Eliminar tema</q-tooltip>
+                                </q-btn>
+                              </div>
+                            </div>
+
+                            <!-- Actividades del bloque -->
+                            <div class="bloque-actividades q-pl-lg">
+                              <draggable
+                                :list="getListaActividadesPorBloque(seccion.id, bloque.id)"
+                                handle=".act-drag-handle"
+                                item-key="id"
+                                animation="200"
+                                ghost-class="ghost-card"
+                                :group="'actividades-' + seccion.id"
+                                @change="(evt) => onActividadBloqueChange(seccion.id, bloque.id, evt)"
+                                :move="onActividadMove"
+                              >
+                                <template #item="{ element: act }">
+                                  <q-item clickable v-ripple class="actividad-item" @click="editarActividad(act)">
+                                    <q-item-section avatar>
+                                      <q-icon name="drag_indicator" class="act-drag-handle text-grey-4" size="xs" />
+                                    </q-item-section>
+                                    <q-item-section avatar>
+                                      <q-icon :name="iconoTipo(act.tipo)" :color="colorTipo(act.tipo)" size="sm" />
+                                    </q-item-section>
+                                    <q-item-section>
+                                      <q-item-label class="text-body2">{{ act.titulo }}</q-item-label>
+                                      <q-item-label caption>
+                                        <q-badge :color="colorTipo(act.tipo)" text-color="white" dense class="q-mr-xs">
+                                          {{ labelTipo(act.tipo) }}
+                                        </q-badge>
+                                        <template v-if="act.tiene_nota">{{ act.nota_maxima }} pts · Peso: {{ act.peso }}x</template>
+                                        <template v-else>Sin calificacion</template>
+                                      </q-item-label>
+                                    </q-item-section>
+                                    <q-item-section side>
+                                      <q-btn flat round dense size="sm" icon="more_vert" aria-label="Opciones de actividad">
+                                        <q-menu>
+                                          <q-list dense>
+                                            <q-item clickable v-close-popup @click.stop="editarActividad(act)">
+                                              <q-item-section avatar><q-icon name="edit" /></q-item-section>
+                                              <q-item-section>Editar</q-item-section>
+                                            </q-item>
+                                            <q-item clickable v-close-popup @click.stop="guardarComoPlantilla(act)">
+                                              <q-item-section avatar><q-icon name="archive" color="primary" /></q-item-section>
+                                              <q-item-section class="text-primary">Guardar como Plantilla</q-item-section>
+                                            </q-item>
+                                            <q-separator />
+                                            <q-item clickable v-close-popup @click.stop="eliminarActividad(act.id)">
+                                              <q-item-section avatar><q-icon name="delete" color="negative" /></q-item-section>
+                                              <q-item-section class="text-negative">Eliminar</q-item-section>
+                                            </q-item>
+                                          </q-list>
+                                        </q-menu>
+                                      </q-btn>
+                                    </q-item-section>
+                                  </q-item>
+                                </template>
+                              </draggable>
+
+                              <!-- Agregar actividad dentro del bloque -->
+                              <q-item
+                                class="text-grey-6 add-act-row"
+                                clickable
+                                @click="tipoActividadDialog = true; seccionActivaParaAgregar = seccion.id; bloqueActivoParaAgregar = bloque.id"
+                              >
+                                <q-item-section avatar><q-icon name="add" size="xs" /></q-item-section>
+                                <q-item-section class="text-caption">Agregar actividad...</q-item-section>
+                              </q-item>
+                            </div>
+                          </div>
                         </template>
                       </draggable>
 
-                      <q-item class="text-grey-6 add-act-row" clickable @click="tipoActividadDialog = true; seccionActivaParaAgregar = seccion.id">
-                        <q-item-section avatar>
-                          <q-icon name="add" />
-                        </q-item-section>
-                        <q-item-section>Agregar actividad...</q-item-section>
+                      <!-- Sin bloques: mostrar actividades sueltas (compatibilidad) + botón agregar bloque -->
+                      <div v-if="!(seccion.bloques || []).length" class="q-px-sm">
+                        <draggable
+                          :list="getListaActividades(seccion.id)"
+                          handle=".act-drag-handle"
+                          item-key="id"
+                          animation="200"
+                          ghost-class="ghost-card"
+                          :group="'actividades-' + seccion.id"
+                          @change="(evt) => onActividadChange(seccion.id, evt)"
+                          :move="onActividadMove"
+                        >
+                          <template #item="{ element: act }">
+                            <q-item clickable v-ripple class="actividad-item" @click="editarActividad(act)">
+                              <q-item-section avatar>
+                                <q-icon name="drag_indicator" class="act-drag-handle text-grey-4" size="xs" />
+                              </q-item-section>
+                              <q-item-section avatar>
+                                <q-icon :name="iconoTipo(act.tipo)" :color="colorTipo(act.tipo)" size="sm" />
+                              </q-item-section>
+                              <q-item-section>
+                                <q-item-label class="text-body2">{{ act.titulo }}</q-item-label>
+                                <q-item-label caption>
+                                  <q-badge :color="colorTipo(act.tipo)" text-color="white" dense class="q-mr-xs">
+                                    {{ labelTipo(act.tipo) }}
+                                  </q-badge>
+                                  <template v-if="act.tiene_nota">{{ act.nota_maxima }} pts · Peso: {{ act.peso }}x</template>
+                                  <template v-else>Sin calificacion</template>
+                                </q-item-label>
+                              </q-item-section>
+                              <q-item-section side>
+                                <q-btn flat round dense size="sm" icon="more_vert" aria-label="Opciones de actividad">
+                                  <q-menu>
+                                    <q-list dense>
+                                      <q-item clickable v-close-popup @click.stop="editarActividad(act)">
+                                        <q-item-section avatar><q-icon name="edit" /></q-item-section>
+                                        <q-item-section>Editar</q-item-section>
+                                      </q-item>
+                                      <q-item clickable v-close-popup @click.stop="guardarComoPlantilla(act)">
+                                        <q-item-section avatar><q-icon name="archive" color="primary" /></q-item-section>
+                                        <q-item-section class="text-primary">Guardar como Plantilla</q-item-section>
+                                      </q-item>
+                                      <q-separator />
+                                      <q-item clickable v-close-popup @click.stop="eliminarActividad(act.id)">
+                                        <q-item-section avatar><q-icon name="delete" color="negative" /></q-item-section>
+                                        <q-item-section class="text-negative">Eliminar</q-item-section>
+                                      </q-item>
+                                    </q-list>
+                                  </q-menu>
+                                </q-btn>
+                              </q-item-section>
+                            </q-item>
+                          </template>
+                        </draggable>
+
+                        <q-item
+                          class="text-grey-6 add-act-row"
+                          clickable
+                          @click="tipoActividadDialog = true; seccionActivaParaAgregar = seccion.id; bloqueActivoParaAgregar = null"
+                        >
+                          <q-item-section avatar><q-icon name="add" /></q-item-section>
+                          <q-item-section>Agregar actividad...</q-item-section>
+                        </q-item>
+                      </div>
+
+                      <!-- Botón agregar bloque de tema -->
+                      <q-item
+                        class="add-bloque-row q-mt-xs"
+                        clickable
+                        @click="abrirDialogoBloque(seccion)"
+                      >
+                        <q-item-section avatar><q-icon name="add" color="secondary" size="xs" /></q-item-section>
+                        <q-item-section class="text-caption text-secondary">Agregar bloque de tema...</q-item-section>
                       </q-item>
                     </q-card-section>
                   </q-card>
@@ -176,11 +298,11 @@
               <AppEmptyState
                 v-if="!curso.secciones.length"
                 icon="folder_open"
-                title="Sin secciones"
-                message="Agrega tu primera seccion o genera un curso desde SISA."
+                title="Sin unidades"
+                message="Agrega tu primera unidad o genera el curso desde SISA."
               >
                 <div class="row q-gutter-sm q-mt-md justify-center">
-                  <TaButton variant="primary" icon="add" label="Agregar Seccion" @click="abrirDialogoSeccion()" />
+                  <TaButton variant="primary" icon="add" label="Agregar Unidad" @click="abrirDialogoSeccion()" />
                   <TaButton variant="outline" icon="cloud_download" label="Generar desde SISA" @click="menuSisa = true" />
                 </div>
               </AppEmptyState>
@@ -202,6 +324,8 @@
                     @bloque-change="onCanvasBloqueChange"
                     @edit-bloque="onEditCanvasBloque"
                     @delete-bloque="onDeleteCanvasBloque"
+                    @rename-seccion="onRenameCanvasSeccion"
+                    @rename-bloque="onRenameCanvasBloque"
                   />
                 </div>
               </div>
@@ -311,7 +435,7 @@
               </div>
             </div>
             <div class="row q-col-gutter-sm q-mb-md">
-              <div class="col-12">
+              <div class="col-6">
                 <q-select
                   v-model="formActividad.grupo_calificacion"
                   :options="[
@@ -321,6 +445,21 @@
                     {label: 'Examen Final', value: 'examen_final'}
                   ]"
                   label="Grupo de Calificación"
+                  outlined
+                  dense
+                  emit-value
+                  map-options
+                />
+              </div>
+              <div class="col-6">
+                <q-select
+                  v-model="formActividad.parcial"
+                  :options="[
+                    {label: 'Primer Parcial', value: 1},
+                    {label: 'Segundo Parcial', value: 2},
+                    {label: 'Examen Final / 3er P.', value: 3}
+                  ]"
+                  label="Parcial / Periodo"
                   outlined
                   dense
                   emit-value
@@ -355,6 +494,34 @@
                 </div>
               </q-card>
             </q-expansion-item>
+
+            <!-- Configuración de Rúbrica / Lista de Cotejo -->
+            <div v-if="['tarea', 'foro'].includes(formActividad.tipo)" class="q-mb-md">
+              <q-separator class="q-my-sm" />
+              <div class="row items-center justify-between q-py-xs">
+                <div class="text-subtitle2 text-grey-8">Método de Evaluación</div>
+                <q-btn
+                  color="primary"
+                  size="sm"
+                  outline
+                  icon="fact_check"
+                  label="Configurar Rúbrica / Cotejo"
+                  no-caps
+                  @click="dialogoRubricaStudio = true"
+                />
+              </div>
+              <div v-if="formActividad.config.rubrica?.metodo_evaluacion && formActividad.config.rubrica?.metodo_evaluacion !== 'directa'" class="q-pa-sm rounded bg-teal-1 text-teal-9 text-caption row items-center justify-between">
+                <span>
+                  <q-icon name="check_circle" class="q-mr-xs" />
+                  Evaluación por: <strong>{{ formActividad.config.rubrica.metodo_evaluacion === 'lista_cotejo' ? 'Lista de Cotejo' : 'Rúbrica Ampliada' }}</strong> 
+                  ({{ formActividad.config.rubrica.criterios?.length || 0 }} criterios)
+                </span>
+                <q-btn flat round dense color="negative" icon="delete" size="xs" @click="formActividad.config.rubrica = { metodo_evaluacion: 'directa', criterios: [], niveles: [] }" />
+              </div>
+              <div v-else class="text-caption text-grey-5">
+                Calificación Numérica Directa (sin rúbricas)
+              </div>
+            </div>
           </template>
 
           <template v-if="formActividad.tipo === 'tarea'">
@@ -497,6 +664,34 @@
       </q-card>
     </q-dialog>
 
+    <!-- Diálogo Diseñador de Rúbricas y Listas de Cotejo -->
+    <q-dialog v-model="dialogoRubricaStudio" persistent maximized>
+      <q-card class="column full-height">
+        <q-bar class="bg-primary text-white q-py-sm">
+          <q-icon name="fact_check" />
+          <div class="text-subtitle1 text-weight-bold">Diseñador de Rúbricas y Listas de Cotejo</div>
+          <q-space />
+          <q-btn dense flat icon="close" v-close-popup />
+        </q-bar>
+        
+        <q-card-section class="col scroll q-pa-lg">
+          <div class="max-w-4xl mx-auto" style="max-width: 900px; margin: 0 auto;">
+            <div class="text-h6 text-weight-bold q-mb-xs">Definición de Rúbrica para: {{ formActividad.titulo || 'Nueva Actividad' }}</div>
+            <div class="text-caption text-grey-6 q-mb-lg">Configura el método con el que calificarás los entregables de tus estudiantes.</div>
+            
+            <RubricaStudio
+              v-model="formActividad.config.rubrica"
+              :maxPoints="formActividad.nota_maxima || 100"
+            />
+          </div>
+        </q-card-section>
+        
+        <q-card-actions align="right" class="q-pa-md bg-grey-2">
+          <q-btn flat label="Cerrar y Guardar Cambios" color="primary" class="q-px-lg text-weight-bold" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Diálogo para Importar Preguntas desde Banco SISA -->
     <q-dialog v-model="dialogoSisaPreguntas" persistent>
       <q-card style="width: 550px; max-width: 90vw; border-radius: 16px;">
@@ -572,13 +767,17 @@
               <p class="text-grey-7">El sistema mapea automaticamente la estructura del PAC a la estructura del curso LMS:</p>
               <q-list bordered separator class="q-mb-md">
                 <q-item v-for="(map, i) in sisaMapeo" :key="i">
-                  <q-item-section avatar><q-icon name="arrow_forward" color="primary" /></q-item-section>
+                  <q-item-section avatar><q-icon :name="map.icon" color="primary" /></q-item-section>
                   <q-item-section>
-                    <q-item-label>{{ map.sisa }}</q-item-label>
-                    <q-item-label caption>{{ map.lms }}</q-item-label>
+                    <q-item-label class="text-weight-medium">{{ map.sisa }}</q-item-label>
+                    <q-item-label caption class="text-positive">→ {{ map.lms }}</q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
+              <q-banner class="bg-blue-1 text-blue-9 q-mb-md rounded-borders" dense>
+                <template #avatar><q-icon name="info" color="blue" /></template>
+                Los <strong>bloques de tema</strong> se crean automáticamente desde los temas del PAC, con solo el título — listos para agregar actividades.
+              </q-banner>
               <q-stepper-navigation>
                 <q-btn flat color="primary" label="Atras" @click="sisaPaso = 'conectar'" class="q-mr-sm" />
                 <q-btn color="primary" label="Generar Curso" @click="sisaGenerar" />
@@ -587,8 +786,20 @@
             <q-step name="confirmar" title="Curso Generado" icon="check_circle">
               <div class="text-center q-pa-lg">
                 <q-icon name="check_circle" size="64px" color="green" />
-                <h6 class="text-green q-mt-md">Curso generado exitosamente!</h6>
-                <p class="text-grey-7">Se han creado {{ sisaSeccionesCreadas }} secciones y {{ sisaActividadesCreadas }} actividades base a partir del PAC.</p>
+                <h6 class="text-green q-mt-md">¡Curso generado exitosamente!</h6>
+                <div class="row q-col-gutter-md justify-center q-mt-sm">
+                  <div class="col-auto">
+                    <q-chip icon="auto_stories" color="primary" text-color="white" size="md">
+                      {{ sisaSeccionesCreadas }} unidades
+                    </q-chip>
+                  </div>
+                  <div class="col-auto">
+                    <q-chip icon="topic" color="secondary" text-color="white" size="md">
+                      {{ sisaBloquesCreados }} bloques de tema
+                    </q-chip>
+                  </div>
+                </div>
+                <p class="text-grey-7 q-mt-md">La estructura del PAC fue importada. Ahora puedes agregar actividades en cada bloque de tema.</p>
               </div>
               <q-stepper-navigation>
                 <q-btn color="primary" label="Ir al Builder" v-close-popup @click="recargarActividades" />
@@ -839,11 +1050,173 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Diálogo: Nuevo / Editar Bloque de Tema -->
+    <q-dialog v-model="dialogoBloque">
+      <q-card class="dialog-card" style="max-width: 420px;">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6 text-weight-bold">{{ bloqueEditando ? 'Editar Tema' : 'Nuevo Bloque de Tema' }}</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+        <q-card-section>
+          <q-input
+            v-model="formBloque.titulo"
+            label="Título del tema"
+            outlined
+            autofocus
+            :rules="[val => !!val?.trim() || 'El título es obligatorio']"
+            @keyup.enter="guardarBloque"
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <TaButton variant="ghost" label="Cancelar" v-close-popup />
+          <TaButton variant="primary" :label="bloqueEditando ? 'Guardar' : 'Agregar'" @click="guardarBloque" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Diálogo: Replicar Estructura -->
+    <q-dialog v-model="dialogoReplicar">
+      <q-card class="dialog-card" style="max-width: 480px;">
+        <q-card-section class="row items-center q-pb-none">
+          <div>
+            <div class="text-h6 text-weight-bold">Replicar estructura</div>
+            <div class="text-caption text-grey-7 q-mt-xs">
+              Se copiarán los bloques de <strong>«{{ replicarOrigen?.titulo }}»</strong> en las unidades seleccionadas (solo estructura, sin actividades).
+            </div>
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <div class="text-subtitle2 q-mb-sm">Selecciona las unidades destino:</div>
+          <q-list bordered separator class="rounded-borders">
+            <q-item
+              v-for="sec in seccionesDestino"
+              :key="sec.id"
+              tag="label"
+              v-ripple
+            >
+              <q-item-section avatar>
+                <q-checkbox v-model="replicarDestinosSeleccionados" :val="sec.id" color="primary" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>{{ sec.titulo }}</q-item-label>
+                <q-item-label caption>{{ (sec.bloques || []).length }} temas actuales</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+          <div v-if="!seccionesDestino.length" class="text-center text-grey-6 q-pa-md">
+            No hay otras unidades disponibles.
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md">
+          <TaButton variant="ghost" label="Cancelar" v-close-popup />
+          <TaButton
+            variant="primary"
+            icon="content_copy"
+            label="Replicar"
+            :disable="!replicarDestinosSeleccionados.length"
+            @click="confirmarReplicar"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Diálogo: Importar Temas desde SISA (por sección) -->
+    <q-dialog v-model="dialogoImportarTemas" persistent>
+      <q-card class="dialog-card" style="max-width: 520px;">
+        <q-card-section class="row items-center q-pb-none">
+          <div>
+            <div class="row items-center q-gutter-xs">
+              <q-icon name="cloud_download" color="blue-7" />
+              <div class="text-h6 text-weight-bold">Importar temas desde SISA</div>
+            </div>
+            <div class="text-caption text-grey-7 q-mt-xs" v-if="importarTemasSeccion">
+              Unidad: <strong>{{ importarTemasSeccion.titulo }}</strong>
+            </div>
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <q-select
+            v-model="importarTemasAsignatura"
+            :options="opcionesSisa"
+            label="Seleccionar asignatura del PAC SISA"
+            outlined
+            dense
+            emit-value
+            map-options
+            class="q-mb-md"
+            @update:model-value="onImportarTemasAsignaturaChange"
+          />
+
+          <div v-if="importarTemasAsignatura">
+            <!-- Seleccionar unidad del PAC para importar sus temas -->
+            <div class="text-subtitle2 q-mb-xs">Unidad del PAC a importar:</div>
+            <q-select
+              v-model="importarTemasUnidadPac"
+              :options="opcionesUnidadesPac"
+              label="Seleccionar unidad del PAC"
+              outlined
+              dense
+              emit-value
+              map-options
+              class="q-mb-md"
+              @update:model-value="onImportarTemasUnidadChange"
+            />
+          </div>
+
+          <div v-if="importarTemasDisponibles.length">
+            <div class="text-subtitle2 q-mb-xs">
+              Temas disponibles
+              <q-btn flat dense size="xs" label="Seleccionar todos" color="primary" @click="seleccionarTodosTemas" class="q-ml-sm" />
+            </div>
+            <q-list bordered separator class="rounded-borders" style="max-height: 250px; overflow-y: auto;">
+              <q-item v-for="(tema, i) in importarTemasDisponibles" :key="i" tag="label" v-ripple>
+                <q-item-section avatar>
+                  <q-checkbox v-model="importarTemasSeleccionados" :val="tema" color="secondary" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-section>
+                    <q-icon name="topic" color="secondary" size="xs" class="q-mr-xs" style="display:inline" />
+                    {{ tema }}
+                  </q-item-section>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </div>
+
+          <div v-else-if="importarTemasAsignatura && importarTemasUnidadPac" class="text-center text-grey-6 q-pa-md">
+            No hay temas disponibles para esa unidad.
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md">
+          <TaButton variant="ghost" label="Cancelar" v-close-popup />
+          <TaButton
+            variant="primary"
+            icon="cloud_download"
+            label="Importar temas"
+            :disable="!importarTemasSeleccionados.length"
+            @click="confirmarImportarTemas"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
+
+
+
 </template>
 
 <script setup>
-import { ref, computed, watch, shallowReactive, onMounted } from 'vue'
+import { ref, computed, watch, shallowReactive, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useCursosStore } from 'src/stores/cursos'
@@ -861,6 +1234,7 @@ import { useLoadingState } from 'src/composables/useLoadingState'
 import { getActivityModel } from 'src/utils/activityModel'
 import { integracionService } from 'src/services/integracionService.js'
 import { bancoDocenteService } from 'src/services/bancoDocenteService.js'
+import RubricaStudio from 'src/components/calificaciones/RubricaStudio.vue'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -911,12 +1285,31 @@ function inicializarListas() {
 
 inicializarListas()
 
+function abrirActividadDesdeQuery() {
+  const actId = Number(route.query.actividad)
+  if (!actId) return
+  const act = actividadesStore.actividades.find((a) => a.id === actId)
+  if (act) {
+    nextTick(() => {
+      editarActividad(act)
+    })
+  }
+}
+
 onMounted(async () => {
   const curso = await cursosStore.cargarCurso(Number(route.params.id))
   if (curso) actividadesStore.cargarDesdeCursos([curso])
   inicializarListas()
+  abrirActividadDesdeQuery()
   finalizarCarga()
 })
+
+watch(
+  () => route.query.actividad,
+  () => {
+    abrirActividadDesdeQuery()
+  }
+)
 
 watch(
   () => [curso.value?.secciones?.length, curso.value?.secciones?.map((s) => s.id).join(',')],
@@ -1049,10 +1442,228 @@ async function guardarSeccion() {
 
 const tipoActividadDialog = ref(false)
 const seccionActivaParaAgregar = ref(null)
+const bloqueActivoParaAgregar = ref(null)
 const dialogoActividad = ref(false)
 const actividadEditando = ref(null)
 const formActividad = ref(initFormActividad())
 const modeloFormActividad = computed(() => getActivityModel(formActividad.value))
+
+// ─── Bloques de Tema ────────────────────────────────────────────────────────
+const dialogoBloque = ref(false)
+const bloqueEditando = ref(null)
+const seccionParaBloque = ref(null)
+const formBloque = ref({ titulo: '' })
+
+function abrirDialogoBloque(seccion, bloque = null) {
+  seccionParaBloque.value = seccion
+  bloqueEditando.value = bloque
+  formBloque.value = { titulo: bloque ? bloque.titulo : '' }
+  dialogoBloque.value = true
+}
+
+function guardarBloque() {
+  if (!formBloque.value.titulo?.trim()) return
+  const cursoId = curso.value.id
+  const seccionId = seccionParaBloque.value.id
+  if (bloqueEditando.value) {
+    cursosStore.actualizarBloque(cursoId, seccionId, bloqueEditando.value.id, formBloque.value.titulo)
+    $q.notify({ message: 'Tema actualizado', color: 'positive', timeout: 1500 })
+  } else {
+    cursosStore.agregarBloque(cursoId, seccionId, formBloque.value.titulo)
+    $q.notify({ message: 'Bloque de tema agregado', color: 'positive', timeout: 1500 })
+  }
+  dialogoBloque.value = false
+  bloqueEditando.value = null
+  seccionParaBloque.value = null
+}
+
+function eliminarBloque(seccionId, bloqueId) {
+  $q.dialog({
+    title: 'Eliminar tema',
+    message: '¿Eliminar este bloque de tema? Las actividades dentro quedarán sin bloque asignado.',
+    cancel: true,
+    persistent: true,
+  }).onOk(() => {
+    cursosStore.eliminarBloque(curso.value.id, seccionId, bloqueId)
+    // Desasociar actividades del bloque eliminado
+    actividadesStore.actividades.forEach((a) => {
+      if (a.bloque_id === bloqueId) a.bloque_id = null
+    })
+    $q.notify({ message: 'Tema eliminado', color: 'warning', timeout: 1500 })
+  })
+}
+
+function onBloquesChange(seccionId, evt) {
+  if (evt.moved) {
+    const seccion = curso.value?.secciones?.find((s) => s.id === seccionId)
+    if (!seccion) return
+    const ids = (seccion.bloques || []).map((b) => b.id)
+    cursosStore.reordenarBloques(curso.value.id, seccionId, ids)
+  }
+}
+
+// Helper: actividades filtradas por bloque dentro de un mapa local
+const listasActividadesPorBloque = shallowReactive({})
+
+function getListaActividadesPorBloque(seccionId, bloqueId) {
+  const key = `${seccionId}-${bloqueId}`
+  if (!listasActividadesPorBloque[key]) {
+    listasActividadesPorBloque[key] = actividadesStore.actividades
+      .filter((a) => a.seccion_id === seccionId && a.bloque_id === bloqueId)
+      .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+  }
+  return listasActividadesPorBloque[key]
+}
+
+function getActividadesPorBloque(seccionId, bloqueId) {
+  return actividadesStore.actividades.filter(
+    (a) => a.seccion_id === seccionId && a.bloque_id === bloqueId
+  )
+}
+
+async function onActividadBloqueChange(seccionId, bloqueId, evt) {
+  const key = `${seccionId}-${bloqueId}`
+  const lista = listasActividadesPorBloque[key] || []
+
+  if (evt.moved) {
+    lista.forEach((a, i) => { a.orden = i + 1 })
+    try {
+      await actividadesStore.reordenarActividades(seccionId, lista.map((a) => a.id))
+    } catch (err) {
+      console.error('[builder] Error reordenando actividades de bloque:', err)
+    }
+  }
+
+  if (evt.added) {
+    const act = evt.added.element
+    act.seccion_id = seccionId
+    act.bloque_id = bloqueId
+    try {
+      await actividadesStore.actualizarActividad(act.id, { seccion_id: seccionId, bloque_id: bloqueId })
+    } catch (err) {
+      console.error('[builder] Error al asignar bloque a actividad:', err)
+    }
+  }
+}
+
+// ─── Replicar Estructura ────────────────────────────────────────────────────
+const dialogoReplicar = ref(false)
+const replicarOrigen = ref(null)     // { titulo, seccionId, bloqueId? }
+const replicarDestinosSeleccionados = ref([])
+
+const seccionesDestino = computed(() => {
+  if (!curso.value || !replicarOrigen.value) return []
+  return curso.value.secciones.filter((s) => s.id !== replicarOrigen.value.seccionId)
+})
+
+function abrirReplicarSeccion(seccion) {
+  replicarOrigen.value = { titulo: seccion.titulo, seccionId: seccion.id, bloqueId: null }
+  replicarDestinosSeleccionados.value = []
+  dialogoReplicar.value = true
+}
+
+function abrirReplicarBloque(seccion, bloque) {
+  replicarOrigen.value = { titulo: bloque.titulo, seccionId: seccion.id, bloqueId: bloque.id }
+  replicarDestinosSeleccionados.value = []
+  dialogoReplicar.value = true
+}
+
+function confirmarReplicar() {
+  const destinos = replicarDestinosSeleccionados.value
+  if (!destinos.length || !replicarOrigen.value) return
+
+  if (replicarOrigen.value.bloqueId) {
+    cursosStore.replicarBloque(
+      curso.value.id,
+      replicarOrigen.value.seccionId,
+      replicarOrigen.value.bloqueId,
+      destinos
+    )
+  } else {
+    cursosStore.replicarEstructuraSeccion(
+      curso.value.id,
+      replicarOrigen.value.seccionId,
+      destinos
+    )
+  }
+
+  $q.notify({
+    message: `Estructura replicada en ${destinos.length} unidad${destinos.length > 1 ? 'es' : ''}`,
+    color: 'positive',
+    icon: 'content_copy',
+    timeout: 2500,
+  })
+  dialogoReplicar.value = false
+  replicarOrigen.value = null
+  replicarDestinosSeleccionados.value = []
+}
+
+// ─── Importar Temas desde SISA por Sección ───────────────────────────────────
+const dialogoImportarTemas = ref(false)
+const importarTemasSeccion = ref(null)
+const importarTemasAsignatura = ref(null)
+const importarTemasUnidadPac = ref(null)
+const importarTemasDisponibles = ref([])
+const importarTemasSeleccionados = ref([])
+
+const opcionesUnidadesPac = computed(() => {
+  if (!importarTemasAsignatura.value) return []
+  const pac = sisaPacMock[importarTemasAsignatura.value] ?? []
+  return pac.map((u, i) => ({ label: u.titulo, value: i }))
+})
+
+function abrirImportarTemasSeccion(seccion) {
+  importarTemasSeccion.value = seccion
+  importarTemasAsignatura.value = null
+  importarTemasUnidadPac.value = null
+  importarTemasDisponibles.value = []
+  importarTemasSeleccionados.value = []
+  dialogoImportarTemas.value = true
+}
+
+function onImportarTemasAsignaturaChange() {
+  importarTemasUnidadPac.value = null
+  importarTemasDisponibles.value = []
+  importarTemasSeleccionados.value = []
+}
+
+function onImportarTemasUnidadChange(idx) {
+  if (idx === null || idx === undefined) {
+    importarTemasDisponibles.value = []
+    importarTemasSeleccionados.value = []
+    return
+  }
+  const pac = sisaPacMock[importarTemasAsignatura.value] ?? []
+  importarTemasDisponibles.value = pac[idx]?.bloques ?? []
+  importarTemasSeleccionados.value = []
+}
+
+function seleccionarTodosTemas() {
+  importarTemasSeleccionados.value = [...importarTemasDisponibles.value]
+}
+
+function confirmarImportarTemas() {
+  const seccion = importarTemasSeccion.value
+  if (!seccion || !importarTemasSeleccionados.value.length) return
+
+  for (const titulo of importarTemasSeleccionados.value) {
+    cursosStore.agregarBloque(curso.value.id, seccion.id, titulo)
+  }
+
+  $q.notify({
+    message: `${importarTemasSeleccionados.value.length} tema${importarTemasSeleccionados.value.length > 1 ? 's importados' : ' importado'} en «${seccion.titulo}»`,
+    color: 'positive',
+    icon: 'cloud_download',
+    timeout: 2500,
+  })
+  dialogoImportarTemas.value = false
+  importarTemasSeccion.value = null
+  importarTemasAsignatura.value = null
+  importarTemasUnidadPac.value = null
+  importarTemasDisponibles.value = []
+  importarTemasSeleccionados.value = []
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 const extensionesDisponibles = [
   { label: 'PDF (.pdf)', val: 'pdf' },
@@ -1192,6 +1803,7 @@ function initFormActividad() {
     peso: 1.0,
     tipo_actividad: 'teorica',
     grupo_calificacion: 'formativa_teorica',
+    parcial: 1,
     config: {
       fecha_entrega: '', fecha_limite: '',
       archivos_permitidos: 'pdf,docx', tamano_max_mb: 10, instrucciones: '',
@@ -1206,6 +1818,11 @@ function initFormActividad() {
       modo_interaccion: 'entrega',
       regla_completado: 'entrega_enviada',
       preguntas: [],
+      rubrica: {
+        metodo_evaluacion: 'directa',
+        criterios: [],
+        niveles: []
+      }
     },
   }
 }
@@ -1214,6 +1831,7 @@ function abrirFormularioActividad(tipo) {
   formActividad.value = { ...initFormActividad(), tipo }
   formActividad.value.tipo_actividad = ['tarea', 'h5p', 'foro'].includes(tipo) ? 'practica' : 'teorica'
   formActividad.value.grupo_calificacion = formActividad.value.tipo_actividad === 'practica' ? 'formativa_practica' : 'formativa_teorica'
+  formActividad.value.parcial = 1
   archivosSeleccionados.value = ['pdf', 'docx']
   actividadEditando.value = null
   dialogoActividad.value = true
@@ -1225,6 +1843,7 @@ function editarActividad(act) {
     tiene_nota: act.tiene_nota, nota_maxima: act.nota_maxima, peso: act.peso,
     tipo_actividad: act.tipo_actividad || (['tarea', 'h5p', 'foro'].includes(act.tipo) ? 'practica' : 'teorica'),
     grupo_calificacion: act.grupo_calificacion || (['tarea', 'h5p', 'foro'].includes(act.tipo) ? 'formativa_practica' : 'formativa_teorica'),
+    parcial: act.parcial || 1,
     config: { ...initFormActividad().config, ...act.config },
   }
   archivosSeleccionados.value = formActividad.value.config.archivos_permitidos
@@ -1266,6 +1885,9 @@ async function onH5pFileChange(file) {
     $q.notify({ message: 'Error al leer el archivo H5P', color: 'negative', timeout: 3000 })
   }
 }
+
+// Diseñador de Rúbricas
+const dialogoRubricaStudio = ref(false)
 
 // SISA banco de preguntas variables
 const dialogoSisaPreguntas = ref(false)
@@ -1411,9 +2033,11 @@ async function guardarActividad() {
     }
     $q.notify({ message: 'Bloque actualizado', color: 'positive', timeout: 1500 })
   } else {
+    const bid = bloqueActivoParaAgregar.value
     const nuevoBloque = {
       ...formActividad.value,
       seccion_id: sid,
+      bloque_id: bid ?? null,
       orden: (listasActividades[sid] || []).length + 1,
     }
     if (esActividad) {
@@ -1422,12 +2046,20 @@ async function guardarActividad() {
     }
     if (!listasActividades[sid]) listasActividades[sid] = []
     listasActividades[sid].push(nuevoBloque)
-    $q.notify({ message: 'Bloque agregado', color: 'positive', timeout: 1500 })
+    // Añadir también al mapa por bloque si aplica
+    if (bid) {
+      const key = `${sid}-${bid}`
+      if (!listasActividadesPorBloque[key]) listasActividadesPorBloque[key] = []
+      listasActividadesPorBloque[key].push(nuevoBloque)
+    }
+    $q.notify({ message: 'Actividad agregada', color: 'positive', timeout: 1500 })
   }
   dialogoActividad.value = false
   actividadEditando.value = null
+  bloqueActivoParaAgregar.value = null
   inicializarListas()
 }
+
 
 const itemAEliminarSeccion = ref(null)
 const itemAEliminarAct = ref(null)
@@ -1509,20 +2141,84 @@ const menuSisa = ref(false)
 const sisaPaso = ref('conectar')
 const sisaAsignatura = ref(null)
 const sisaSeccionesCreadas = ref(0)
-const sisaActividadesCreadas = ref(0)
+const sisaBloquesCreados = ref(0)
 
 const opcionesSisa = [
   { label: 'SIS-401 — Programacion Avanzada', value: 'SIS-401' },
   { label: 'SIS-305 — Base de Datos II', value: 'SIS-305' },
 ]
 
+// PAC mock: estructura completa por asignatura (lo que vendría de la API SISA real)
+const sisaPacMock = {
+  'SIS-401': [
+    {
+      titulo: 'Unidad I — Paradigma Orientado a Objetos',
+      bloques: [
+        'Introduccion al paradigma OOP',
+        'Clases, atributos y metodos',
+        'Herencia y polimorfismo',
+        'Interfaces y clases abstractas',
+      ],
+    },
+    {
+      titulo: 'Unidad II — Patrones de Diseno',
+      bloques: [
+        'Patrones Creacionales (Factory, Singleton, Builder)',
+        'Patrones Estructurales (Adapter, Decorator, Facade)',
+        'Patrones de Comportamiento (Observer, Strategy, Command)',
+      ],
+    },
+    {
+      titulo: 'Unidad III — Arquitectura de Software',
+      bloques: [
+        'Principios SOLID',
+        'Arquitectura en capas y MVC',
+        'Microservicios y API REST',
+      ],
+    },
+    {
+      titulo: 'Unidad IV — Pruebas y Calidad',
+      bloques: [
+        'Pruebas unitarias y de integracion',
+        'TDD y BDD',
+        'Refactorizacion y deuda tecnica',
+      ],
+    },
+  ],
+  'SIS-305': [
+    {
+      titulo: 'Unidad I — Fundamentos de Bases de Datos',
+      bloques: [
+        'Modelo relacional y algebra relacional',
+        'Disenio de esquemas y normalizacion',
+        'SQL avanzado y subconsultas',
+      ],
+    },
+    {
+      titulo: 'Unidad II — Transacciones y Concurrencia',
+      bloques: [
+        'Propiedades ACID',
+        'Control de concurrencia y bloqueos',
+        'Recuperacion ante fallos',
+      ],
+    },
+    {
+      titulo: 'Unidad III — Optimizacion y Rendimiento',
+      bloques: [
+        'Indices y planes de ejecucion',
+        'Particionamiento y sharding',
+        'Caches de consulta',
+      ],
+    },
+  ],
+}
+
 const sisaMapeo = [
-  { sisa: 'Asignatura', lms: 'Curso' },
-  { sisa: 'Unidad I, II, III...', lms: 'Seccion' },
-  { sisa: 'Temas por unidad', lms: 'Actividades sugeridas' },
-  { sisa: 'Logros de aprendizaje', lms: 'Objetivos de la seccion' },
-  { sisa: 'Cronograma maestro', lms: 'Fechas sugeridas' },
-  { sisa: 'Sistema de evaluacion', lms: 'Esquema de calificacion inicial' },
+  { sisa: 'Asignatura', lms: 'Curso', icon: 'school' },
+  { sisa: 'Unidad I, II, III...', lms: 'Unidad de Aprendizaje (Seccion)', icon: 'auto_stories' },
+  { sisa: 'Temas de la unidad', lms: 'Bloque de Tema', icon: 'topic' },
+  { sisa: 'Logros de aprendizaje', lms: 'Objetivos de la seccion', icon: 'emoji_events' },
+  { sisa: 'Sistema de evaluacion', lms: 'Esquema de calificacion inicial', icon: 'grading' },
 ]
 
 function sisaConectar() {
@@ -1531,18 +2227,33 @@ function sisaConectar() {
 }
 
 async function sisaGenerar() {
-  const nroSecciones = Math.floor(Math.random() * 3) + 2
-  for (let i = 0; i < nroSecciones; i++) {
-    await cursosStore.agregarSeccion(curso.value.id, {
-      titulo: `Unidad ${['I', 'II', 'III', 'IV'][i]} — Importada desde SISA`,
-      descripcion: `Contenido del PAC de ${sisaAsignatura.value?.label ?? 'SISA'}`,
+  $q.loading.show({ message: 'Importando PAC desde SISA...' })
+  await new Promise((r) => setTimeout(r, 900))
+
+  const pac = sisaPacMock[sisaAsignatura.value?.value] ?? []
+  let totalBloques = 0
+
+  for (const unidad of pac) {
+    const seccionData = await cursosStore.agregarSeccion(curso.value.id, {
+      titulo: unidad.titulo,
+      descripcion: `Importado desde PAC ${sisaAsignatura.value?.label ?? 'SISA'}`,
     })
+    // seccionData puede ser el objeto seccion devuelto por el servicio
+    const seccion = seccionData ?? curso.value.secciones[curso.value.secciones.length - 1]
+    if (seccion && Array.isArray(unidad.bloques)) {
+      for (const tituloBloque of unidad.bloques) {
+        cursosStore.agregarBloque(curso.value.id, seccion.id, tituloBloque)
+        totalBloques++
+      }
+    }
   }
-  sisaSeccionesCreadas.value = nroSecciones
-  sisaActividadesCreadas.value = nroSecciones * 2
+
+  $q.loading.hide()
+  sisaSeccionesCreadas.value = pac.length
+  sisaBloquesCreados.value = totalBloques
   sisaPaso.value = 'confirmar'
   inicializarListas()
-  $q.notify({ message: `Curso generado desde SISA con ${nroSecciones} secciones`, color: 'positive', timeout: 3000 })
+  $q.notify({ message: `Curso generado desde SISA: ${pac.length} unidades, ${totalBloques} temas`, color: 'positive', timeout: 3000 })
 }
 
 function labelTipo(tipo) {
@@ -1590,6 +2301,29 @@ function onDeleteCanvasBloque(seccionId, idx) {
     lista.splice(idx, 1)
   }
 }
+
+// ─── Canvas rename handlers ─────────────────────────────────────────────────
+async function onRenameCanvasSeccion(seccionId, newTitle) {
+  const seccion = curso.value.secciones.find((s) => s.id === seccionId)
+  if (!seccion || !newTitle.trim()) return
+  await cursosStore.actualizarSeccion(curso.value.id, seccionId, {
+    titulo: newTitle.trim(),
+    descripcion: seccion.descripcion,
+  })
+  $q.notify({ message: 'Título actualizado', color: 'positive', timeout: 1200 })
+}
+
+function onRenameCanvasBloque(seccionId, bIdx, newTitle) {
+  const lista = listasActividades[seccionId]
+  if (!lista || !lista[bIdx] || !newTitle.trim()) return
+  lista[bIdx].titulo = newTitle.trim()
+  sincronizarAlStore(seccionId)
+  $q.notify({ message: 'Título actualizado', color: 'positive', timeout: 1200 })
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 // Plantillas
 const dialogoPlantillas = ref(false)
@@ -1820,5 +2554,103 @@ if (plantillas.value.length === 0) {
 .body--dark .section-count {
   background: rgba(var(--primary-rgb), 0.2);
   color: var(--ta-text-primary);
+}
+
+/* ── Inline title editing (Modo Simple) ───────────────── */
+.simple-inline-title-input {
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid var(--ta-primary, var(--q-primary));
+  background: transparent;
+  outline: none;
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+  color: inherit;
+  line-height: inherit;
+  padding: 0 2px;
+  border-radius: 2px 2px 0 0;
+}
+
+.simple-title-editable {
+  cursor: text;
+  border-radius: 3px;
+  padding: 1px 3px;
+  transition: background 0.15s;
+}
+.simple-title-editable:hover {
+  background: rgba(var(--primary-rgb), 0.08);
+}
+
+/* ── Bloques de Tema ───────────────────────────────────── */
+.bloque-tema {
+  border-radius: 10px;
+  border: 1px solid transparent;
+  border-left: 3px solid var(--q-secondary, #9c27b0);
+  background: transparent;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  margin: 2px 4px;
+}
+.bloque-tema:hover {
+  background: rgba(156, 39, 176, 0.04);
+  border-color: rgba(156, 39, 176, 0.25);
+  border-left-color: var(--q-secondary, #9c27b0);
+}
+.body--dark .bloque-tema:hover {
+  background: rgba(156, 39, 176, 0.08);
+}
+
+.bloque-header {
+  border-radius: 8px 8px 0 0;
+  cursor: default;
+  min-height: 32px;
+}
+
+.bloque-titulo {
+  font-size: 0.82rem;
+  color: var(--ta-text-primary);
+  line-height: 1.3;
+}
+
+.bloque-drag-handle {
+  opacity: 0;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  cursor: grab;
+}
+.bloque-tema:hover .bloque-drag-handle {
+  opacity: 0.5;
+}
+.bloque-drag-handle:hover {
+  opacity: 1 !important;
+  color: var(--q-secondary);
+}
+.bloque-drag-handle:active { cursor: grabbing; }
+
+.bloque-actividades {
+  border-top: 1px dashed rgba(156, 39, 176, 0.15);
+  padding-top: 2px;
+  padding-bottom: 4px;
+}
+
+.ghost-bloque {
+  opacity: 0.6;
+  background: rgba(156, 39, 176, 0.07);
+  border: 2px dashed rgba(156, 39, 176, 0.3);
+  border-radius: 10px;
+}
+
+.add-bloque-row {
+  border-radius: 8px;
+  margin: 2px 4px;
+  transition: all 0.2s ease;
+  border: 1px dashed transparent;
+  color: var(--q-secondary, #9c27b0);
+  opacity: 0.7;
+  min-height: 28px !important;
+}
+.add-bloque-row:hover {
+  background: rgba(156, 39, 176, 0.06);
+  border-color: rgba(156, 39, 176, 0.25);
+  opacity: 1;
 }
 </style>

@@ -21,6 +21,8 @@ export const useActividadesStore = defineStore('actividades', {
     getActividadById: (state) => (id) => state.actividades.find((a) => a.id === id),
     getActividadesPorSeccion: (state) => (seccionId) =>
       state.actividades.filter((a) => a.seccion_id === seccionId).sort((a, b) => (a.orden || 0) - (b.orden || 0)),
+    getActividadesPorBloque: (state) => (bloqueId) =>
+      state.actividades.filter((a) => a.bloque_id === bloqueId).sort((a, b) => (a.orden || 0) - (b.orden || 0)),
 
     getCursosMatriculados: () => (estudianteId) => {
       return mockMatriculas

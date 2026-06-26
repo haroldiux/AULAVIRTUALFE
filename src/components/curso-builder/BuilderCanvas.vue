@@ -30,7 +30,25 @@
         />
         <q-icon name="folder" color="primary" size="sm" class="q-mr-sm" />
         <div class="col">
-          <div class="text-subtitle2 text-weight-medium">{{ seccion.titulo }}</div>
+          <!-- Inline title editing for section -->
+          <input
+            v-if="editing?.type === 'seccion' && editing.seccionId === seccion.id"
+            :ref="(el) => { if (el) inputRef = el }"
+            v-model="inlineTitle"
+            class="inline-title-input text-subtitle2 text-weight-medium"
+            @keydown.enter.prevent="commitEdit"
+            @keydown.escape.prevent="cancelEdit"
+            @blur="cancelEdit"
+          />
+          <div
+            v-else
+            class="text-subtitle2 text-weight-medium seccion-title-editable"
+            @dblclick.stop="startEditSeccion(seccion)"
+            title="Doble clic para editar el título"
+          >
+            {{ seccion.titulo }}
+            <q-tooltip anchor="top middle" self="bottom middle" :delay="600">Doble clic para editar el título</q-tooltip>
+          </div>
           <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-6'">{{ seccion.descripcion }}</div>
         </div>
         <div class="col-auto row q-gutter-xs">
@@ -83,7 +101,22 @@
 
             <div class="q-px-sm q-pb-sm">
               <template v-if="bloque.tipo === 'h5p'">
-                <div class="text-body2 text-weight-medium q-mt-xs">{{ bloque.titulo || 'Nuevo Contenido H5P' }}</div>
+                <!-- Inline title for h5p -->
+                <input
+                  v-if="editing?.type === 'bloque' && editing.seccionId === seccion.id && editing.bIdx === bIdx"
+                  :ref="(el) => { if (el) inputRef = el }"
+                  v-model="inlineTitle"
+                  class="inline-title-input text-body2 text-weight-medium q-mt-xs"
+                  @keydown.enter.prevent="commitEdit"
+                  @keydown.escape.prevent="cancelEdit"
+                  @blur="cancelEdit"
+                />
+                <div
+                  v-else
+                  class="text-body2 text-weight-medium q-mt-xs bloque-title-editable"
+                  @dblclick.stop="startEditBloque(seccion.id, bloque, bIdx)"
+                  title="Doble clic para editar el título"
+                >{{ bloque.titulo || 'Nuevo Contenido H5P' }}</div>
                 <div class="bloque-preview-mini bg-pink-1 q-pa-xs q-mt-xs rounded-borders text-caption">
                   <q-icon name="extension" size="xs" /> {{ bloque.config?.h5p_metadata?.mainLibrary || 'H5P' }}
                   <span v-if="bloque.tiene_nota !== false"> · {{ bloque.nota_maxima || 100 }} pts</span>
@@ -91,9 +124,22 @@
               </template>
 
               <template v-if="bloque.tipo === 'leccion'">
-                <div class="text-body2 text-weight-medium q-mt-xs">
-                  {{ bloque.titulo || 'Nueva Leccion' }}
-                </div>
+                <!-- Inline title for leccion -->
+                <input
+                  v-if="editing?.type === 'bloque' && editing.seccionId === seccion.id && editing.bIdx === bIdx"
+                  :ref="(el) => { if (el) inputRef = el }"
+                  v-model="inlineTitle"
+                  class="inline-title-input text-body2 text-weight-medium q-mt-xs"
+                  @keydown.enter.prevent="commitEdit"
+                  @keydown.escape.prevent="cancelEdit"
+                  @blur="cancelEdit"
+                />
+                <div
+                  v-else
+                  class="text-body2 text-weight-medium q-mt-xs bloque-title-editable"
+                  @dblclick.stop="startEditBloque(seccion.id, bloque, bIdx)"
+                  title="Doble clic para editar el título"
+                >{{ bloque.titulo || 'Nueva Leccion' }}</div>
                 <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-6'" v-if="bloque.descripcion">{{ bloque.descripcion }}</div>
                 <div
                   class="bloque-preview-mini q-pa-xs q-mt-xs rounded-borders text-caption"
@@ -105,7 +151,22 @@
               </template>
 
               <template v-else-if="bloque.tipo === 'tarea'">
-                <div class="text-body2 text-weight-medium q-mt-xs">{{ bloque.titulo || 'Nueva Tarea' }}</div>
+                <!-- Inline title for tarea -->
+                <input
+                  v-if="editing?.type === 'bloque' && editing.seccionId === seccion.id && editing.bIdx === bIdx"
+                  :ref="(el) => { if (el) inputRef = el }"
+                  v-model="inlineTitle"
+                  class="inline-title-input text-body2 text-weight-medium q-mt-xs"
+                  @keydown.enter.prevent="commitEdit"
+                  @keydown.escape.prevent="cancelEdit"
+                  @blur="cancelEdit"
+                />
+                <div
+                  v-else
+                  class="text-body2 text-weight-medium q-mt-xs bloque-title-editable"
+                  @dblclick.stop="startEditBloque(seccion.id, bloque, bIdx)"
+                  title="Doble clic para editar el título"
+                >{{ bloque.titulo || 'Nueva Tarea' }}</div>
                 <div
                   class="bloque-preview-mini q-pa-xs q-mt-xs rounded-borders text-caption"
                   :class="$q.dark.isActive ? 'bg-orange-10 text-orange-2' : 'bg-orange-1'"
@@ -116,7 +177,22 @@
               </template>
 
               <template v-else-if="bloque.tipo === 'foro'">
-                <div class="text-body2 text-weight-medium q-mt-xs">{{ bloque.titulo || 'Nuevo Foro' }}</div>
+                <!-- Inline title for foro -->
+                <input
+                  v-if="editing?.type === 'bloque' && editing.seccionId === seccion.id && editing.bIdx === bIdx"
+                  :ref="(el) => { if (el) inputRef = el }"
+                  v-model="inlineTitle"
+                  class="inline-title-input text-body2 text-weight-medium q-mt-xs"
+                  @keydown.enter.prevent="commitEdit"
+                  @keydown.escape.prevent="cancelEdit"
+                  @blur="cancelEdit"
+                />
+                <div
+                  v-else
+                  class="text-body2 text-weight-medium q-mt-xs bloque-title-editable"
+                  @dblclick.stop="startEditBloque(seccion.id, bloque, bIdx)"
+                  title="Doble clic para editar el título"
+                >{{ bloque.titulo || 'Nuevo Foro' }}</div>
                 <div
                   class="bloque-preview-mini q-pa-xs q-mt-xs rounded-borders text-caption"
                   :class="$q.dark.isActive ? 'bg-teal-10 text-teal-2' : 'bg-teal-1'"
@@ -126,7 +202,22 @@
               </template>
 
               <template v-else-if="bloque.tipo === 'cuestionario'">
-                <div class="text-body2 text-weight-medium q-mt-xs">{{ bloque.titulo || 'Nuevo Quiz' }}</div>
+                <!-- Inline title for cuestionario -->
+                <input
+                  v-if="editing?.type === 'bloque' && editing.seccionId === seccion.id && editing.bIdx === bIdx"
+                  :ref="(el) => { if (el) inputRef = el }"
+                  v-model="inlineTitle"
+                  class="inline-title-input text-body2 text-weight-medium q-mt-xs"
+                  @keydown.enter.prevent="commitEdit"
+                  @keydown.escape.prevent="cancelEdit"
+                  @blur="cancelEdit"
+                />
+                <div
+                  v-else
+                  class="text-body2 text-weight-medium q-mt-xs bloque-title-editable"
+                  @dblclick.stop="startEditBloque(seccion.id, bloque, bIdx)"
+                  title="Doble clic para editar el título"
+                >{{ bloque.titulo || 'Nuevo Quiz' }}</div>
                 <div
                   class="bloque-preview-mini q-pa-xs q-mt-xs rounded-borders text-caption"
                   :class="$q.dark.isActive ? 'bg-purple-10 text-purple-2' : 'bg-purple-1'"
@@ -136,7 +227,22 @@
               </template>
 
               <template v-else-if="bloque.tipo === 'encuesta'">
-                <div class="text-body2 text-weight-medium q-mt-xs">{{ bloque.titulo || 'Nueva Encuesta' }}</div>
+                <!-- Inline title for encuesta -->
+                <input
+                  v-if="editing?.type === 'bloque' && editing.seccionId === seccion.id && editing.bIdx === bIdx"
+                  :ref="(el) => { if (el) inputRef = el }"
+                  v-model="inlineTitle"
+                  class="inline-title-input text-body2 text-weight-medium q-mt-xs"
+                  @keydown.enter.prevent="commitEdit"
+                  @keydown.escape.prevent="cancelEdit"
+                  @blur="cancelEdit"
+                />
+                <div
+                  v-else
+                  class="text-body2 text-weight-medium q-mt-xs bloque-title-editable"
+                  @dblclick.stop="startEditBloque(seccion.id, bloque, bIdx)"
+                  title="Doble clic para editar el título"
+                >{{ bloque.titulo || 'Nueva Encuesta' }}</div>
                 <div
                   class="bloque-preview-mini q-pa-xs q-mt-xs rounded-borders text-caption"
                   :class="$q.dark.isActive ? 'bg-green-10 text-green-2' : 'bg-green-1'"
@@ -198,6 +304,7 @@
 </template>
 
 <script setup>
+import { ref, nextTick } from 'vue'
 import draggable from 'vuedraggable'
 import { useQuasar } from 'quasar'
 
@@ -208,14 +315,57 @@ defineProps({
   bloquesPorSeccion: { type: Object, required: true },
 })
 
-defineEmits([
+const emit = defineEmits([
   'edit-seccion',
   'delete-seccion',
   'update-bloques',
   'bloque-change',
   'edit-bloque',
   'delete-bloque',
+  'rename-seccion',
+  'rename-bloque',
 ])
+
+// ─── Inline title editing ───────────────────────────────────────────────────
+/** editing = { type: 'seccion'|'bloque', seccionId, bIdx? } */
+const editing = ref(null)
+const inlineTitle = ref('')
+let inputRef = null
+
+async function startEditSeccion(seccion) {
+  inlineTitle.value = seccion.titulo
+  editing.value = { type: 'seccion', seccionId: seccion.id }
+  await nextTick()
+  inputRef?.focus()
+  inputRef?.select()
+}
+
+async function startEditBloque(seccionId, bloque, bIdx) {
+  inlineTitle.value = bloque.titulo || ''
+  editing.value = { type: 'bloque', seccionId, bIdx }
+  await nextTick()
+  inputRef?.focus()
+  inputRef?.select()
+}
+
+function commitEdit() {
+  if (!editing.value) return
+  const title = inlineTitle.value.trim()
+  if (editing.value.type === 'seccion') {
+    if (title) emit('rename-seccion', editing.value.seccionId, title)
+  } else {
+    if (title) emit('rename-bloque', editing.value.seccionId, editing.value.bIdx, title)
+  }
+  editing.value = null
+  inlineTitle.value = ''
+}
+
+function cancelEdit() {
+  if (!editing.value) return
+  editing.value = null
+  inlineTitle.value = ''
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 function formatFecha(f) {
   return f ? new Date(f).toLocaleDateString('es-BO', { day: '2-digit', month: 'short' }) : 'Sin fecha'
@@ -326,4 +476,40 @@ function previewTexto(bloque) {
 .body--dark .canvas-ghost { background: rgba(37, 99, 235, 0.2); }
 
 .bloque-preview-mini { overflow: hidden; }
+
+/* ── Inline title editing ────────────────────────────── */
+.inline-title-input {
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid var(--q-primary);
+  background: transparent;
+  outline: none;
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+  color: inherit;
+  line-height: inherit;
+  padding: 0 2px;
+  border-radius: 2px 2px 0 0;
+}
+
+.seccion-title-editable {
+  cursor: text;
+  border-radius: 3px;
+  padding: 1px 3px;
+  transition: background 0.15s;
+}
+.seccion-title-editable:hover {
+  background: rgba(var(--q-primary-rgb, 37, 99, 235), 0.08);
+}
+
+.bloque-title-editable {
+  cursor: text;
+  border-radius: 3px;
+  padding: 1px 3px;
+  transition: background 0.15s;
+}
+.bloque-title-editable:hover {
+  background: rgba(var(--q-primary-rgb, 37, 99, 235), 0.08);
+}
 </style>

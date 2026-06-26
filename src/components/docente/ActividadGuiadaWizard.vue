@@ -63,7 +63,7 @@
           </div>
 
           <div class="row q-col-gutter-md q-mt-xs">
-            <div class="col-12 col-md-6">
+            <div class="col-12 col-md-4">
               <q-select
                 v-model="form.tipoActividad"
                 :options="[{label: 'Teórica', value: 'teorica'}, {label: 'Práctica', value: 'practica'}]"
@@ -73,7 +73,7 @@
                 map-options
               />
             </div>
-            <div v-if="form.calificable" class="col-12 col-md-6">
+            <div v-if="form.calificable" class="col-12 col-md-4">
               <q-select
                 v-model="form.grupoCalificacion"
                 :options="[
@@ -83,6 +83,20 @@
                   {label: 'Examen Final', value: 'examen_final'}
                 ]"
                 label="Grupo de Calificación"
+                outlined
+                emit-value
+                map-options
+              />
+            </div>
+            <div v-if="form.calificable" class="col-12 col-md-4">
+              <q-select
+                v-model="form.parcial"
+                :options="[
+                  {label: 'Primer Parcial', value: 1},
+                  {label: 'Segundo Parcial', value: 2},
+                  {label: 'Examen Final', value: 3}
+                ]"
+                label="Parcial / Periodo"
                 outlined
                 emit-value
                 map-options
@@ -124,8 +138,27 @@
               <q-select v-model="form.bancoPreguntasId" :options="opcionesPreguntas" label="Banco de preguntas" outlined emit-value map-options clearable />
             </div>
             <div v-if="['tarea', 'foro'].includes(form.tipo)" class="col-12 col-md-6">
-              <q-select v-model="form.rubricaId" :options="opcionesRubricas" label="Rubrica reutilizable" outlined emit-value map-options clearable />
+              <q-select v-model="form.rubricaId" :options="opcionesRubricas" label="Rubrica reutilizable" outlined emit-value map-options clearable @update:model-value="form.rubrica = { metodo_evaluacion: 'directa', criterios: [], niveles: [] }" />
             </div>
+            <div v-if="['tarea', 'foro'].includes(form.tipo) && form.calificable && !form.rubricaId" class="col-12 col-md-6 flex items-center">
+              <q-btn
+                color="secondary"
+                outline
+                icon="design_services"
+                label="O diseñar Rúbrica / Lista de Cotejo local"
+                no-caps
+                @click="dialogoRubricaStudio = true"
+              />
+            </div>
+          </div>
+
+          <div v-if="form.rubrica?.metodo_evaluacion && form.rubrica?.metodo_evaluacion !== 'directa' && !form.rubricaId" class="q-mt-md q-pa-sm rounded bg-teal-1 text-teal-9 text-caption row items-center justify-between">
+            <span>
+              <q-icon name="check_circle" class="q-mr-xs" />
+              Rúbrica local diseñada: <strong>{{ form.rubrica.metodo_evaluacion === 'lista_cotejo' ? 'Lista de Cotejo' : 'Rúbrica Ampliada' }}</strong> 
+              ({{ form.rubrica.criterios?.length || 0 }} criterios)
+            </span>
+            <q-btn flat round dense color="negative" icon="delete" size="xs" @click="form.rubrica = { metodo_evaluacion: 'directa', criterios: [], niveles: [] }" />
             <div v-if="form.tipo === 'cuestionario'" class="col-12 col-md-3">
               <q-input v-model.number="form.intentos" label="Intentos" outlined type="number" min="1" />
             </div>
@@ -177,6 +210,34 @@
       <q-separator class="q-my-md" />
       <div class="text-caption text-grey">El estudiante nunca vera “Subir tarea” en cuestionarios, foros, encuestas, lecciones o interactivos.</div>
     </aside>
+
+    <!-- Diálogo Diseñador de Rúbricas y Listas de Cotejo -->
+    <q-dialog v-model="dialogoRubricaStudio" persistent maximized>
+      <q-card class="column full-height">
+        <q-bar class="bg-primary text-white q-py-sm">
+          <q-icon name="fact_check" />
+          <div class="text-subtitle1 text-weight-bold">Diseñador de Rúbricas y Listas de Cotejo (Asistente)</div>
+          <q-space />
+          <q-btn dense flat icon="close" v-close-popup />
+        </q-bar>
+        
+        <q-card-section class="col scroll q-pa-lg">
+          <div style="max-width: 900px; margin: 0 auto;">
+            <div class="text-h6 text-weight-bold q-mb-xs">Definición de Rúbrica para: {{ form.titulo || 'Nueva Actividad' }}</div>
+            <div class="text-caption text-grey-6 q-mb-lg">Configura el método con el que calificarás esta actividad.</div>
+            
+            <RubricaStudio
+              v-model="form.rubrica"
+              :maxPoints="form.puntos || 100"
+            />
+          </div>
+        </q-card-section>
+        
+        <q-card-actions align="right" class="q-pa-md bg-grey-2">
+          <q-btn flat label="Cerrar y Guardar Cambios" color="primary" class="q-px-lg text-weight-bold" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -190,6 +251,7 @@ import { useActividadesStore } from 'src/stores/actividades'
 import { useHerramientasDocenteStore } from 'src/stores/herramientasDocente'
 import { getActivityModel } from 'src/utils/activityModel'
 import TaButton from 'src/components/tailadmin/TaButton.vue'
+import RubricaStudio from 'src/components/calificaciones/RubricaStudio.vue'
 
 const emit = defineEmits(['created'])
 const $q = useQuasar()
@@ -211,6 +273,8 @@ const tipos = [
   { value: 'leccion', label: 'Leccion', icon: 'article', color: 'indigo', descripcion: 'Lectura y confirmacion' },
 ]
 
+const dialogoRubricaStudio = ref(false)
+
 function nuevoForm() {
   return {
     cursoId: null,
@@ -229,6 +293,12 @@ function nuevoForm() {
     rubricaId: null,
     tipoActividad: 'teorica',
     grupoCalificacion: 'formativa_teorica',
+    parcial: 1,
+    rubrica: {
+      metodo_evaluacion: 'directa',
+      criterios: [],
+      niveles: []
+    }
   }
 }
 
@@ -282,6 +352,7 @@ async function crearActividad() {
     peso: form.value.calificable ? form.value.peso : 0,
     tipo_actividad: form.value.tipoActividad,
     grupo_calificacion: form.value.calificable ? form.value.grupoCalificacion : null,
+    parcial: form.value.calificable ? form.value.parcial : 1,
     config,
   })
   herramientas.registrarCreacionGuiada({ actividadId, cursoId: form.value.cursoId, tipo: form.value.tipo })
@@ -296,8 +367,11 @@ function preguntasSeleccionadas() {
 }
 
 function rubricaSeleccionada() {
-  const rubrica = herramientas.plantillas.find((item) => item.id === form.value.rubricaId)
-  return rubrica?.datos || null
+  if (form.value.rubricaId) {
+    const rubrica = herramientas.plantillas.find((item) => item.id === form.value.rubricaId)
+    return rubrica?.datos || null
+  }
+  return form.value.rubrica || null
 }
 
 function formatoFecha(fecha) { return new Date(fecha).toLocaleString('es-BO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }

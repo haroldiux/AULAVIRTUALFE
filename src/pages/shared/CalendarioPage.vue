@@ -164,7 +164,7 @@
         <q-card-actions align="right" class="q-pa-md" v-else>
           <!-- Si tiene actividad asociada, permitir ir a verla -->
           <TaButton 
-            v-if="eventoSeleccionado?.actividad_id && auth.esEstudiante"
+            v-if="eventoSeleccionado?.actividad_id"
             variant="primary" 
             label="Ir a Actividad" 
             @click="irAActividad(eventoSeleccionado)"
@@ -513,7 +513,11 @@ async function eliminarEventoConfirm(id) {
 function irAActividad(ev) {
   dialogoDetalle.value = false
   if (ev.curso_id && ev.actividad_id) {
-    router.push(`/estudiante/curso/${ev.curso_id}`)
+    if (auth.esEstudiante) {
+      router.push(`/estudiante/curso/${ev.curso_id}?actividad=${ev.actividad_id}`)
+    } else {
+      router.push(`/docente/curso/${ev.curso_id}/builder?actividad=${ev.actividad_id}`)
+    }
   }
 }
 
